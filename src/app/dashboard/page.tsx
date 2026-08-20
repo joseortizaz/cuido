@@ -26,12 +26,20 @@ export default async function DashboardPage() {
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         {clinic?.province} · Rol: {membership.role}
       </p>
-      <Link
-        href="/patients"
-        className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-      >
-        Ver pacientes
-      </Link>
+      <div className="flex gap-3">
+        <Link
+          href="/patients"
+          className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+        >
+          Ver pacientes
+        </Link>
+        <Link
+          href="/team"
+          className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-medium transition-colors hover:bg-black/[.04] dark:border-zinc-700 dark:hover:bg-white/[.08]"
+        >
+          Ver equipo
+        </Link>
+      </div>
       <SignOutButton />
     </div>
   );
