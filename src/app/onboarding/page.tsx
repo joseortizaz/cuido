@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { OnboardingForm } from "./onboarding-form";
 
 export default async function OnboardingPage() {
@@ -9,11 +10,7 @@ export default async function OnboardingPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: membership } = await supabase
-    .from("clinic_members")
-    .select("clinic_id")
-    .limit(1)
-    .maybeSingle();
+  const membership = await getCurrentClinicMembership(supabase);
   if (membership) redirect("/dashboard");
 
   return (

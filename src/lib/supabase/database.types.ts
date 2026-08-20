@@ -39,6 +39,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      allergies: {
+        Row: {
+          clinic_id: string
+          id: string
+          patient_id: string
+          reaction: string | null
+          recorded_at: string
+          severity: string | null
+          status: string
+          substance: string
+        }
+        Insert: {
+          clinic_id: string
+          id?: string
+          patient_id: string
+          reaction?: string | null
+          recorded_at?: string
+          severity?: string | null
+          status?: string
+          substance: string
+        }
+        Update: {
+          clinic_id?: string
+          id?: string
+          patient_id?: string
+          reaction?: string | null
+          recorded_at?: string
+          severity?: string | null
+          status?: string
+          substance?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allergies_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "allergies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_members: {
         Row: {
           clinic_id: string
@@ -98,6 +146,258 @@ export type Database = {
         }
         Relationships: []
       }
+      encounters: {
+        Row: {
+          chief_complaint: string | null
+          clinic_id: string
+          created_at: string
+          encounter_date: string
+          id: string
+          patient_id: string
+          provider_id: string
+          specialty_data: Json
+          specialty_template_id: string
+          updated_at: string
+        }
+        Insert: {
+          chief_complaint?: string | null
+          clinic_id: string
+          created_at?: string
+          encounter_date?: string
+          id?: string
+          patient_id: string
+          provider_id: string
+          specialty_data?: Json
+          specialty_template_id: string
+          updated_at?: string
+        }
+        Update: {
+          chief_complaint?: string | null
+          clinic_id?: string
+          created_at?: string
+          encounter_date?: string
+          id?: string
+          patient_id?: string
+          provider_id?: string
+          specialty_data?: Json
+          specialty_template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encounters_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encounters_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encounters_specialty_template_id_fkey"
+            columns: ["specialty_template_id"]
+            isOneToOne: false
+            referencedRelation: "specialty_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          discontinued_at: string | null
+          dose: string | null
+          frequency: string | null
+          id: string
+          name: string
+          patient_id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          discontinued_at?: string | null
+          dose?: string | null
+          frequency?: string | null
+          id?: string
+          name: string
+          patient_id: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          discontinued_at?: string | null
+          dose?: string | null
+          frequency?: string | null
+          id?: string
+          name?: string
+          patient_id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medications_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medications_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          date_of_birth: string
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string
+          national_id: string | null
+          phone: string | null
+          sex: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          date_of_birth: string
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          national_id?: string | null
+          phone?: string | null
+          sex: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          date_of_birth?: string
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          national_id?: string | null
+          phone?: string | null
+          sex?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialty_templates: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          schema: Json
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          schema: Json
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          schema?: Json
+        }
+        Relationships: []
+      }
+      vital_signs: {
+        Row: {
+          clinic_id: string
+          diastolic_bp: number | null
+          encounter_id: string
+          heart_rate: number | null
+          height_cm: number | null
+          id: string
+          oxygen_saturation: number | null
+          recorded_at: string
+          respiratory_rate: number | null
+          systolic_bp: number | null
+          temperature_celsius: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          clinic_id: string
+          diastolic_bp?: number | null
+          encounter_id: string
+          heart_rate?: number | null
+          height_cm?: number | null
+          id?: string
+          oxygen_saturation?: number | null
+          recorded_at?: string
+          respiratory_rate?: number | null
+          systolic_bp?: number | null
+          temperature_celsius?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          clinic_id?: string
+          diastolic_bp?: number | null
+          encounter_id?: string
+          heart_rate?: number | null
+          height_cm?: number | null
+          id?: string
+          oxygen_saturation?: number | null
+          recorded_at?: string
+          respiratory_rate?: number | null
+          systolic_bp?: number | null
+          temperature_celsius?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vital_signs_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vital_signs_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -112,6 +412,10 @@ export type Database = {
         Returns: string
       }
       is_clinic_admin: { Args: { target_clinic_id: string }; Returns: boolean }
+      is_clinic_clinician: {
+        Args: { target_clinic_id: string }
+        Returns: boolean
+      }
       is_clinic_member: { Args: { target_clinic_id: string }; Returns: boolean }
     }
     Enums: {

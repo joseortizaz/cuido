@@ -4,12 +4,14 @@ Plataforma SaaS de gestión clínica multiespecialidad para el mercado dominican
 Ver [CLAUDE.md](./CLAUDE.md) para el contexto completo del producto, modelo de
 negocio y filosofía de desarrollo (seguridad y multi-tenancy antes que MVP).
 
-**Estado actual: Fase 1 (arranque) — autenticación y alta de clínica.**
-Fase 0 (infraestructura, RLS, CI) está cerrada. Este incremento agrega el
-único flujo de producto que existe hasta ahora: registro/login y creación
-de una clínica (el usuario que la crea queda como su admin). El núcleo
-clínico (pacientes, agenda, expedientes) y las especialidades todavía no
-existen — son los siguientes incrementos de Fase 1.
+**Estado actual: Fase 1 — núcleo clínico + motor de plantillas +
+Medicina Interna.** Fase 0 (infraestructura, RLS, CI) y el incremento de
+auth/onboarding están cerrados. Este incremento agrega el núcleo clínico
+común (pacientes, signos vitales, alergias, medicamentos activos) y el
+motor de plantillas por especialidad configurables — con Medicina Interna
+como primera especialidad real. Las otras 4 especialidades de Fase 1
+(Pediatría, Ginecología y Obstetricia, Cirugía General, Anestesiología)
+reutilizan el mismo motor en incrementos siguientes.
 
 ## Stack
 
@@ -77,6 +79,32 @@ Dos caminos para llegar a ese RPC (o a su equivalente por service_role):
   Usa `SUPABASE_SERVICE_ROLE_KEY`, invita al admin por correo (nunca
   genera ni conoce una contraseña) y bypassa RLS intencionalmente — script
   de confianza, no expuesto como endpoint.
+
+## Núcleo clínico y motor de plantillas por especialidad
+
+Principio de CLAUDE.md: *"la especialidad es configuración, no código"*.
+`specialty_templates`
+([supabase/migrations/20260820111106_clinical_core_and_templates.sql](supabase/migrations/20260820111106_clinical_core_and_templates.sql))
+es un catálogo global (`schema jsonb` con campos dinámicos); agregar una
+especialidad nueva es una fila, no una tabla ni una página nuevas — ver
+[src/lib/domain/specialty-template.ts](src/lib/domain/specialty-template.ts)
+(el motor que interpreta esos campos y construye su validación con Zod en
+runtime).
+
+`patients` → `encounters` (+ `vital_signs`, `allergies`, `medications`)
+tienen tablas padre, a diferencia de `clinics`/`clinic_members` — un
+`clinic_id` enviado por el cliente no basta para aislarlas: hace falta
+evitar que alguien inserte, p. ej., una alergia con `patient_id` de otro
+tenant pero su propio `clinic_id`. Por eso estas tablas usan triggers
+`BEFORE INSERT` (`set_clinic_id_from_patient`/`set_clinic_id_from_encounter`)
+que derivan `clinic_id` del registro padre e ignoran lo que mande el
+cliente — mismo principio no negociable de CLAUDE.md, un nivel más abajo
+del árbol de tenant.
+
+RLS por rol, no solo por tenant: cualquier miembro de la clínica lee y
+registra pacientes (recepción incluida), pero solo `admin`/`medico`
+(`is_clinic_clinician`) puede escribir contenido clínico (consultas,
+vitales, alergias, medicamentos).
 
 ## Prueba de aislamiento entre tenants
 
