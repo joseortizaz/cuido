@@ -1,14 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
-import type { TemplateField } from "@/lib/domain/specialty-template";
+import { useActionState, useMemo, useState } from "react";
+import {
+  groupFieldsBySection,
+  type TemplateField,
+} from "@/lib/domain/specialty-template";
 import { createEncounter, type EncounterFormState } from "./actions";
 
 const inputClass =
   "rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400";
 const labelClass = "text-sm font-medium";
 
-function DynamicField({ field }: { field: TemplateField }) {
+function DynamicField({
+  field,
+  isControlling,
+  onControlChange,
+}: {
+  field: TemplateField;
+  isControlling: boolean;
+  onControlChange: (key: string, value: string) => void;
+}) {
   const name = `field-${field.key}`;
   const label = (
     <label htmlFor={name} className={labelClass}>
@@ -43,7 +54,14 @@ function DynamicField({ field }: { field: TemplateField }) {
       return (
         <div className="flex flex-col gap-1">
           {label}
-          <select id={name} name={name} required={field.required} defaultValue="" className={inputClass}>
+          <select
+            id={name}
+            name={name}
+            required={field.required}
+            defaultValue=""
+            className={inputClass}
+            onChange={isControlling ? (e) => onControlChange(field.key, e.target.value) : undefined}
+          >
             <option value="" disabled={field.required}>
               Selecciona
             </option>
@@ -80,6 +98,24 @@ export function EncounterForm({
     boundAction,
     undefined
   );
+
+  // Claves de los campos que controlan la visibilidad de otros (referenciados
+  // por algún `condition.field`), y el valor actual de cada uno, para
+  // mostrar/ocultar los campos dependientes en vivo mientras el usuario llena
+  // el formulario. El envío real sigue siendo un <form> no controlado — este
+  // estado es solo para la visibilidad, no reemplaza los valores del form.
+  const controllingKeys = useMemo(
+    () => new Set(fields.filter((f) => f.condition).map((f) => f.condition!.field)),
+    [fields]
+  );
+  const [controlValues, setControlValues] = useState<Record<string, string>>({});
+
+  function isVisible(field: TemplateField): boolean {
+    if (!field.condition) return true;
+    return controlValues[field.condition.field] === field.condition.equals;
+  }
+
+  const sections = useMemo(() => groupFieldsBySection(fields), [fields]);
 
   return (
     <form action={formAction} className="flex w-full max-w-lg flex-col gap-8">
@@ -152,14 +188,23 @@ export function EncounterForm({
         </div>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-          Nota de la especialidad
-        </legend>
-        {fields.map((field) => (
-          <DynamicField key={field.key} field={field} />
-        ))}
-      </fieldset>
+      {sections.map(([sectionTitle, sectionFields]) => (
+        <fieldset key={sectionTitle ?? "__default"} className="flex flex-col gap-3">
+          <legend className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            {sectionTitle ?? "Nota de la especialidad"}
+          </legend>
+          {sectionFields.filter(isVisible).map((field) => (
+            <DynamicField
+              key={field.key}
+              field={field}
+              isControlling={controllingKeys.has(field.key)}
+              onControlChange={(key, value) =>
+                setControlValues((prev) => ({ ...prev, [key]: value }))
+              }
+            />
+          ))}
+        </fieldset>
+      ))}
 
       {state?.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
       <button

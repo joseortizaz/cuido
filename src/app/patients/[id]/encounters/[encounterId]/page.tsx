@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { parseTemplateSchema } from "@/lib/domain/specialty-template";
+import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
 
 const VITAL_LABELS: Record<string, string> = {
   systolic_bp: "PA sistólica",
@@ -92,19 +92,26 @@ export default async function EncounterDetailPage({
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Nota de la especialidad</h2>
-        {fields.map((field) => {
+      {groupFieldsBySection(fields).map(([sectionTitle, sectionFields]) => {
+        const filled = sectionFields.filter((field) => {
           const value = specialtyData[field.key];
-          if (value === undefined || value === "" || value === null) return null;
-          return (
-            <div key={field.key}>
-              <dt className="text-xs text-zinc-500">{field.label}</dt>
-              <dd className="whitespace-pre-wrap text-sm">{String(value)}</dd>
-            </div>
-          );
-        })}
-      </div>
+          return value !== undefined && value !== "" && value !== null;
+        });
+        if (filled.length === 0) return null;
+        return (
+          <div key={sectionTitle ?? "__default"} className="flex flex-col gap-4">
+            <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              {sectionTitle ?? "Nota de la especialidad"}
+            </h2>
+            {filled.map((field) => (
+              <div key={field.key}>
+                <dt className="text-xs text-zinc-500">{field.label}</dt>
+                <dd className="whitespace-pre-wrap text-sm">{String(specialtyData[field.key])}</dd>
+              </div>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
