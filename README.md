@@ -38,6 +38,24 @@ práctica clínica general, **no** del reglamento MSP — documentado así
 explícitamente para no mezclar el nivel de evidencia con las otras 4
 plantillas.
 
+## Landing pública
+
+`/` — landing pública de marketing ([src/app/_landing/](src/app/_landing/),
+carpeta `_` = Next.js la excluye del enrutamiento) para visitantes sin
+sesión. Un usuario con sesión activa nunca la ve: `src/app/page.tsx`
+mantiene el mismo despacho de siempre (→ `/dashboard` o `/onboarding`) —
+solo cambió el `else`. El middleware ([src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts))
+tuvo que sumar `"/"` a `PUBLIC_PATHS`, si no ningún visitante sin sesión
+llegaba nunca a `page.tsx` (rebotaba a `/login` antes).
+
+Paleta de marca (`--color-brand-*` en `globals.css`) y fuente Poppins
+(`src/app/_landing/fonts.ts`) viven **solo** en esta carpeta — el resto de
+la app (pantallas autenticadas) sigue con la paleta zinc y Geist Sans de
+siempre. Logo (`public/Logo Cuido.png`) es un PNG opaco sin canal alfa —
+en el footer navy oscuro va envuelto en un chip blanco para no mostrar un
+rectángulo blanco flotante; en el resto de la página su fondo blanco se
+funde con el fondo de la landing sin necesidad de recortarlo.
+
 ## Stack
 
 - Next.js (App Router, TypeScript) — desplegado en Vercel
