@@ -103,6 +103,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_clinic_with_admin: {
+        Args: {
+          clinic_business_model: Database["public"]["Enums"]["clinic_business_model"]
+          clinic_name: string
+          clinic_province: string
+        }
+        Returns: string
+      }
       is_clinic_admin: { Args: { target_clinic_id: string }; Returns: boolean }
       is_clinic_member: { Args: { target_clinic_id: string }; Returns: boolean }
     }

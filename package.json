@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test:tenant-isolation": "tsx scripts/test-tenant-isolation.ts"
+    "test:tenant-isolation": "tsx scripts/test-tenant-isolation.ts",
+    "provision:clinic": "tsx scripts/provision-clinic.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
