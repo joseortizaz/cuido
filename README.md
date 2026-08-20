@@ -105,6 +105,34 @@ Dos caminos para llegar a ese RPC (o a su equivalente por service_role):
   genera ni conoce una contraseña) y bypassa RLS intencionalmente — script
   de confianza, no expuesto como endpoint.
 
+## Equipo de la clínica
+
+`/team` — un admin invita médicos/recepción por correo. Hallazgo al
+diseñar esto: RLS de `clinic_members` ya soportaba agregar/cambiar rol/
+quitar miembros desde Fase 0
+([supabase/migrations/20260820031102_core_tenant_model.sql](supabase/migrations/20260820031102_core_tenant_model.sql),
+`clinic_members_insert_by_admin` y afines) — no hizo falta ninguna
+migración SQL nueva para esta feature.
+
+[src/lib/supabase/admin.ts](src/lib/supabase/admin.ts) es la primera vez
+que `SUPABASE_SERVICE_ROLE_KEY` entra al runtime de la app (antes solo
+scripts). Patrón: se usa **solo** para resolver email → `user_id`
+(`auth.users` no está expuesto vía la Data API, ningún cliente con RLS
+puede hacerlo) — el `INSERT`/`UPDATE`/`DELETE` real en `clinic_members`
+sigue pasando por el cliente normal del llamador
+([src/app/team/actions.ts](src/app/team/actions.ts)), así que RLS lo
+vuelve a validar de forma independiente. Guardia de aplicación: no se
+puede degradar/quitar al último admin de una clínica.
+
+**Hallazgo operativo**: el servicio de correo integrado de Supabase (sin
+SMTP propio configurado en este proyecto) tiene un rate limit muy bajo
+(`over_email_send_rate_limit`, confirmado en pruebas). Por eso
+`findOrInviteUserByEmail` busca ANTES de invitar — agregar a alguien que
+ya tiene cuenta (el caso más común) no gasta cupo de correo. **Antes de
+producción real, configurar SMTP propio** en el proyecto Supabase
+(Authentication → Settings → SMTP) para que invitar gente nueva funcione
+de forma confiable.
+
 ## Núcleo clínico y motor de plantillas por especialidad
 
 Principio de CLAUDE.md: *"la especialidad es configuración, no código"*.

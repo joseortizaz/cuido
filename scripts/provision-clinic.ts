@@ -10,6 +10,8 @@
  * A diferencia del signup público (que usa el RPC create_clinic_with_admin
  * con contraseña elegida por el propio usuario), este script invita al
  * admin por correo — nunca genera ni conoce una contraseña en texto plano.
+ * findOrInviteUserByEmail se comparte con src/app/team/actions.ts (invitar
+ * miembros desde la app) — misma lógica, dos puntos de entrada.
  *
  * Uso:
  *   npm run provision:clinic -- \
@@ -20,12 +22,9 @@
  */
 
 import { config as loadDotenv } from "dotenv";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient, findOrInviteUserByEmail } from "../src/lib/supabase/admin";
 
 loadDotenv({ path: ".env.local" });
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const VALID_BUSINESS_MODELS = ["modelo_c", "modelo_e", "modelo_f"] as const;
 type BusinessModel = (typeof VALID_BUSINESS_MODELS)[number];
@@ -47,12 +46,6 @@ function parseArgs(argv: string[]) {
 }
 
 async function main() {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    throw new Error(
-      "Faltan NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY en .env.local"
-    );
-  }
-
   const args = parseArgs(process.argv.slice(2));
   const name = args["name"];
   const province = args["province"];
@@ -70,30 +63,15 @@ async function main() {
     throw new Error(`--business-model debe ser uno de: ${VALID_BUSINESS_MODELS.join(", ")}`);
   }
 
-  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const admin = createAdminClient();
 
   console.log(`Buscando/invitando al admin (${adminEmail})...`);
-  let adminUserId: string;
-  const invite = await admin.auth.admin.inviteUserByEmail(adminEmail);
-  if (invite.error) {
-    const alreadyExists = /already|existe|registrad/i.test(invite.error.message);
-    if (!alreadyExists) {
-      throw new Error(`No se pudo invitar al admin: ${invite.error.message}`);
-    }
-    console.log("  Ya existe una cuenta con ese correo, la reutilizo.");
-    const existing = await findUserByEmail(admin, adminEmail);
-    if (!existing) {
-      throw new Error(
-        `El correo ${adminEmail} ya está registrado pero no lo pude encontrar en la lista de usuarios.`
-      );
-    }
-    adminUserId = existing.id;
-  } else {
-    adminUserId = invite.data.user.id;
-    console.log("  Invitación enviada. El admin debe revisar su correo para fijar su contraseña.");
-  }
+  const { userId: adminUserId, invited } = await findOrInviteUserByEmail(admin, adminEmail);
+  console.log(
+    invited
+      ? "  Invitación enviada. El admin debe revisar su correo para fijar su contraseña."
+      : "  Ya existe una cuenta con ese correo, la reutilizo."
+  );
 
   console.log(`Creando clínica "${name}" (${province}, ${businessModel})...`);
   const { data: clinic, error: clinicError } = await admin
@@ -119,18 +97,6 @@ async function main() {
   console.log("\nListo.");
   console.log(`  Clínica: ${clinic.id}`);
   console.log(`  Admin:   ${adminEmail} (${adminUserId})`);
-}
-
-async function findUserByEmail(admin: SupabaseClient, email: string) {
-  const normalized = email.toLowerCase();
-  for (let page = 1; page <= 20; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });
-    if (error) throw new Error(`No se pudo listar usuarios: ${error.message}`);
-    const match = data.users.find((u) => u.email?.toLowerCase() === normalized);
-    if (match) return match;
-    if (data.users.length < 200) break; // última página
-  }
-  return null;
 }
 
 main().catch((err) => {
