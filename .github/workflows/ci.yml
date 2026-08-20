@@ -1,0 +1,84 @@
+name: CI
+
+# Checks obligatorios de Fase 0: lint, type-check y aislamiento entre tenants.
+# Configurar estos tres jobs como "required status checks" para `main` en
+# GitHub (Settings > Branches > Branch protection rules) — ver README/PR.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  tenant-isolation:
+    name: Tenant isolation test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Levanta Postgres + Auth locales en el runner y aplica las migraciones
+      # de supabase/migrations sobre una base efímera. Nunca toca el proyecto
+      # remoto ni datos reales — 100% sintético, coherente con el modelo de
+      # entornos de CLAUDE.md.
+      - name: Start local Supabase stack
+        run: supabase start --exclude studio,edge-runtime,imgproxy,logflare,vector,pgadmin-schema-diff,pgbouncer
+
+      - name: Export local Supabase credentials
+        run: |
+          set -euo pipefail
+          STATUS="$(supabase status -o env)"
+          URL="$(echo "$STATUS" | grep '^API_URL=' | cut -d= -f2- | tr -d '"')"
+          ANON="$(echo "$STATUS" | grep '^ANON_KEY=' | cut -d= -f2- | tr -d '"')"
+          SERVICE="$(echo "$STATUS" | grep '^SERVICE_ROLE_KEY=' | cut -d= -f2- | tr -d '"')"
+          if [ -z "$URL" ] || [ -z "$ANON" ] || [ -z "$SERVICE" ]; then
+            echo "No se pudieron extraer las credenciales de 'supabase status -o env'." >&2
+            echo "$STATUS" >&2
+            exit 1
+          fi
+          echo "NEXT_PUBLIC_SUPABASE_URL=$URL" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE" >> "$GITHUB_ENV"
+
+      - name: Run tenant isolation test
+        run: npm run test:tenant-isolation
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: supabase stop
