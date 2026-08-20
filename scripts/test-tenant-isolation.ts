@@ -2,8 +2,11 @@
  * Prueba de aislamiento multi-tenant (Fase 0 — criterio de salida).
  *
  * Qué hace:
- *   1. Con la service_role key (bypassa RLS) crea dos clínicas sintéticas
- *      ("A" y "B") y un usuario admin sintético en cada una.
+ *   1. Con la service_role key (bypassa RLS) crea un usuario sintético para
+ *      cada tenant ("A" y "B"). La clínica de cada uno se crea llamando al
+ *      RPC create_clinic_with_admin como ese usuario ya autenticado — el
+ *      mismo camino que usa el signup público
+ *      (src/app/onboarding/actions.ts), no un atajo de test.
  *   2. Inicia sesión como cada usuario con la clave anónima (sujeta a RLS).
  *   3. Verifica que el usuario de la clínica A NO puede leer, insertar,
  *      actualizar ni borrar filas de la clínica B (ni de su membresía) — y
@@ -75,19 +78,6 @@ async function provisionTenant(label: string): Promise<TestTenant> {
   const password = `Test-${randomUUID()}!`;
   const clinicName = `[TEST] Clínica ${label} ${suffix.slice(0, 8)}`;
 
-  const { data: clinic, error: clinicError } = await admin
-    .from("clinics")
-    .insert({
-      name: clinicName,
-      province: "Distrito Nacional",
-      business_model: "modelo_c",
-    })
-    .select("id")
-    .single();
-  if (clinicError || !clinic) {
-    throw new Error(`No se pudo crear clínica sintética ${label}: ${clinicError?.message}`);
-  }
-
   const { data: userRes, error: userError } = await admin.auth.admin.createUser({
     email,
     password,
@@ -95,15 +85,6 @@ async function provisionTenant(label: string): Promise<TestTenant> {
   });
   if (userError || !userRes.user) {
     throw new Error(`No se pudo crear usuario sintético ${label}: ${userError?.message}`);
-  }
-
-  const { error: memberError } = await admin.from("clinic_members").insert({
-    clinic_id: clinic.id,
-    user_id: userRes.user.id,
-    role: "admin",
-  });
-  if (memberError) {
-    throw new Error(`No se pudo asociar usuario ${label} a su clínica: ${memberError.message}`);
   }
 
   const userClient = createClient(SUPABASE_URL!, ANON_KEY!, {
@@ -114,8 +95,21 @@ async function provisionTenant(label: string): Promise<TestTenant> {
     throw new Error(`No se pudo iniciar sesión como usuario ${label}: ${signInError.message}`);
   }
 
+  // Camino real de onboarding: el mismo RPC que usa el signup público
+  // (src/app/onboarding/actions.ts) crea la clínica y autoasigna admin.
+  const { data: clinicId, error: rpcError } = await userClient.rpc("create_clinic_with_admin", {
+    clinic_name: clinicName,
+    clinic_province: "Distrito Nacional",
+    clinic_business_model: "modelo_c",
+  });
+  if (rpcError || !clinicId) {
+    throw new Error(
+      `No se pudo crear clínica sintética ${label} vía create_clinic_with_admin: ${rpcError?.message}`
+    );
+  }
+
   return {
-    clinicId: clinic.id as string,
+    clinicId,
     clinicName,
     userId: userRes.user.id,
     email,

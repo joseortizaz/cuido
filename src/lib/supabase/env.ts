@@ -31,6 +31,17 @@ export function getSupabaseAnonKey(): string {
 }
 
 /**
+ * Origen público del sitio, usado para construir el link de confirmación
+ * de correo (`emailRedirectTo`). Debe apuntar a cada entorno real
+ * (localhost en dev, el dominio de preview/producción en Vercel) — por eso
+ * es una variable de entorno y no un valor fijo. Cae a localhost en dev
+ * si no está seteada, para no romper `npm run dev` sin configuración extra.
+ */
+export function getSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
+/**
  * Solo para uso en servidor de confianza (scripts, tests de aislamiento,
  * Edge Functions). Bypassa RLS — jamás importar desde código de cliente
  * ni desde rutas expuestas al usuario final.
