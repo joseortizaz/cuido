@@ -19,6 +19,15 @@ por personal médico real. Deben revisarse con un médico de cada
 especialidad antes de usarse con pacientes reales — ver el comentario en
 la migración correspondiente.
 
+**Actualización — alineación con normativa MSP** (ver
+[docs/normativa-msp/](docs/normativa-msp/): Reglamento Técnico del
+Expediente Clínico y Protocolo de Crecimiento y Desarrollo del MSP). Las
+plantillas de Medicina Interna, Pediatría, Cirugía General y Ginecología y
+Obstetricia se revisaron campo por campo contra la norma
+([supabase/migrations/20260820171621_specialty_templates_normativa_msp.sql](supabase/migrations/20260820171621_specialty_templates_normativa_msp.sql)).
+Anestesiología queda pendiente. El aviso de arriba sigue aplicando —
+acercarse a la norma no reemplaza la validación clínica final.
+
 ## Stack
 
 - Next.js (App Router, TypeScript) — desplegado en Vercel
@@ -116,6 +125,21 @@ Al crear una consulta (`/patients/[id]/encounters/new`), primero se elige
 la especialidad (selector — necesario desde que hay más de una plantilla
 activa) y luego se renderiza el formulario dinámico de esa especialidad
 en `/patients/[id]/encounters/new/[templateId]`.
+
+Dos mecanismos de organización dentro de un `TemplateField`
+([src/lib/domain/specialty-template.ts](src/lib/domain/specialty-template.ts)),
+deliberadamente distintos:
+- `section`: agrupación puramente visual dentro de UNA nota (p. ej. la
+  anamnesis de Medicina Interna). No afecta validación.
+- `condition`: un campo solo aplica si otro campo del mismo formulario
+  tiene cierto valor (p. ej. "detalle de transfusión" solo si "hubo
+  transfusión" = Sí en Cirugía General).
+
+Notas que ocurren en momentos clínicos distintos (nota preoperatoria vs.
+descripción quirúrgica postoperatoria; consulta prenatal vs. admisión por
+parto vs. puerperio) **no** se modelan con `condition` — son filas
+separadas de `specialty_templates`, seleccionables en el mismo picker.
+Cero cambios de esquema para agregar una variante.
 
 ## Prueba de aislamiento entre tenants
 
