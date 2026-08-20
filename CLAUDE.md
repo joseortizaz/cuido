@@ -53,6 +53,42 @@ Principio central: un núcleo de expediente clínico común (datos demográficos
 
 **Fase 3 — vertical diferenciadora:** Salud mental/psicología — notas de evolución estructuradas, escalas DSM-5-TR, consentimientos específicos para terapia, con separación de acceso reforzada (un médico general de la clínica no debe poder leer notas de psicología de otro profesional sin permiso explícito, incluso dentro del mismo tenant).
 
+## Fase 3 — hallazgos normativos por especialidad (MSP/SNS)
+
+Investigación de agosto 2026 sobre normativa dominicana aplicable a las
+especialidades de déficit y a salud mental, para tener en cuenta al
+diseñar sus plantillas (no requiere acción antes de Fase 3):
+
+- **Oncología**: la Resolución No. 000014 (23 abril 2020) del MSP creó el
+  Registro de Cáncer de la República Dominicana y ordena notificación
+  obligatoria de todo caso diagnosticado. La implementación operativa del
+  registro ha estado intermitente; no hay formato técnico de reporte
+  público confirmado a la fecha. Diseñar el módulo con campo de
+  estatus/estadio y estructura exportable, sin comprometerse a un formato
+  específico todavía.
+
+- **Nefrología**: el SNS opera el Programa Nacional de Diálisis
+  (hemodiálisis, diálisis peritoneal, trasplante renal) y mantiene un
+  Registro Nacional de Diálisis con datos epidemiológicos, centrado en la
+  Red Pública. No se confirmó obligación de reporte para unidades de
+  diálisis privadas. Mismo tratamiento que Oncología: dejar espacio para
+  reporte epidemiológico sin forzar integración.
+
+- **Salud mental**: la Ley 12-06 no exige un formulario clínico
+  específico, pero su Art. sobre restricción física o reclusión
+  involuntaria SÍ es un campo obligatorio: motivo, carácter y duración
+  deben registrarse en el historial clínico. Solo aplica a contextos de
+  internamiento/hospitalización psiquiátrica, no a consulta ambulatoria
+  de psicología (nuestro caso de uso probable). No requiere acción a
+  menos que Cuido conecte con una institución de internamiento.
+
+- **Cardiología, Endocrinología, Neumología, Otorrinolaringología**: sin
+  programa nacional o norma vertical específica encontrada. Se rigen
+  únicamente por el Reglamento Técnico general de Expediente Clínico
+  (mismo tratamiento que Medicina Interna): anamnesis desglosada, examen
+  físico con revisión por sistemas, diagnóstico presuntivo y definitivo
+  por separado.
+
 ## Integraciones clave (por prioridad regulatoria)
 
 1. **e-CF/DGII**: obligatorio para pequeños/microcontribuyentes desde el 15 de noviembre de 2026 (Ley 32-23). Prioridad de calendario alta.
