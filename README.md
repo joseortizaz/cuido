@@ -25,8 +25,18 @@ Expediente Clínico y Protocolo de Crecimiento y Desarrollo del MSP). Las
 plantillas de Medicina Interna, Pediatría, Cirugía General y Ginecología y
 Obstetricia se revisaron campo por campo contra la norma
 ([supabase/migrations/20260820171621_specialty_templates_normativa_msp.sql](supabase/migrations/20260820171621_specialty_templates_normativa_msp.sql)).
-Anestesiología queda pendiente. El aviso de arriba sigue aplicando —
-acercarse a la norma no reemplaza la validación clínica final.
+El aviso de arriba sigue aplicando — acercarse a la norma no reemplaza la
+validación clínica final.
+
+Anestesiología es un caso aparte: el reglamento no especifica una lista de
+elementos obligatorios para su nota (a diferencia de las otras 4) — se
+revisó el documento completo antes de concluir esto, no solo la sección
+que la menciona de pasada. Sus 3 campos nuevos
+([supabase/migrations/20260820175823_anestesiologia_buenas_practicas.sql](supabase/migrations/20260820175823_anestesiologia_buenas_practicas.sql):
+Mallampati, ayuno preoperatorio, comorbilidades relevantes) vienen de
+práctica clínica general, **no** del reglamento MSP — documentado así
+explícitamente para no mezclar el nivel de evidencia con las otras 4
+plantillas.
 
 ## Stack
 
