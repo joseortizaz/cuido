@@ -4,14 +4,20 @@ Plataforma SaaS de gestión clínica multiespecialidad para el mercado dominican
 Ver [CLAUDE.md](./CLAUDE.md) para el contexto completo del producto, modelo de
 negocio y filosofía de desarrollo (seguridad y multi-tenancy antes que MVP).
 
-**Estado actual: Fase 1 — núcleo clínico + motor de plantillas +
-Medicina Interna.** Fase 0 (infraestructura, RLS, CI) y el incremento de
-auth/onboarding están cerrados. Este incremento agrega el núcleo clínico
-común (pacientes, signos vitales, alergias, medicamentos activos) y el
-motor de plantillas por especialidad configurables — con Medicina Interna
-como primera especialidad real. Las otras 4 especialidades de Fase 1
-(Pediatría, Ginecología y Obstetricia, Cirugía General, Anestesiología)
-reutilizan el mismo motor en incrementos siguientes.
+**Estado actual: Fase 1 — 5 especialidades de alta demanda completas.**
+Fase 0 (infraestructura, RLS, CI), auth/onboarding y el núcleo clínico +
+motor de plantillas están cerrados. Las 5 especialidades priorizadas de
+CLAUDE.md ya existen como configuración en `specialty_templates`:
+Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía General y
+Anestesiología. Agregar cada una no requirió tocar código de UI ni
+esquema — solo una fila nueva, prueba directa de que el motor de
+plantillas funciona como se diseñó.
+
+**Aviso:** los campos de cada plantilla son un primer corte razonable
+para probar el patrón de configuración, no un formulario clínico validado
+por personal médico real. Deben revisarse con un médico de cada
+especialidad antes de usarse con pacientes reales — ver el comentario en
+la migración correspondiente.
 
 ## Stack
 
@@ -105,6 +111,11 @@ RLS por rol, no solo por tenant: cualquier miembro de la clínica lee y
 registra pacientes (recepción incluida), pero solo `admin`/`medico`
 (`is_clinic_clinician`) puede escribir contenido clínico (consultas,
 vitales, alergias, medicamentos).
+
+Al crear una consulta (`/patients/[id]/encounters/new`), primero se elige
+la especialidad (selector — necesario desde que hay más de una plantilla
+activa) y luego se renderiza el formulario dinámico de esa especialidad
+en `/patients/[id]/encounters/new/[templateId]`.
 
 ## Prueba de aislamiento entre tenants
 
