@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { SignOutButton } from "./sign-out-button";
 
 export default async function DashboardPage() {
@@ -9,17 +11,13 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: membership } = await supabase
-    .from("clinic_members")
-    .select("clinic_id, role")
-    .limit(1)
-    .maybeSingle();
+  const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
 
   const { data: clinic } = await supabase
     .from("clinics")
     .select("name, province")
-    .eq("id", membership.clinic_id)
+    .eq("id", membership.clinicId)
     .single();
 
   return (
@@ -28,10 +26,12 @@ export default async function DashboardPage() {
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         {clinic?.province} · Rol: {membership.role}
       </p>
-      <p className="max-w-md text-sm text-zinc-500 dark:text-zinc-500">
-        Este es un placeholder — el núcleo clínico (pacientes, agenda,
-        expedientes) llega en el siguiente incremento de Fase 1.
-      </p>
+      <Link
+        href="/patients"
+        className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+      >
+        Ver pacientes
+      </Link>
       <SignOutButton />
     </div>
   );
