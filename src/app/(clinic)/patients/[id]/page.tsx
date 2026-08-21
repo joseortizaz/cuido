@@ -31,8 +31,14 @@ export default async function PatientDetailPage({
   const { data: patient } = await supabase.from("patients").select("*").eq("id", id).maybeSingle();
   if (!patient) notFound();
 
-  const [{ data: allergies }, { data: medications }, { data: encounters }, { data: templates }, { data: consents }] =
-    await Promise.all([
+  const [
+    { data: allergies },
+    { data: medications },
+    { data: encounters },
+    { data: templates },
+    { data: consents },
+    { data: fiscalDocuments },
+  ] = await Promise.all([
       supabase
         .from("allergies")
         .select("id, substance, reaction, severity, status")
@@ -54,10 +60,16 @@ export default async function PatientDetailPage({
         .select("id, document_title, signer_name, signer_relationship, signed_at, status, recorded_by")
         .eq("patient_id", id)
         .order("signed_at", { ascending: false }),
+      supabase
+        .from("fiscal_documents")
+        .select("id, e_ncf, monto_total, status, created_at")
+        .eq("patient_id", id)
+        .order("created_at", { ascending: false }),
     ]);
 
   const templateNameById = new Map((templates ?? []).map((t) => [t.id, t.name]));
   const canWriteClinical = membership.role === "admin" || membership.role === "medico";
+  const canManageBilling = membership.role === "admin" || membership.role === "recepcion";
 
   // El email no vive en `consents` (auth.users no está expuesto vía la Data
   // API) -- se resuelve server-side, mismo patrón que src/app/team/page.tsx.
@@ -199,6 +211,39 @@ export default async function PatientDetailPage({
                 {canWriteClinical && consent.status === "firmado" && (
                   <RevokeConsentForm patientId={id} consentId={consent.id} />
                 )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Facturación</h2>
+          {canManageBilling && (
+            <Link
+              href={`/billing/new?patientId=${id}`}
+              className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            >
+              Generar e-CF
+            </Link>
+          )}
+        </div>
+        {!fiscalDocuments || fiscalDocuments.length === 0 ? (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin comprobantes fiscales generados.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+            {fiscalDocuments.map((doc) => (
+              <li key={doc.id}>
+                <Link
+                  href={`/billing/${doc.id}`}
+                  className="flex items-center justify-between py-3 text-sm hover:underline"
+                >
+                  <span>{doc.e_ncf ?? "e-CF sin número"}</span>
+                  <span className="text-zinc-500">
+                    RD$ {doc.monto_total.toLocaleString("es-DO", { minimumFractionDigits: 2 })} · {doc.status}
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>

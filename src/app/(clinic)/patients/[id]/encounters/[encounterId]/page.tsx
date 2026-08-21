@@ -69,12 +69,20 @@ export default async function EncounterDetailPage({
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {new Date(encounter.encounter_date).toLocaleString("es-DO")}
         </p>
-        <Link
-          href={`/patients/${id}/consents/new?encounterId=${encounterId}`}
-          className="mt-2 inline-block text-sm text-zinc-500 hover:underline"
-        >
-          Firmar consentimiento para esta consulta →
-        </Link>
+        <div className="mt-2 flex flex-col gap-1">
+          <Link
+            href={`/patients/${id}/consents/new?encounterId=${encounterId}`}
+            className="text-sm text-zinc-500 hover:underline"
+          >
+            Firmar consentimiento para esta consulta →
+          </Link>
+          <Link
+            href={`/billing/new?patientId=${id}&encounterId=${encounterId}`}
+            className="text-sm text-zinc-500 hover:underline"
+          >
+            Generar e-CF para esta consulta →
+          </Link>
+        </div>
       </div>
 
       {encounter.chief_complaint && (
