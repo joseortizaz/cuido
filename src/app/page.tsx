@@ -1,15 +1,22 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { isPlatformOperator } from "@/lib/supabase/operator-context";
 import { LandingPage } from "./_landing/landing-page";
 
 /**
  * "/" — landing pública para visitantes SIN sesión (src/app/_landing/).
- * Un usuario con sesión activa NUNCA la ve: se mantiene exactamente el
- * mismo despacho de siempre (→ /dashboard o /onboarding). El middleware
- * ya no bloquea "/" para visitantes anónimos (ver PUBLIC_PATHS en
- * src/lib/supabase/middleware.ts) — antes redirigía a /login antes de
- * llegar aquí.
+ * Con sesión, despacha en este orden: operador de plataforma → /operator;
+ * si no, clínica propia → /dashboard; si no, → /onboarding.
+ *
+ * Caso raro pero posible: un usuario es operador Y ADEMÁS admin de su
+ * propia clínica. Decisión (documentada aquí porque no hay un lugar más
+ * obvio donde dejarla): prioriza /operator. Un operador de Narnia que
+ * también gestiona su propia clínica sigue siendo, ante todo, alguien
+ * usando la herramienta de operación de la plataforma — no tiene sentido
+ * que aterrice en el dashboard de UNA clínica cuando su rol es ver TODAS.
+ * /operator muestra un enlace a su propio dashboard de clínica cuando
+ * aplica, así no queda sin acceso a ella.
  */
 export default async function Home() {
   const supabase = await createClient();
@@ -17,10 +24,12 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) {
-    const membership = await getCurrentClinicMembership(supabase);
-    redirect(membership ? "/dashboard" : "/onboarding");
+  if (!user) return <LandingPage />;
+
+  if (await isPlatformOperator(supabase)) {
+    redirect("/operator");
   }
 
-  return <LandingPage />;
+  const membership = await getCurrentClinicMembership(supabase);
+  redirect(membership ? "/dashboard" : "/onboarding");
 }
