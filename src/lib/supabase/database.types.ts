@@ -499,6 +499,61 @@ export type Database = {
           },
         ]
       }
+      eligibility_checks: {
+        Row: {
+          checked_at: string
+          checked_by: string
+          clinic_id: string
+          id: string
+          notes: string | null
+          patient_id: string
+          patient_insurer_id: string
+          result: string
+        }
+        Insert: {
+          checked_at?: string
+          checked_by: string
+          clinic_id: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          patient_insurer_id: string
+          result: string
+        }
+        Update: {
+          checked_at?: string
+          checked_by?: string
+          clinic_id?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          patient_insurer_id?: string
+          result?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eligibility_checks_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eligibility_checks_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eligibility_checks_patient_insurer_id_fkey"
+            columns: ["patient_insurer_id"]
+            isOneToOne: false
+            referencedRelation: "patient_insurers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encounters: {
         Row: {
           chief_complaint: string | null
@@ -707,6 +762,76 @@ export type Database = {
           },
         ]
       }
+      insurance_claims: {
+        Row: {
+          claimed_amount: number | null
+          clinic_id: string
+          created_at: string
+          created_by: string
+          encounter_id: string
+          id: string
+          notes: string | null
+          patient_insurer_id: string
+          rejection_reason: string | null
+          status: string
+          status_updated_at: string | null
+          status_updated_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          claimed_amount?: number | null
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          encounter_id: string
+          id?: string
+          notes?: string | null
+          patient_insurer_id: string
+          rejection_reason?: string | null
+          status?: string
+          status_updated_at?: string | null
+          status_updated_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          claimed_amount?: number | null
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          encounter_id?: string
+          id?: string
+          notes?: string | null
+          patient_insurer_id?: string
+          rejection_reason?: string | null
+          status?: string
+          status_updated_at?: string | null
+          status_updated_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claims_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claims_patient_insurer_id_fkey"
+            columns: ["patient_insurer_id"]
+            isOneToOne: false
+            referencedRelation: "patient_insurers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medications: {
         Row: {
           clinic_id: string
@@ -754,6 +879,54 @@ export type Database = {
           },
           {
             foreignKeyName: "medications_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_insurers: {
+        Row: {
+          affiliate_number: string
+          clinic_id: string
+          id: string
+          insurer_name: string
+          is_current: boolean
+          patient_id: string
+          recorded_at: string
+          recorded_by: string
+        }
+        Insert: {
+          affiliate_number: string
+          clinic_id: string
+          id?: string
+          insurer_name: string
+          is_current?: boolean
+          patient_id: string
+          recorded_at?: string
+          recorded_by: string
+        }
+        Update: {
+          affiliate_number?: string
+          clinic_id?: string
+          id?: string
+          insurer_name?: string
+          is_current?: boolean
+          patient_id?: string
+          recorded_at?: string
+          recorded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_insurers_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_insurers_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
