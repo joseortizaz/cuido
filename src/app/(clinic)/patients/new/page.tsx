@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
@@ -15,7 +16,12 @@ export default async function NewPatientPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Nuevo paciente</h1>
+      <div>
+        <Link href="/patients" className="text-sm text-zinc-500 hover:underline">
+          ← Pacientes
+        </Link>
+        <h1 className="mt-1 text-2xl font-semibold">Nuevo paciente</h1>
+      </div>
       <PatientForm />
     </div>
   );

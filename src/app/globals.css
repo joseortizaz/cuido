@@ -11,9 +11,12 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Paleta de marca (landing pública) — src/app/_landing/. No se usa en el
-     resto de la app (login/dashboard/pacientes siguen con la paleta neutra
-     zinc existente). */
+  /* Paleta de marca — nació en la landing pública (src/app/_landing/) y
+     ahora también la usan las barras de navegación autenticadas
+     (src/app/(clinic)/_components/clinic-nav.tsx,
+     src/app/operator/_components/operator-nav.tsx) para sentirse parte
+     de la misma marca. El resto de cada pantalla sigue con la paleta
+     neutra zinc existente. */
   --color-brand-blue: #2563eb;
   --color-brand-teal: #14b8a6;
   --color-brand-teal-light: #2dd4bf;
