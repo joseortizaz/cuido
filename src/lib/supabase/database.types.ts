@@ -87,6 +87,91 @@ export type Database = {
           },
         ]
       }
+      clinic_ecf_sequences: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          id: string
+          next_number: number
+          range_end: number
+          range_start: number
+          tipo_ecf: string
+          valid_until: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          id?: string
+          next_number: number
+          range_end: number
+          range_start: number
+          tipo_ecf: string
+          valid_until: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          next_number?: number
+          range_end?: number
+          range_start?: number
+          tipo_ecf?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_ecf_sequences_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_fiscal_profiles: {
+        Row: {
+          business_name: string
+          clinic_id: string
+          commercial_name: string | null
+          economic_activity: string
+          email: string | null
+          fiscal_address: string
+          phone: string | null
+          rnc: string
+          updated_at: string
+        }
+        Insert: {
+          business_name: string
+          clinic_id: string
+          commercial_name?: string | null
+          economic_activity: string
+          email?: string | null
+          fiscal_address: string
+          phone?: string | null
+          rnc: string
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          clinic_id?: string
+          commercial_name?: string | null
+          economic_activity?: string
+          email?: string | null
+          fiscal_address?: string
+          phone?: string | null
+          rnc?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_fiscal_profiles_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_internal_notes: {
         Row: {
           clinic_id: string
@@ -475,6 +560,153 @@ export type Database = {
           },
         ]
       }
+      fiscal_document_items: {
+        Row: {
+          description: string
+          fiscal_document_id: string
+          id: string
+          itbis_indicator: string
+          line_number: number
+          line_total: number
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          description: string
+          fiscal_document_id: string
+          id?: string
+          itbis_indicator?: string
+          line_number: number
+          line_total: number
+          quantity?: number
+          unit_price: number
+        }
+        Update: {
+          description?: string
+          fiscal_document_id?: string
+          id?: string
+          itbis_indicator?: string
+          line_number?: number
+          line_total?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_document_items_fiscal_document_id_fkey"
+            columns: ["fiscal_document_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fiscal_documents: {
+        Row: {
+          clinic_id: string
+          comprador_direccion: string | null
+          comprador_email: string | null
+          comprador_nombre: string
+          comprador_rnc_cedula: string | null
+          created_at: string
+          created_by: string
+          dgii_track_id: string | null
+          e_ncf: string | null
+          encounter_id: string | null
+          fecha_vencimiento_secuencia: string | null
+          id: string
+          monto_exento: number
+          monto_gravado_total: number
+          monto_total: number
+          patient_id: string
+          status: string
+          tipo_ecf: string
+          total_itbis: number
+          updated_at: string
+          voided_at: string | null
+          voided_by: string | null
+          voided_reason: string | null
+          xml_firmado: string | null
+          xml_sin_firmar: string | null
+        }
+        Insert: {
+          clinic_id: string
+          comprador_direccion?: string | null
+          comprador_email?: string | null
+          comprador_nombre: string
+          comprador_rnc_cedula?: string | null
+          created_at?: string
+          created_by: string
+          dgii_track_id?: string | null
+          e_ncf?: string | null
+          encounter_id?: string | null
+          fecha_vencimiento_secuencia?: string | null
+          id?: string
+          monto_exento?: number
+          monto_gravado_total?: number
+          monto_total?: number
+          patient_id: string
+          status?: string
+          tipo_ecf?: string
+          total_itbis?: number
+          updated_at?: string
+          voided_at?: string | null
+          voided_by?: string | null
+          voided_reason?: string | null
+          xml_firmado?: string | null
+          xml_sin_firmar?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          comprador_direccion?: string | null
+          comprador_email?: string | null
+          comprador_nombre?: string
+          comprador_rnc_cedula?: string | null
+          created_at?: string
+          created_by?: string
+          dgii_track_id?: string | null
+          e_ncf?: string | null
+          encounter_id?: string | null
+          fecha_vencimiento_secuencia?: string | null
+          id?: string
+          monto_exento?: number
+          monto_gravado_total?: number
+          monto_total?: number
+          patient_id?: string
+          status?: string
+          tipo_ecf?: string
+          total_itbis?: number
+          updated_at?: string
+          voided_at?: string | null
+          voided_by?: string | null
+          voided_reason?: string | null
+          xml_firmado?: string | null
+          xml_sin_firmar?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_documents_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_documents_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_documents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medications: {
         Row: {
           clinic_id: string
@@ -701,6 +933,22 @@ export type Database = {
         }
         Returns: string
       }
+      generate_fiscal_document: {
+        Args: {
+          comprador_direccion: string
+          comprador_email: string
+          comprador_nombre: string
+          comprador_rnc_cedula: string
+          items: Json
+          target_encounter_id: string
+          target_patient_id: string
+        }
+        Returns: string
+      }
+      is_billing_staff_of_active_clinic: {
+        Args: { target_clinic_id: string }
+        Returns: boolean
+      }
       is_clinic_admin: { Args: { target_clinic_id: string }; Returns: boolean }
       is_clinic_clinician: {
         Args: { target_clinic_id: string }
@@ -743,6 +991,23 @@ export type Database = {
           new_price: number
           target_clinic_id: string
         }
+        Returns: undefined
+      }
+      upsert_clinic_fiscal_profile: {
+        Args: {
+          business_name: string
+          commercial_name: string
+          economic_activity: string
+          email: string
+          fiscal_address: string
+          phone: string
+          rnc: string
+          target_clinic_id: string
+        }
+        Returns: undefined
+      }
+      void_fiscal_document: {
+        Args: { reason: string; target_fiscal_document_id: string }
         Returns: undefined
       }
     }
