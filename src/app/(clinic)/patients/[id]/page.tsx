@@ -6,6 +6,8 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { AllergyForm } from "./allergy-form";
 import { MedicationForm } from "./medication-form";
 import { RevokeConsentForm } from "./consents/revoke-consent-form";
+import { InsurerForm } from "./insurance/insurer-form";
+import { EligibilityForm } from "./insurance/eligibility-form";
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -38,6 +40,8 @@ export default async function PatientDetailPage({
     { data: templates },
     { data: consents },
     { data: fiscalDocuments },
+    { data: insurers },
+    { data: eligibilityChecks },
   ] = await Promise.all([
       supabase
         .from("allergies")
@@ -65,18 +69,33 @@ export default async function PatientDetailPage({
         .select("id, e_ncf, monto_total, status, created_at")
         .eq("patient_id", id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("patient_insurers")
+        .select("id, insurer_name, affiliate_number, is_current, recorded_at")
+        .eq("patient_id", id)
+        .order("recorded_at", { ascending: false }),
+      supabase
+        .from("eligibility_checks")
+        .select("id, result, notes, checked_by, checked_at")
+        .eq("patient_id", id)
+        .order("checked_at", { ascending: false }),
     ]);
 
   const templateNameById = new Map((templates ?? []).map((t) => [t.id, t.name]));
   const canWriteClinical = membership.role === "admin" || membership.role === "medico";
   const canManageBilling = membership.role === "admin" || membership.role === "recepcion";
+  const currentInsurer = (insurers ?? []).find((i) => i.is_current) ?? null;
 
   // El email no vive en `consents` (auth.users no está expuesto vía la Data
   // API) -- se resuelve server-side, mismo patrón que src/app/team/page.tsx.
   const admin = createAdminClient();
   const recorderEmailByUserId = new Map<string, string>();
+  const insuranceUserIds = new Set([
+    ...(consents ?? []).map((c) => c.recorded_by),
+    ...(eligibilityChecks ?? []).map((c) => c.checked_by),
+  ]);
   await Promise.all(
-    Array.from(new Set((consents ?? []).map((c) => c.recorded_by))).map(async (userId) => {
+    Array.from(insuranceUserIds).map(async (userId) => {
       const { data } = await admin.auth.admin.getUserById(userId);
       if (data.user?.email) recorderEmailByUserId.set(userId, data.user.email);
     })
@@ -214,6 +233,69 @@ export default async function PatientDetailPage({
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Seguro (ARS)</h2>
+        {currentInsurer ? (
+          <p className="text-sm">
+            <span className="font-medium">{currentInsurer.insurer_name}</span> — afiliado{" "}
+            {currentInsurer.affiliate_number}
+          </p>
+        ) : (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin aseguradora registrada.</p>
+        )}
+        {(insurers ?? []).filter((i) => !i.is_current).length > 0 && (
+          <details className="text-sm text-zinc-600 dark:text-zinc-400">
+            <summary className="cursor-pointer">Historial de aseguradoras</summary>
+            <ul className="mt-1 flex flex-col gap-1">
+              {(insurers ?? [])
+                .filter((i) => !i.is_current)
+                .map((i) => (
+                  <li key={i.id}>
+                    {i.insurer_name} — afiliado {i.affiliate_number} (hasta{" "}
+                    {new Date(i.recorded_at).toLocaleDateString("es-DO")})
+                  </li>
+                ))}
+            </ul>
+          </details>
+        )}
+        {canManageBilling && <InsurerForm patientId={id} />}
+
+        {currentInsurer && (
+          <>
+            <h3 className="mt-2 text-sm font-medium">Verificación de elegibilidad</h3>
+            {!eligibilityChecks || eligibilityChecks.length === 0 ? (
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin verificaciones registradas.</p>
+            ) : (
+              <ul className="flex flex-col gap-1 text-sm">
+                {eligibilityChecks.slice(0, 5).map((check) => (
+                  <li key={check.id}>
+                    <span
+                      className={
+                        check.result === "elegible"
+                          ? "font-medium text-green-700 dark:text-green-400"
+                          : check.result === "no_elegible"
+                            ? "font-medium text-red-700 dark:text-red-400"
+                            : "font-medium text-amber-700 dark:text-amber-400"
+                      }
+                    >
+                      {check.result === "elegible"
+                        ? "Elegible"
+                        : check.result === "no_elegible"
+                          ? "No elegible"
+                          : "Pendiente"}
+                    </span>{" "}
+                    · {new Date(check.checked_at).toLocaleString("es-DO")} · verificado por{" "}
+                    {recorderEmailByUserId.get(check.checked_by) ?? check.checked_by}
+                    {check.notes ? ` — ${check.notes}` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canManageBilling && <EligibilityForm patientId={id} patientInsurerId={currentInsurer.id} />}
+          </>
         )}
       </section>
 
