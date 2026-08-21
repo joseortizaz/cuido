@@ -40,7 +40,21 @@ function DynamicField({
       return (
         <div className="flex flex-col gap-1">
           {label}
-          <input id={name} name={name} type="number" required={field.required} className={inputClass} />
+          {/* step="any" -- sin esto, el input nativo asume step=1 (solo
+              enteros) y bloquea silenciosamente el envío del formulario
+              ante cualquier valor decimal (HbA1c, cociente
+              albúmina/creatinina, etc.), sin mostrar ningún error visible
+              del lado del servidor porque nunca llega a enviarse. Bug
+              preexistente del motor genérico de plantillas, encontrado al
+              verificar el campo HbA1c de Endocrinología. */}
+          <input
+            id={name}
+            name={name}
+            type="number"
+            step="any"
+            required={field.required}
+            className={inputClass}
+          />
         </div>
       );
     case "date":
