@@ -1,9 +1,17 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { AllergyForm } from "./allergy-form";
 import { MedicationForm } from "./medication-form";
+import { RevokeConsentForm } from "./consents/revoke-consent-form";
+
+const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
+  paciente: "el propio paciente",
+  tutor: "tutor",
+  representante: "representante",
+};
 
 export default async function PatientDetailPage({
   params,
@@ -23,7 +31,7 @@ export default async function PatientDetailPage({
   const { data: patient } = await supabase.from("patients").select("*").eq("id", id).maybeSingle();
   if (!patient) notFound();
 
-  const [{ data: allergies }, { data: medications }, { data: encounters }, { data: templates }] =
+  const [{ data: allergies }, { data: medications }, { data: encounters }, { data: templates }, { data: consents }] =
     await Promise.all([
       supabase
         .from("allergies")
@@ -41,10 +49,26 @@ export default async function PatientDetailPage({
         .eq("patient_id", id)
         .order("encounter_date", { ascending: false }),
       supabase.from("specialty_templates").select("id, name"),
+      supabase
+        .from("consents")
+        .select("id, document_title, signer_name, signer_relationship, signed_at, status, recorded_by")
+        .eq("patient_id", id)
+        .order("signed_at", { ascending: false }),
     ]);
 
   const templateNameById = new Map((templates ?? []).map((t) => [t.id, t.name]));
   const canWriteClinical = membership.role === "admin" || membership.role === "medico";
+
+  // El email no vive en `consents` (auth.users no está expuesto vía la Data
+  // API) -- se resuelve server-side, mismo patrón que src/app/team/page.tsx.
+  const admin = createAdminClient();
+  const recorderEmailByUserId = new Map<string, string>();
+  await Promise.all(
+    Array.from(new Set((consents ?? []).map((c) => c.recorded_by))).map(async (userId) => {
+      const { data } = await admin.auth.admin.getUserById(userId);
+      if (data.user?.email) recorderEmailByUserId.set(userId, data.user.email);
+    })
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
@@ -133,6 +157,52 @@ export default async function PatientDetailPage({
           </ul>
         )}
         {canWriteClinical && <MedicationForm patientId={id} />}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Consentimientos</h2>
+          <Link
+            href={`/patients/${id}/consents/new`}
+            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+          >
+            Firmar consentimiento
+          </Link>
+        </div>
+        {!consents || consents.length === 0 ? (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin consentimientos firmados.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+            {consents.map((consent) => (
+              <li key={consent.id} className="flex flex-col gap-1 py-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    <span className="font-medium">{consent.document_title}</span> — firmado por{" "}
+                    {consent.signer_name} (
+                    {CONSENT_RELATIONSHIP_LABELS[consent.signer_relationship] ?? consent.signer_relationship}
+                    )
+                  </span>
+                  <span
+                    className={
+                      consent.status === "revocado"
+                        ? "text-xs font-medium text-red-700 dark:text-red-400"
+                        : "text-xs font-medium text-green-700 dark:text-green-400"
+                    }
+                  >
+                    {consent.status === "revocado" ? "Revocado" : "Firmado"}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500">
+                  {new Date(consent.signed_at).toLocaleString("es-DO")} · registrado por{" "}
+                  {recorderEmailByUserId.get(consent.recorded_by) ?? consent.recorded_by}
+                </p>
+                {canWriteClinical && consent.status === "firmado" && (
+                  <RevokeConsentForm patientId={id} consentId={consent.id} />
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

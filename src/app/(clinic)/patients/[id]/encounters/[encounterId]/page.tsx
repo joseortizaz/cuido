@@ -69,6 +69,12 @@ export default async function EncounterDetailPage({
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {new Date(encounter.encounter_date).toLocaleString("es-DO")}
         </p>
+        <Link
+          href={`/patients/${id}/consents/new?encounterId=${encounterId}`}
+          className="mt-2 inline-block text-sm text-zinc-500 hover:underline"
+        >
+          Firmar consentimiento para esta consulta →
+        </Link>
       </div>
 
       {encounter.chief_complaint && (

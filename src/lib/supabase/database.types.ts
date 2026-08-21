@@ -289,6 +289,131 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_templates: {
+        Row: {
+          body: string
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          body: string
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          body?: string
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      consents: {
+        Row: {
+          clinic_id: string
+          consent_template_id: string
+          created_at: string
+          document_content: string
+          document_hash: string
+          document_title: string
+          encounter_id: string | null
+          id: string
+          patient_id: string
+          recorded_by: string
+          revoked_at: string | null
+          revoked_by: string | null
+          revoked_reason: string | null
+          signed_at: string
+          signer_ip: unknown
+          signer_name: string
+          signer_national_id: string | null
+          signer_relationship: string
+          signer_user_agent: string | null
+          status: string
+        }
+        Insert: {
+          clinic_id: string
+          consent_template_id: string
+          created_at?: string
+          document_content: string
+          document_hash: string
+          document_title: string
+          encounter_id?: string | null
+          id?: string
+          patient_id: string
+          recorded_by: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          revoked_reason?: string | null
+          signed_at?: string
+          signer_ip?: unknown
+          signer_name: string
+          signer_national_id?: string | null
+          signer_relationship?: string
+          signer_user_agent?: string | null
+          status?: string
+        }
+        Update: {
+          clinic_id?: string
+          consent_template_id?: string
+          created_at?: string
+          document_content?: string
+          document_hash?: string
+          document_title?: string
+          encounter_id?: string | null
+          id?: string
+          patient_id?: string
+          recorded_by?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          revoked_reason?: string | null
+          signed_at?: string
+          signer_ip?: unknown
+          signer_name?: string
+          signer_national_id?: string | null
+          signer_relationship?: string
+          signer_user_agent?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consents_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consents_consent_template_id_fkey"
+            columns: ["consent_template_id"]
+            isOneToOne: false
+            referencedRelation: "consent_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consents_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encounters: {
         Row: {
           chief_complaint: string | null
@@ -591,6 +716,10 @@ export type Database = {
         Returns: boolean
       }
       is_platform_operator: { Args: never; Returns: boolean }
+      revoke_consent: {
+        Args: { reason: string; target_consent_id: string }
+        Returns: undefined
+      }
       set_clinic_active_status: {
         Args: {
           new_is_active: boolean
