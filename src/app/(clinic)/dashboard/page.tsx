@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
-import { SignOutButton } from "./sign-out-button";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -40,7 +39,6 @@ export default async function DashboardPage() {
           Ver equipo
         </Link>
       </div>
-      <SignOutButton />
     </div>
   );
 }
