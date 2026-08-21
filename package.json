@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test:tenant-isolation": "tsx scripts/test-tenant-isolation.ts",
-    "provision:clinic": "tsx scripts/provision-clinic.ts"
+    "provision:clinic": "tsx scripts/provision-clinic.ts",
+    "grant:operator": "tsx scripts/grant-platform-operator.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

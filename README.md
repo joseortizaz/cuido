@@ -38,6 +38,33 @@ práctica clínica general, **no** del reglamento MSP — documentado así
 explícitamente para no mezclar el nivel de evidencia con las otras 4
 plantillas.
 
+## Operador de plataforma (Nivel 1)
+
+Rol operativo/comercial interno de Narnia — gestión de clínicas
+(activar/desactivar, plan, precio, estado de pago) **sin acceso a datos
+clínicos de pacientes**. Se otorga exclusivamente vía
+`npm run grant:operator -- --email <email>`
+([scripts/grant-platform-operator.ts](scripts/grant-platform-operator.ts)) —
+sin RPC autoservicio, mismo principio que `create_clinic_with_admin` usa
+para evitar auto-escalamiento.
+
+Diseño clave
+([supabase/migrations/20260821000500_platform_operators.sql](supabase/migrations/20260821000500_platform_operators.sql)):
+`clinics.is_active` + dos helpers nuevos
+(`is_member_of_active_clinic`/`is_clinician_of_active_clinic`) que
+envuelven a `is_clinic_member`/`is_clinic_clinician` — usados **solo** en
+las políticas de `patients`/`encounters`/`vital_signs`/`allergies`/
+`medications`. `is_clinic_member` en sí NO cambió: una clínica
+desactivada sigue siendo visible para su propio admin (si no, nunca se
+enteraría de por qué perdió acceso), pero sus datos clínicos quedan
+bloqueados a nivel de RLS — no solo ocultos en la UI. Cambios de
+estado/plan pasan por RPC dedicadas (`set_clinic_active_status`,
+`update_clinic_plan`, `update_clinic_payment_status`,
+`add_clinic_internal_note`), cada una con su tabla de historial —
+`clinic_status_changes` y `clinic_plan_changes` son operador-only;
+`clinic_subscriptions` (plan/precio/estado de pago actuales) la puede
+leer también el admin de esa clínica, solo lectura.
+
 ## Landing pública
 
 `/` — landing pública de marketing ([src/app/_landing/](src/app/_landing/),

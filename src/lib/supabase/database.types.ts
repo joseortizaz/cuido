@@ -87,6 +87,38 @@ export type Database = {
           },
         ]
       }
+      clinic_internal_notes: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          id: string
+          note: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          note: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          note?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_internal_notes_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_members: {
         Row: {
           clinic_id: string
@@ -119,11 +151,120 @@ export type Database = {
           },
         ]
       }
+      clinic_plan_changes: {
+        Row: {
+          business_model: Database["public"]["Enums"]["clinic_business_model"]
+          changed_by: string
+          clinic_id: string
+          created_at: string
+          id: string
+          plan_conditions: string | null
+          price: number | null
+        }
+        Insert: {
+          business_model: Database["public"]["Enums"]["clinic_business_model"]
+          changed_by: string
+          clinic_id: string
+          created_at?: string
+          id?: string
+          plan_conditions?: string | null
+          price?: number | null
+        }
+        Update: {
+          business_model?: Database["public"]["Enums"]["clinic_business_model"]
+          changed_by?: string
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          plan_conditions?: string | null
+          price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_plan_changes_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_status_changes: {
+        Row: {
+          changed_by: string
+          clinic_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          reason: string
+        }
+        Insert: {
+          changed_by: string
+          clinic_id: string
+          created_at?: string
+          id?: string
+          is_active: boolean
+          reason: string
+        }
+        Update: {
+          changed_by?: string
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_status_changes_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_subscriptions: {
+        Row: {
+          clinic_id: string
+          next_payment_due_on: string | null
+          payment_status: string
+          plan_conditions: string | null
+          price: number | null
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          next_payment_due_on?: string | null
+          payment_status?: string
+          plan_conditions?: string | null
+          price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          next_payment_due_on?: string | null
+          payment_status?: string
+          plan_conditions?: string | null
+          price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_subscriptions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinics: {
         Row: {
           business_model: Database["public"]["Enums"]["clinic_business_model"]
           created_at: string
           id: string
+          is_active: boolean
           name: string
           province: string
           updated_at: string
@@ -132,6 +273,7 @@ export type Database = {
           business_model: Database["public"]["Enums"]["clinic_business_model"]
           created_at?: string
           id?: string
+          is_active?: boolean
           name: string
           province: string
           updated_at?: string
@@ -140,6 +282,7 @@ export type Database = {
           business_model?: Database["public"]["Enums"]["clinic_business_model"]
           created_at?: string
           id?: string
+          is_active?: boolean
           name?: string
           province?: string
           updated_at?: string
@@ -311,6 +454,24 @@ export type Database = {
           },
         ]
       }
+      platform_operators: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       specialty_templates: {
         Row: {
           code: string
@@ -403,6 +564,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_clinic_internal_note: {
+        Args: { note: string; target_clinic_id: string }
+        Returns: undefined
+      }
       create_clinic_with_admin: {
         Args: {
           clinic_business_model: Database["public"]["Enums"]["clinic_business_model"]
@@ -417,6 +582,40 @@ export type Database = {
         Returns: boolean
       }
       is_clinic_member: { Args: { target_clinic_id: string }; Returns: boolean }
+      is_clinician_of_active_clinic: {
+        Args: { target_clinic_id: string }
+        Returns: boolean
+      }
+      is_member_of_active_clinic: {
+        Args: { target_clinic_id: string }
+        Returns: boolean
+      }
+      is_platform_operator: { Args: never; Returns: boolean }
+      set_clinic_active_status: {
+        Args: {
+          new_is_active: boolean
+          reason: string
+          target_clinic_id: string
+        }
+        Returns: undefined
+      }
+      update_clinic_payment_status: {
+        Args: {
+          new_next_payment_due_on: string
+          new_payment_status: string
+          target_clinic_id: string
+        }
+        Returns: undefined
+      }
+      update_clinic_plan: {
+        Args: {
+          new_business_model: Database["public"]["Enums"]["clinic_business_model"]
+          new_conditions: string
+          new_price: number
+          target_clinic_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       clinic_business_model: "modelo_c" | "modelo_e" | "modelo_f"
