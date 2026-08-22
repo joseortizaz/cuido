@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { PasswordInput } from "../_auth/password-input";
 import { signup, type SignupState } from "./actions";
 
 export function SignupForm() {
@@ -9,11 +10,11 @@ export function SignupForm() {
 
   if (state?.success) {
     return (
-      <div className="flex w-full max-w-sm flex-col items-center gap-2 text-center">
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+      <div className="flex w-full flex-col items-center gap-2 text-center">
+        <p className="text-sm text-zinc-700">
           Revisa tu correo para confirmar la cuenta antes de iniciar sesión.
         </p>
-        <Link href="/login" className="text-sm font-medium underline underline-offset-2">
+        <Link href="/login" className="text-sm font-medium text-brand-teal hover:underline">
           Volver a iniciar sesión
         </Link>
       </div>
@@ -21,9 +22,9 @@ export function SignupForm() {
   }
 
   return (
-    <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
+    <form action={formAction} className="flex w-full flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="email" className="text-sm font-medium">
+        <label htmlFor="email" className="text-sm font-medium text-brand-navy">
           Correo
         </label>
         <input
@@ -32,34 +33,26 @@ export function SignupForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400"
+          className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-brand-teal"
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium">
+        <label htmlFor="password" className="text-sm font-medium text-brand-navy">
           Contraseña
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          minLength={8}
-          autoComplete="new-password"
-          className="rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400"
-        />
+        <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} />
       </div>
-      {state?.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] disabled:opacity-50 dark:hover:bg-[#ccc]"
+        className="rounded-full bg-linear-to-r from-brand-blue to-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {pending ? "Creando cuenta…" : "Crear cuenta"}
       </button>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-center text-sm text-zinc-600">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/login" className="font-medium underline underline-offset-2">
+        <Link href="/login" className="font-medium text-brand-teal hover:underline">
           Inicia sesión
         </Link>
       </p>
