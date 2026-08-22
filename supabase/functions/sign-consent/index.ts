@@ -119,11 +119,23 @@ const handler = {
     // confía en texto que mande el cliente.
     const { data: template } = await ctx.supabaseAdmin
       .from("consent_templates")
-      .select("id, title, body, is_active")
+      .select("id, code, title, body, is_active")
       .eq("id", consentTemplateId)
       .maybeSingle();
     if (!template || !template.is_active) {
       return jsonError("Plantilla de consentimiento no encontrada o inactiva.", 404);
+    }
+
+    // 4.1. El consentimiento de salud mental (Ley 12-06, Art. 50) usa una
+    // atestación procedimental para el numeral "diagnóstico y su
+    // evaluación" que remite a la nota clínica de la consulta concreta
+    // (ver 20260822030000_consentimiento_salud_mental.sql) -- por eso,
+    // a diferencia de cualquier otra plantilla, exige encounterId.
+    if (template.code === "consentimiento_salud_mental" && !encounterId) {
+      return jsonError(
+        "El consentimiento de salud mental debe asociarse a la consulta donde se explicó el diagnóstico.",
+        400
+      );
     }
 
     const signedAt = new Date().toISOString();

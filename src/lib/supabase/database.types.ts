@@ -1002,6 +1002,73 @@ export type Database = {
         }
         Relationships: []
       }
+      sensitive_specialty_access_grants: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          granted_at: string
+          granted_by_user_id: string
+          granted_to_user_id: string
+          id: string
+          patient_id: string
+          reason: string
+          revoked_at: string | null
+          revoked_by_user_id: string | null
+          revoked_reason: string | null
+          specialty_template_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          granted_at?: string
+          granted_by_user_id: string
+          granted_to_user_id: string
+          id?: string
+          patient_id: string
+          reason: string
+          revoked_at?: string | null
+          revoked_by_user_id?: string | null
+          revoked_reason?: string | null
+          specialty_template_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          granted_at?: string
+          granted_by_user_id?: string
+          granted_to_user_id?: string
+          id?: string
+          patient_id?: string
+          reason?: string
+          revoked_at?: string | null
+          revoked_by_user_id?: string | null
+          revoked_reason?: string | null
+          specialty_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensitive_specialty_access_grants_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sensitive_specialty_access_grants_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sensitive_specialty_access_grants_specialty_template_id_fkey"
+            columns: ["specialty_template_id"]
+            isOneToOne: false
+            referencedRelation: "specialty_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialty_templates: {
         Row: {
           code: string
@@ -1009,6 +1076,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          requires_explicit_access: boolean
           schema: Json
         }
         Insert: {
@@ -1017,6 +1085,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          requires_explicit_access?: boolean
           schema: Json
         }
         Update: {
@@ -1025,6 +1094,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          requires_explicit_access?: boolean
           schema?: Json
         }
         Relationships: []
@@ -1098,6 +1168,15 @@ export type Database = {
         Args: { note: string; target_clinic_id: string }
         Returns: undefined
       }
+      can_access_sensitive_encounter: {
+        Args: {
+          target_clinic_id: string
+          target_patient_id: string
+          target_provider_id: string
+          target_specialty_template_id: string
+        }
+        Returns: boolean
+      }
       create_clinic_with_admin: {
         Args: {
           clinic_business_model: Database["public"]["Enums"]["clinic_business_model"]
@@ -1115,6 +1194,15 @@ export type Database = {
           items: Json
           target_encounter_id: string
           target_patient_id: string
+        }
+        Returns: string
+      }
+      grant_sensitive_specialty_access: {
+        Args: {
+          p_reason: string
+          target_patient_id: string
+          target_specialty_template_id: string
+          target_user_id: string
         }
         Returns: string
       }
@@ -1139,6 +1227,10 @@ export type Database = {
       is_platform_operator: { Args: never; Returns: boolean }
       revoke_consent: {
         Args: { reason: string; target_consent_id: string }
+        Returns: undefined
+      }
+      revoke_sensitive_specialty_access: {
+        Args: { p_reason: string; target_grant_id: string }
         Returns: undefined
       }
       set_clinic_active_status: {
