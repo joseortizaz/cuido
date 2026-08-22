@@ -1,4 +1,4 @@
-import { DEMO_MAILTO } from "./constants";
+import { CONTACT_ANCHOR } from "./constants";
 
 export function LandingHero() {
   return (
@@ -18,7 +18,7 @@ export function LandingHero() {
       </p>
 
       <a
-        href={DEMO_MAILTO}
+        href={CONTACT_ANCHOR}
         className="mt-8 rounded-full bg-linear-to-r from-brand-blue to-brand-teal px-8 py-3.5 text-base font-semibold text-white shadow-md shadow-brand-blue/20 transition-opacity hover:opacity-90 sm:text-lg"
       >
         Solicitar una demo
