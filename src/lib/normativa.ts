@@ -81,8 +81,19 @@ export const NORMATIVA: NormativaEntry[] = [
     issuer: "Ministerio de Salud Pública (MSP), Programa Nacional de Prevención y Control de las Enfermedades Crónicas No Transmisibles",
     year: "2018",
     specialties: ["Endocrinología"],
-    url: null,
-    note: "Enlace directo a la fuente oficial pendiente de confirmar -- el documento se usó para construir la plantilla a partir de una investigación normativa entregada como texto, sin un PDF propio verificado en este repositorio.",
+    url: "https://repositorio.msp.gob.do/bitstream/handle/123456789/2266/9789945621501.pdf?sequence=1&isAllowed=y",
+    // Nota de verificación (a diferencia de las demás entradas de este
+    // archivo, esta NO se pudo re-verificar de forma independiente): el
+    // usuario confirmó este enlace leyendo la bibliografía del propio PDF,
+    // que se autocita con este título y año exactos. Al intentar
+    // re-verificarlo (mismo método que el resto de esta lista -- ver
+    // comentario de arriba), tanto curl como WebFetch fallaron con
+    // ECONNRESET contra repositorio.msp.gob.do en el momento de esta
+    // sesión -- incluyendo un handle que sí se había verificado
+    // exitosamente antes (2310), lo que indica una caída/bloqueo temporal
+    // del lado del servidor, no un problema del enlace en sí. Si el enlace
+    // no resuelve al revisar esto, vale la pena reintentar más tarde antes
+    // de sospechar del contenido.
   },
   {
     title: "Ley sobre Salud Mental No. 12-06",
