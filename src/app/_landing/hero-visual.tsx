@@ -1,65 +1,77 @@
-import { ClipboardIcon, ReceiptIcon, SignatureIcon, ShieldCheckIcon } from "./icons";
+import Image from "next/image";
+import { CUIDO_LOGO_SRC } from "./constants";
+import { FEATURES } from "./features-data";
 
 /**
- * Visual del Hero -- composición gráfica abstracta, NO una captura de
- * pantalla real de la app. Decisión explícita (opción b de las dos
- * planteadas al pedir esta mejora):
+ * Visual del Hero -- mockup de laptop en CSS/React, NO una imagen estática.
  *
- * El dashboard real hoy (src/app/(clinic)/dashboard/page.tsx) es una
- * pantalla de bienvenida mínima -- un título, la clínica/rol del usuario y
- * dos botones. Ninguna vista de la app tiene hoy el tipo de panel con
- * gráficas/tarjetas de métricas que sugiere el boceto. Una captura real
- * de esa pantalla se vería pobre en una landing (y como es tan simple,
- * cualquier intento de "vestirla" para la captura empezaría a acercarse a
- * simular una interfaz que no es la real). Una composición abstracta con
- * las mismas 4 funcionalidades ya descritas en la sección de
- * funcionalidades más abajo evita ambos problemas: no hay datos de
- * pacientes (ni siquiera de mentira) que puedan confundirse con reales, y
- * no se le atribuye a la app una UI que no tiene.
+ * Referencia de estilo: public/hero_cuido.png (subida por el usuario) --
+ * mismo tipo de composición (laptop con la interfaz, degradado de marca
+ * detrás) pero su CONTENIDO no era utilizable tal cual: mostraba secciones
+ * de menú que no existen (Agenda, Reportes, Inventario), un dashboard con
+ * métricas inventadas (28 citas, RD$1,250,000, gráfica de consultas) y
+ * nombres de pacientes de ejemplo (María González, Juan Pérez, Ana
+ * Martínez, Carlos Sánchez) -- exactamente lo que la regla de "cero
+ * contenido aspiracional" de este proyecto prohíbe.
  *
- * Reutiliza los mismos íconos de la sección de funcionalidades (icons.tsx)
- * para que la composición se sienta parte del mismo sistema visual, no un
- * elemento aparte. Sin animaciones ni librerías nuevas -- todo es CSS
- * (Tailwind) estático, con leves rotaciones para dar sensación de
- * "tarjetas flotantes" tal como pedía el boceto.
+ * Aquí la pantalla del laptop muestra ÚNICAMENTE las 6 funcionalidades
+ * reales ya listadas en la sección Funcionalidades (features-data.ts es la
+ * fuente única para ambas, así que nunca pueden desincronizarse) -- mismos
+ * títulos exactos, sin gráficas, sin cifras, sin nombres de pacientes.
+ *
+ * Imagen estática vs. composición CSS/React -- se eligió CSS/React:
+ * 1. Mantenible sin regenerar nada: si mañana cambia una de las 6
+ *    funcionalidades (o se agrega una séptima), este componente se
+ *    actualiza solo con FEATURES -- una imagen PNG requeriría regenerarse
+ *    a mano cada vez.
+ * 2. Cero riesgo de contenido inventado colándose por accidente: un
+ *    generador de imágenes (IA o diseño manual) tiende a rellenar un
+ *    "dashboard" con métricas/gráficas de relleno para que se vea
+ *    completo, que es justo el problema del archivo de referencia.
+ * 3. Sin la persona en bata médica del boceto de referencia: esa foto es
+ *    un asset de stock específico que no se puede reproducir sin
+ *    licencia, y sustituirla por otra foto de stock o un retrato
+ *    generado por IA abre el mismo problema de derechos de imagen (o de
+ *    una persona sintética que podría parecer una persona real). Se
+ *    prescinde de ella por completo -- el mockup del laptop solo ya
+ *    comunica "esto es un producto de software" sin ese riesgo.
+ *
+ * Sin librerías nuevas ni animaciones -- todo Tailwind estático, mismas
+ * clases de marca (brand-blue/brand-teal) ya usadas en el resto de la
+ * landing.
  */
 export function LandingHeroVisual() {
   return (
-    <div className="relative mx-auto flex aspect-square w-full max-w-md items-center justify-center sm:aspect-4/3 sm:max-w-lg">
-      <div className="absolute inset-4 rounded-[2rem] bg-linear-to-br from-brand-blue to-brand-teal opacity-90 shadow-xl shadow-brand-blue/20 sm:inset-6" />
+    <div className="relative mx-auto w-full max-w-xl">
+      <div className="absolute -inset-6 rounded-[3rem] bg-linear-to-br from-brand-blue/20 to-brand-teal/20 blur-2xl" />
 
-      <div className="absolute inset-4 rounded-[2rem] bg-white/10 sm:inset-6" />
+      <div className="relative rounded-2xl border-[10px] border-zinc-800 bg-zinc-800 shadow-2xl shadow-brand-blue/20">
+        <div className="aspect-4/3 overflow-hidden rounded-lg bg-white p-3 sm:aspect-16/10 sm:p-5">
+          <div className="mb-3 flex items-center gap-2 border-b border-zinc-100 pb-2.5 sm:mb-4 sm:pb-3">
+            <Image src={CUIDO_LOGO_SRC} alt="" width={1254} height={1254} className="h-4 w-4 rounded sm:h-5 sm:w-5" />
+            <span className="text-xs font-semibold text-brand-navy sm:text-sm">Cuido</span>
+            <span className="ml-auto flex gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-200" />
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-200" />
+              <span className="h-1.5 w-1.5 rounded-full bg-zinc-200" />
+            </span>
+          </div>
 
-      <div className="absolute left-[8%] top-[12%] flex w-40 -rotate-6 flex-col gap-2 rounded-2xl bg-white p-4 shadow-lg sm:w-44">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-          <ClipboardIcon className="h-4.5 w-4.5" />
-        </span>
-        <p className="text-xs font-semibold text-brand-navy">Historias Clínicas</p>
-        <p className="text-[11px] text-zinc-500">Por especialidad</p>
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
+            {FEATURES.map(({ icon: Icon, title }) => (
+              <div key={title} className="flex flex-col items-start gap-1 rounded-lg bg-brand-bg p-2 sm:gap-1.5 sm:p-3">
+                <span className="flex h-5 w-5 items-center justify-center rounded-md bg-linear-to-br from-brand-blue/15 to-brand-teal/15 text-brand-blue sm:h-6 sm:w-6">
+                  <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                </span>
+                <p className="text-[9px] font-medium leading-tight text-brand-navy sm:text-xs">{title}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="absolute right-[6%] top-[28%] flex w-36 rotate-3 flex-col gap-2 rounded-2xl bg-white p-4 shadow-lg sm:w-40">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-          <ReceiptIcon className="h-4.5 w-4.5" />
-        </span>
-        <p className="text-xs font-semibold text-brand-navy">e-CF</p>
-        <p className="text-[11px] text-zinc-500">Listo para DGII</p>
-      </div>
-
-      <div className="absolute bottom-[10%] left-[14%] flex w-36 rotate-2 flex-col gap-2 rounded-2xl bg-white p-4 shadow-lg sm:w-40">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-          <SignatureIcon className="h-4.5 w-4.5" />
-        </span>
-        <p className="text-xs font-semibold text-brand-navy">Consentimiento</p>
-        <p className="text-[11px] text-zinc-500">Firma con trazabilidad</p>
-      </div>
-
-      <div className="absolute bottom-[18%] right-[10%] flex w-32 -rotate-3 flex-col gap-2 rounded-2xl bg-white p-3.5 shadow-lg sm:w-36">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-          <ShieldCheckIcon className="h-4 w-4" />
-        </span>
-        <p className="text-xs font-semibold text-brand-navy">Normativa MSP</p>
-      </div>
+      <div className="relative mx-auto h-3 w-[88%] rounded-b-xl bg-linear-to-b from-zinc-600 to-zinc-700 sm:h-4" />
+      <div className="mx-auto h-1.5 w-full rounded-b-md bg-zinc-800/90" />
     </div>
   );
 }
