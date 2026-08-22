@@ -8,6 +8,8 @@ import { MedicationForm } from "./medication-form";
 import { RevokeConsentForm } from "./consents/revoke-consent-form";
 import { InsurerForm } from "./insurance/insurer-form";
 import { EligibilityForm } from "./insurance/eligibility-form";
+import { GrantAccessForm } from "./sensitive-access/grant-access-form";
+import { RevokeAccessForm } from "./sensitive-access/revoke-access-form";
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -33,6 +35,8 @@ export default async function PatientDetailPage({
   const { data: patient } = await supabase.from("patients").select("*").eq("id", id).maybeSingle();
   if (!patient) notFound();
 
+  const membershipIsAdmin = membership.role === "admin";
+
   const [
     { data: allergies },
     { data: medications },
@@ -42,6 +46,8 @@ export default async function PatientDetailPage({
     { data: fiscalDocuments },
     { data: insurers },
     { data: eligibilityChecks },
+    { data: sensitiveGrants },
+    { data: clinicMembersRaw },
   ] = await Promise.all([
       supabase
         .from("allergies")
@@ -58,7 +64,7 @@ export default async function PatientDetailPage({
         .select("id, encounter_date, chief_complaint, specialty_template_id")
         .eq("patient_id", id)
         .order("encounter_date", { ascending: false }),
-      supabase.from("specialty_templates").select("id, name"),
+      supabase.from("specialty_templates").select("id, name, requires_explicit_access"),
       supabase
         .from("consents")
         .select("id, document_title, signer_name, signer_relationship, signed_at, status, recorded_by")
@@ -79,9 +85,20 @@ export default async function PatientDetailPage({
         .select("id, result, notes, checked_by, checked_at")
         .eq("patient_id", id)
         .order("checked_at", { ascending: false }),
+      supabase
+        .from("sensitive_specialty_access_grants")
+        .select(
+          "id, specialty_template_id, granted_to_user_id, granted_by_user_id, reason, granted_at, revoked_at, revoked_reason"
+        )
+        .eq("patient_id", id)
+        .order("granted_at", { ascending: false }),
+      supabase.from("clinic_members").select("user_id, role").eq("clinic_id", membership.clinicId),
     ]);
 
   const templateNameById = new Map((templates ?? []).map((t) => [t.id, t.name]));
+  const sensitiveSpecialties = (templates ?? [])
+    .filter((t) => t.requires_explicit_access)
+    .map((t) => ({ id: t.id, name: t.name }));
   const canWriteClinical = membership.role === "admin" || membership.role === "medico";
   const canManageBilling = membership.role === "admin" || membership.role === "recepcion";
   const currentInsurer = (insurers ?? []).find((i) => i.is_current) ?? null;
@@ -93,11 +110,19 @@ export default async function PatientDetailPage({
   const insuranceUserIds = new Set([
     ...(consents ?? []).map((c) => c.recorded_by),
     ...(eligibilityChecks ?? []).map((c) => c.checked_by),
+    ...(sensitiveGrants ?? []).flatMap((g) => [g.granted_to_user_id, g.granted_by_user_id]),
   ]);
   await Promise.all(
     Array.from(insuranceUserIds).map(async (userId) => {
       const { data } = await admin.auth.admin.getUserById(userId);
       if (data.user?.email) recorderEmailByUserId.set(userId, data.user.email);
+    })
+  );
+
+  const clinicMembers = await Promise.all(
+    (clinicMembersRaw ?? []).map(async (m) => {
+      const { data } = await admin.auth.admin.getUserById(m.user_id);
+      return { userId: m.user_id, label: data.user?.email ?? m.user_id };
     })
   );
 
@@ -331,6 +356,61 @@ export default async function PatientDetailPage({
           </ul>
         )}
       </section>
+
+      {membershipIsAdmin && sensitiveSpecialties.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-medium">Acceso a especialidades sensibles</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Las consultas de estas especialidades solo son visibles para quien las atendió, salvo
+            que se otorgue acceso explícito aquí. Solo un admin puede otorgar o revocar.
+          </p>
+          {!sensitiveGrants || sensitiveGrants.length === 0 ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin concesiones registradas.</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+              {sensitiveGrants.map((grant) => (
+                <li key={grant.id} className="flex flex-col gap-1 py-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span>
+                      <span className="font-medium">
+                        {templateNameById.get(grant.specialty_template_id) ?? "Especialidad"}
+                      </span>{" "}
+                      — otorgado a{" "}
+                      {recorderEmailByUserId.get(grant.granted_to_user_id) ?? grant.granted_to_user_id}
+                    </span>
+                    <span
+                      className={
+                        grant.revoked_at
+                          ? "text-xs font-medium text-red-700 dark:text-red-400"
+                          : "text-xs font-medium text-green-700 dark:text-green-400"
+                      }
+                    >
+                      {grant.revoked_at ? "Revocado" : "Activo"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    Motivo: {grant.reason} · otorgado por{" "}
+                    {recorderEmailByUserId.get(grant.granted_by_user_id) ?? grant.granted_by_user_id} el{" "}
+                    {new Date(grant.granted_at).toLocaleString("es-DO")}
+                  </p>
+                  {grant.revoked_at && (
+                    <p className="text-xs text-zinc-500">
+                      Revocado el {new Date(grant.revoked_at).toLocaleString("es-DO")}
+                      {grant.revoked_reason ? ` — ${grant.revoked_reason}` : ""}
+                    </p>
+                  )}
+                  {!grant.revoked_at && <RevokeAccessForm patientId={id} grantId={grant.id} />}
+                </li>
+              ))}
+            </ul>
+          )}
+          <GrantAccessForm
+            patientId={id}
+            sensitiveSpecialties={sensitiveSpecialties}
+            clinicMembers={clinicMembers}
+          />
+        </section>
+      )}
     </div>
   );
 }
