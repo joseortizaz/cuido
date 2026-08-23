@@ -47,6 +47,12 @@ export function LandingFooter() {
           <Link href="/login" className="text-sm text-white/70 hover:text-white">
             Iniciar sesión
           </Link>
+          <Link href="/privacidad" className="text-sm text-white/70 hover:text-white">
+            Política de Privacidad
+          </Link>
+          <Link href="/eliminacion-datos" className="text-sm text-white/70 hover:text-white">
+            Eliminación de Datos
+          </Link>
         </nav>
 
         <div className="flex flex-col gap-2">
