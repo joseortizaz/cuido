@@ -11,6 +11,8 @@ const PUBLIC_PATHS = [
   "/blog",
   "/normativa",
   "/forgot-password",
+  "/privacidad",
+  "/eliminacion-datos",
 ];
 
 function isPublicPath(pathname: string) {
