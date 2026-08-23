@@ -1159,6 +1159,72 @@ export type Database = {
           },
         ]
       }
+      whatsapp_messages: {
+        Row: {
+          clinic_id: string | null
+          created_at: string
+          environment: string
+          error_message: string | null
+          id: string
+          meta_app_id: string
+          meta_message_id: string | null
+          patient_id: string | null
+          sent_by: string
+          status: string
+          template_language: string
+          template_name: string
+          template_variables: Json
+          to_phone_number: string
+        }
+        Insert: {
+          clinic_id?: string | null
+          created_at?: string
+          environment: string
+          error_message?: string | null
+          id?: string
+          meta_app_id: string
+          meta_message_id?: string | null
+          patient_id?: string | null
+          sent_by: string
+          status: string
+          template_language: string
+          template_name: string
+          template_variables?: Json
+          to_phone_number: string
+        }
+        Update: {
+          clinic_id?: string | null
+          created_at?: string
+          environment?: string
+          error_message?: string | null
+          id?: string
+          meta_app_id?: string
+          meta_message_id?: string | null
+          patient_id?: string | null
+          sent_by?: string
+          status?: string
+          template_language?: string
+          template_name?: string
+          template_variables?: Json
+          to_phone_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_messages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

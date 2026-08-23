@@ -40,6 +40,12 @@ export function OperatorNav() {
           >
             Clínicas
           </Link>
+          <Link
+            href="/operator/whatsapp-test"
+            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+          >
+            WhatsApp (prueba)
+          </Link>
         </div>
         <SignOutButton className="rounded-full border border-zinc-600 px-3 py-1.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/10" />
       </div>
