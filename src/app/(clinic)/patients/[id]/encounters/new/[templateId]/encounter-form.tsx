@@ -101,13 +101,15 @@ function DynamicField({
 export function EncounterForm({
   patientId,
   templateId,
+  appointmentId,
   fields,
 }: {
   patientId: string;
   templateId: string;
+  appointmentId: string | null;
   fields: TemplateField[];
 }) {
-  const boundAction = createEncounter.bind(null, patientId, templateId);
+  const boundAction = createEncounter.bind(null, patientId, templateId, appointmentId);
   const [state, formAction, pending] = useActionState<EncounterFormState, FormData>(
     boundAction,
     undefined

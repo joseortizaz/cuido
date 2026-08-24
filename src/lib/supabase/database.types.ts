@@ -87,6 +87,70 @@ export type Database = {
           },
         ]
       }
+      appointments: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          created_by: string
+          id: string
+          patient_id: string
+          provider_id: string
+          reason: string | null
+          scheduled_at: string
+          specialty_template_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          patient_id: string
+          provider_id: string
+          reason?: string | null
+          scheduled_at: string
+          specialty_template_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          patient_id?: string
+          provider_id?: string
+          reason?: string | null
+          scheduled_at?: string
+          specialty_template_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_specialty_template_id_fkey"
+            columns: ["specialty_template_id"]
+            isOneToOne: false
+            referencedRelation: "specialty_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_ecf_sequences: {
         Row: {
           clinic_id: string
@@ -556,6 +620,7 @@ export type Database = {
       }
       encounters: {
         Row: {
+          appointment_id: string | null
           chief_complaint: string | null
           clinic_id: string
           created_at: string
@@ -568,6 +633,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_id?: string | null
           chief_complaint?: string | null
           clinic_id: string
           created_at?: string
@@ -580,6 +646,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_id?: string | null
           chief_complaint?: string | null
           clinic_id?: string
           created_at?: string
@@ -592,6 +659,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "encounters_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "encounters_clinic_id_fkey"
             columns: ["clinic_id"]
@@ -1242,6 +1316,10 @@ export type Database = {
           target_specialty_template_id: string
         }
         Returns: boolean
+      }
+      complete_appointment_with_encounter: {
+        Args: { target_appointment_id: string; target_encounter_id: string }
+        Returns: undefined
       }
       create_clinic_with_admin: {
         Args: {

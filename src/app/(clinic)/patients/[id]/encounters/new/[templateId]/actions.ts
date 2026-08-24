@@ -24,6 +24,7 @@ function optionalNumber(formData: FormData, key: string): number | null {
 export async function createEncounter(
   patientId: string,
   templateId: string,
+  appointmentId: string | null,
   _prevState: EncounterFormState,
   formData: FormData
 ): Promise<EncounterFormState> {
@@ -101,6 +102,20 @@ export async function createEncounter(
       clinic_id: membership.clinicId,
       encounter_id: encounter.id,
       ...vitals,
+    });
+  }
+
+  // "Convertir a consulta": si la consulta vino de una cita agendada,
+  // marca la cita completada y la enlaza a este encounter en un solo
+  // paso, vía el RPC security definer (el médico no tiene UPDATE
+  // directo sobre appointments -- ver
+  // supabase/migrations/20260824100000_appointments.sql). No bloquea el
+  // flujo principal si falla: el encounter ya se guardó y es válido por
+  // sí solo, igual que el registro opcional de vital_signs arriba.
+  if (appointmentId) {
+    await supabase.rpc("complete_appointment_with_encounter", {
+      target_appointment_id: appointmentId,
+      target_encounter_id: encounter.id,
     });
   }
 
