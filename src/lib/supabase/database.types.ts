@@ -151,6 +151,69 @@ export type Database = {
           },
         ]
       }
+      bulk_import_batches: {
+        Row: {
+          clinic_id: string
+          confirmed_at: string | null
+          created_at: string
+          created_by: string
+          error_row_count: number
+          file_name: string
+          id: string
+          import_type: string
+          row_count: number
+          rows: Json
+          specialty_template_id: string | null
+          status: string
+          valid_row_count: number
+        }
+        Insert: {
+          clinic_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          created_by: string
+          error_row_count: number
+          file_name: string
+          id?: string
+          import_type: string
+          row_count: number
+          rows: Json
+          specialty_template_id?: string | null
+          status?: string
+          valid_row_count: number
+        }
+        Update: {
+          clinic_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          created_by?: string
+          error_row_count?: number
+          file_name?: string
+          id?: string
+          import_type?: string
+          row_count?: number
+          rows?: Json
+          specialty_template_id?: string | null
+          status?: string
+          valid_row_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_import_batches_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulk_import_batches_specialty_template_id_fkey"
+            columns: ["specialty_template_id"]
+            isOneToOne: false
+            referencedRelation: "specialty_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_ecf_sequences: {
         Row: {
           clinic_id: string
