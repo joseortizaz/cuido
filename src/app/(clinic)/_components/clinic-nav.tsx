@@ -10,6 +10,7 @@ import { SignOutButton } from "../../_nav/sign-out-button";
 const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/patients", label: "Pacientes" },
+  { href: "/appointments", label: "Agenda" },
   { href: "/billing", label: "Facturación" },
   { href: "/claims", label: "Reclamaciones" },
   { href: "/team", label: "Equipo" },
