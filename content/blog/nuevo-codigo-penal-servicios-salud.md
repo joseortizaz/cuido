@@ -2,6 +2,7 @@
 title: "Lo que el nuevo Código Penal dominicano cambia para la prestación de servicios de salud"
 date: "2026-08-24"
 excerpt: "La Ley 74-25 y su reforma (Ley 44-26) redefinen la responsabilidad penal de médicos, clínicas y hospitales en República Dominicana. Un análisis de lo que dice el texto oficial, artículo por artículo, y de lo que todavía está en disputa."
+cover: "/blog/nuevo-codigo-penal-servicios-salud.svg"
 ---
 
 # Lo que el nuevo Código Penal dominicano cambia para la prestación de servicios de salud

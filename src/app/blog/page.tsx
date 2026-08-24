@@ -5,9 +5,8 @@ import { LandingFooter } from "@/app/_landing/footer";
 import { getAllPosts } from "@/lib/blog";
 
 /**
- * "Avances en Salud" — infraestructura construida y funcional, pero NO
- * enlazada desde la navegación de la landing todavía (ver header.tsx). Ver
- * content/blog/README.md para por qué no hay posts reales en esta ronda.
+ * "Avances en Salud" — enlazada desde la navegación de la landing desde
+ * que existe el primer post real (ver header.tsx/footer.tsx).
  */
 export default function BlogIndexPage() {
   const posts = getAllPosts();
@@ -28,12 +27,28 @@ export default function BlogIndexPage() {
             <ul className="mt-12 flex flex-col divide-y divide-zinc-200">
               {posts.map((post) => (
                 <li key={post.slug} className="py-6">
-                  <Link href={`/blog/${post.slug}`} className="group">
-                    <h2 className="text-xl font-semibold text-brand-navy group-hover:text-brand-blue">
-                      {post.title}
-                    </h2>
-                    {post.date && <p className="mt-1 text-xs text-zinc-500">{post.date}</p>}
-                    {post.excerpt && <p className="mt-2 text-sm text-zinc-600">{post.excerpt}</p>}
+                  <Link href={`/blog/${post.slug}`} className="group flex flex-col gap-4 sm:flex-row">
+                    {post.cover && (
+                      // <img> normal, no next/image: las portadas son SVG y el
+                      // optimizador de imágenes de Next no las procesa por
+                      // defecto (dangerouslyAllowSVG) -- no vale la pena esa
+                      // bandera de seguridad para un asset estático del propio
+                      // repo. alt="" porque el título ya al lado describe el
+                      // post -- es decorativa, no información nueva.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.cover}
+                        alt=""
+                        className="h-40 w-full flex-shrink-0 rounded-xl object-cover sm:h-28 sm:w-44"
+                      />
+                    )}
+                    <div>
+                      <h2 className="text-xl font-semibold text-brand-navy group-hover:text-brand-blue">
+                        {post.title}
+                      </h2>
+                      {post.date && <p className="mt-1 text-xs text-zinc-500">{post.date}</p>}
+                      {post.excerpt && <p className="mt-2 text-sm text-zinc-600">{post.excerpt}</p>}
+                    </div>
                   </Link>
                 </li>
               ))}

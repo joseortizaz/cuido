@@ -20,6 +20,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </Link>
           <h1 className="mt-3 text-3xl font-bold text-brand-navy sm:text-4xl">{post.title}</h1>
           {post.date && <p className="mt-2 text-xs text-zinc-500">{post.date}</p>}
+          {post.cover && (
+            // <img> normal, no next/image: ver la misma nota en blog/page.tsx.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={post.cover}
+              alt=""
+              className="mt-6 aspect-video w-full rounded-2xl object-cover"
+            />
+          )}
           <div
             className="prose prose-zinc mt-8 max-w-none prose-headings:text-brand-navy prose-a:text-brand-blue"
             dangerouslySetInnerHTML={{ __html: post.html }}

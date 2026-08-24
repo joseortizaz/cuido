@@ -9,9 +9,8 @@ import { ABOUT_ANCHOR, CONTACT_ANCHOR, CONTACT_EMAIL, CUIDO_LOGO_SRC } from "./c
  * Frecuentes, Soporte -- ninguna de esas páginas existe, así que no se
  * recrean (regla no negociable de esta ronda: cero contenido aspiracional).
  *
- * "Avances en Salud" (el blog) NO está aquí tampoco, mismo criterio que el
- * header -- la ruta existe pero no se hace descubrible desde la navegación
- * hasta que haya contenido real.
+ * "Avances en Salud" (el blog) se agregó aquí también, mismo criterio que
+ * el header -- ver esa nota para el porqué.
  */
 export function LandingFooter() {
   return (
@@ -37,6 +36,9 @@ export function LandingFooter() {
           <h3 className="text-sm font-semibold text-white">Navegación</h3>
           <Link href={ABOUT_ANCHOR} className="text-sm text-white/70 hover:text-white">
             Quiénes Somos
+          </Link>
+          <Link href="/blog" className="text-sm text-white/70 hover:text-white">
+            Avances en Salud
           </Link>
           <Link href="/normativa" className="text-sm text-white/70 hover:text-white">
             Directorio de Normas y Guías de Salud
