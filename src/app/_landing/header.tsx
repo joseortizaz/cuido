@@ -8,9 +8,9 @@ import { ABOUT_ANCHOR, CONTACT_ANCHOR, CUIDO_LOGO_SRC } from "./constants";
  * ("/#ancla") precisamente por eso -- un "#ancla" relativo no funcionaría
  * si el visitante está en /blog o /normativa.
  *
- * "Avances en Salud" (el blog) NO está en esta nav todavía -- instrucción
- * explícita: la ruta /blog existe y funciona, pero no se agrega a la
- * navegación hasta que haya contenido real que publicar.
+ * "Avances en Salud" (el blog) se agregó a esta nav cuando se publicó el
+ * primer post real -- antes estaba deliberadamente pendiente (ver
+ * content/blog/README.md) para no enlazar una sección sin contenido.
  */
 export function LandingHeader() {
   return (
@@ -30,6 +30,9 @@ export function LandingHeader() {
         <nav className="hidden items-center gap-7 lg:flex">
           <Link href={ABOUT_ANCHOR} className="text-sm font-medium text-brand-navy hover:text-brand-blue">
             Quiénes Somos
+          </Link>
+          <Link href="/blog" className="text-sm font-medium text-brand-navy hover:text-brand-blue">
+            Avances en Salud
           </Link>
           <Link href="/normativa" className="text-sm font-medium text-brand-navy hover:text-brand-blue">
             Directorio de Normas y Guías de Salud

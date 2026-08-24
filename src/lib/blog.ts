@@ -5,9 +5,9 @@ import { marked } from "marked";
 
 /**
  * "Avances en Salud" (/blog) — sin CMS. Cada post es un archivo Markdown
- * en content/blog/, con frontmatter (title, date, excerpt). El nombre del
- * archivo (sin extensión) es el slug de la URL -- ver content/blog/README.md
- * para el formato exacto y por qué esta carpeta empieza vacía de posts.
+ * en content/blog/, con frontmatter (title, date, excerpt, cover opcional).
+ * El nombre del archivo (sin extensión) es el slug de la URL -- ver
+ * content/blog/README.md para el formato exacto.
  *
  * Leído desde el sistema de archivos en request/build time -- no hay tabla
  * en Supabase para esto, es contenido editorial de la landing, no un dato
@@ -21,6 +21,13 @@ export type BlogPostMeta = {
   title: string;
   date: string;
   excerpt: string;
+  /**
+   * Ruta pública opcional a la imagen de portada (ej.
+   * "/blog/mi-post.svg"). Opcional a propósito -- el blog nace con un
+   * solo post con imagen, pero no todos los posts futuros tendrán una;
+   * el diseño de /blog y /blog/[slug] debe verse igual de bien sin ella.
+   */
+  cover?: string;
 };
 
 export type BlogPost = BlogPostMeta & { html: string };
@@ -46,6 +53,7 @@ export function getAllPosts(): BlogPostMeta[] {
         title: String(data.title ?? slug),
         date: String(data.date ?? ""),
         excerpt: String(data.excerpt ?? ""),
+        cover: data.cover ? String(data.cover) : undefined,
       };
     })
     .sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -65,6 +73,7 @@ export function getPostBySlug(slug: string): BlogPost | null {
     title: String(data.title ?? slug),
     date: String(data.date ?? ""),
     excerpt: String(data.excerpt ?? ""),
+    cover: data.cover ? String(data.cover) : undefined,
     html: marked.parse(content, { async: false }) as string,
   };
 }
