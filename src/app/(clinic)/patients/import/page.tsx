@@ -4,11 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 
 /**
- * Landing de importación masiva. Solo pacientes está construido en esta
- * ronda -- consultas por especialidad reusa esta misma infraestructura
- * de staging/preview (bulk_import_batches) en una ronda siguiente. La
- * estructura de rutas (/patients/import/patients, /patients/import/encounters)
- * ya deja espacio para esa segunda tarjeta sin reorganizar nada.
+ * Landing de importación masiva -- pacientes (Fase 1) y consultas por
+ * especialidad (Fase 2), ambas sobre la misma infraestructura de
+ * staging/preview (bulk_import_batches).
  */
 export default async function ImportLandingPage() {
   const supabase = await createClient();
@@ -63,9 +61,18 @@ export default async function ImportLandingPage() {
           </Link>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-5 text-zinc-400 dark:border-zinc-800">
+        <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
           <h2 className="font-semibold">Consultas por especialidad</h2>
-          <p className="text-sm">Próximamente.</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Formato campo/valor: elige la especialidad para descargar su plantilla. Los pacientes
+            deben existir ya en la clínica (importa primero pacientes si hace falta).
+          </p>
+          <Link
+            href="/patients/import/encounters"
+            className="mt-2 self-start rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+          >
+            Subir archivo
+          </Link>
         </div>
       </div>
     </div>
