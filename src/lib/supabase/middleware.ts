@@ -13,6 +13,13 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/privacidad",
   "/eliminacion-datos",
+  // El matcher de src/proxy.ts excluye favicon.ico y extensiones de
+  // imagen comunes, pero NO .webmanifest -- sin esta entrada, un
+  // fetch sin sesión (el navegador/SO pidiendo el manifest para
+  // "añadir a pantalla de inicio", no un usuario logueado) se
+  // redirigía a /login y recibía HTML en vez del JSON del manifest,
+  // rompiendo la instalación como PWA por completo.
+  "/manifest.webmanifest",
 ];
 
 function isPublicPath(pathname: string) {
