@@ -95,6 +95,22 @@ export function NewAppointmentForm({
         <input id="reason" name="reason" type="text" className={inputClass} />
       </div>
 
+      <div className="flex flex-col gap-1">
+        <label htmlFor="appointment_type" className={labelClass}>
+          Tipo de evento
+        </label>
+        <select
+          id="appointment_type"
+          name="appointment_type"
+          required
+          defaultValue="consulta"
+          className={inputClass}
+        >
+          <option value="consulta">Consulta ambulatoria</option>
+          <option value="procedimiento_quirurgico">Procedimiento quirúrgico</option>
+        </select>
+      </div>
+
       {state?.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
 
       <button
