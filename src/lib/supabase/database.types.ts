@@ -87,8 +87,54 @@ export type Database = {
           },
         ]
       }
+      appointment_surgical_checklist: {
+        Row: {
+          analiticas_sangre: string
+          appointment_id: string
+          clinic_id: string
+          evaluacion_cardiovascular: string
+          implantes_aprobados_seguro: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          analiticas_sangre?: string
+          appointment_id: string
+          clinic_id: string
+          evaluacion_cardiovascular?: string
+          implantes_aprobados_seguro?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          analiticas_sangre?: string
+          appointment_id?: string
+          clinic_id?: string
+          evaluacion_cardiovascular?: string
+          implantes_aprobados_seguro?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_surgical_checklist_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_surgical_checklist_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
+          appointment_type: string
           clinic_id: string
           created_at: string
           created_by: string
@@ -102,6 +148,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_type?: string
           clinic_id: string
           created_at?: string
           created_by: string
@@ -115,6 +162,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_type?: string
           clinic_id?: string
           created_at?: string
           created_by?: string

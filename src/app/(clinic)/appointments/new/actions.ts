@@ -39,11 +39,15 @@ export async function createAppointment(
   const date = String(formData.get("date") ?? "").trim();
   const time = String(formData.get("time") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim();
+  const appointmentType = String(formData.get("appointment_type") ?? "consulta").trim();
 
   if (!patientId) return { error: "Selecciona un paciente." };
   if (!providerId) return { error: "Selecciona un médico." };
   if (!specialtyTemplateId) return { error: "Selecciona una especialidad." };
   if (!date || !time) return { error: "Selecciona fecha y hora." };
+  if (appointmentType !== "consulta" && appointmentType !== "procedimiento_quirurgico") {
+    return { error: "Tipo de evento inválido." };
+  }
 
   const scheduledAt = new Date(`${date}T${time}`);
   if (Number.isNaN(scheduledAt.getTime())) {
@@ -61,6 +65,7 @@ export async function createAppointment(
     specialty_template_id: specialtyTemplateId,
     scheduled_at: scheduledAt.toISOString(),
     reason: reason || null,
+    appointment_type: appointmentType,
     created_by: user.id,
   });
   if (error) {

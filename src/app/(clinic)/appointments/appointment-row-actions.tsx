@@ -24,11 +24,13 @@ export function AppointmentRowActions({
   currentStatus,
   canManage,
   convertHref,
+  checklistHref,
 }: {
   appointmentId: string;
   currentStatus: string;
   canManage: boolean;
   convertHref: string | null;
+  checklistHref?: string | null;
 }) {
   const boundAction = updateAppointmentStatus.bind(null, appointmentId);
   const [state, formAction, pending] = useActionState<AppointmentActionState, FormData>(
@@ -66,6 +68,14 @@ export function AppointmentRowActions({
           className="rounded-full bg-brand-teal/10 px-2.5 py-1 text-xs font-medium text-brand-teal hover:bg-brand-teal/20"
         >
           Convertir a consulta
+        </Link>
+      )}
+      {checklistHref && (
+        <Link
+          href={checklistHref}
+          className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+        >
+          Checklist prequirúrgico
         </Link>
       )}
       {state?.error && <p className="w-full text-xs text-red-600 dark:text-red-400">{state.error}</p>}

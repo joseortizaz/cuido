@@ -61,7 +61,9 @@ export default async function AppointmentsPage({
 
   let query = supabase
     .from("appointments")
-    .select("id, patient_id, provider_id, specialty_template_id, scheduled_at, reason, status")
+    .select(
+      "id, patient_id, provider_id, specialty_template_id, scheduled_at, reason, status, appointment_type"
+    )
     .gte("scheduled_at", rangeStart.toISOString())
     .lt("scheduled_at", rangeEnd.toISOString())
     .order("scheduled_at");
@@ -201,11 +203,13 @@ export default async function AppointmentsPage({
           {appointments.map((appt) => {
             const alreadyConverted = linkedAppointmentIds.has(appt.id);
             const convertible = canConvert && !alreadyConverted && (appt.status === "pendiente" || appt.status === "confirmada");
+            const isSurgical = appt.appointment_type === "procedimiento_quirurgico";
             return (
               <li key={appt.id} className="flex flex-col gap-2 py-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div>
                     <p className="text-sm font-medium">
+                      {isSurgical && <span title="Procedimiento quirúrgico">🔪 </span>}
                       {formatTime(appt.scheduled_at)} · {patientById.get(appt.patient_id) ?? appt.patient_id}
                     </p>
                     <p className="text-xs text-zinc-500">
@@ -214,8 +218,15 @@ export default async function AppointmentsPage({
                       {appt.reason ? ` · ${appt.reason}` : ""}
                     </p>
                   </div>
-                  <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-                    {STATUS_LABELS[appt.status] ?? appt.status}
+                  <span className="flex items-center gap-2">
+                    {isSurgical && (
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                        Quirúrgico
+                      </span>
+                    )}
+                    <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                      {STATUS_LABELS[appt.status] ?? appt.status}
+                    </span>
                   </span>
                 </div>
                 <AppointmentRowActions
@@ -227,6 +238,7 @@ export default async function AppointmentsPage({
                       ? `/patients/${appt.patient_id}/encounters/new/${appt.specialty_template_id}?appointmentId=${appt.id}`
                       : null
                   }
+                  checklistHref={isSurgical && canConvert ? `/appointments/${appt.id}/checklist` : null}
                 />
               </li>
             );
