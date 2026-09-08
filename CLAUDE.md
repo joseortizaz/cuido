@@ -89,6 +89,32 @@ diseñar sus plantillas (no requiere acción antes de Fase 3):
   físico con revisión por sistemas, diagnóstico presuntivo y definitivo
   por separado.
 
+## Consideraciones futuras de producto
+
+### Codificación diagnóstica CIE-11 (OMS) -- pendiente de evaluar
+
+La OMS ofrece una API gratuita para CIE-11 (clasificación internacional
+de enfermedades vigente, sucesora de CIE-10), que cubre TODAS las
+especialidades, no solo salud mental. A diferencia del DSM-5-TR (que
+usamos como referencia de criterios diagnósticos en la vertical de
+salud mental), CIE-11 es un sistema de codificación/clasificación --
+ambos son complementarios, no sustitutos entre sí.
+
+Por qué podría valer la pena en el futuro: reportes epidemiológicos
+obligatorios que ya identificamos en el proyecto (Registro Nacional de
+Cáncer, Resolución 000014/2020; reportes eventuales de salud mental o
+de otras condiciones al MSP) eventualmente podrían requerir códigos
+CIE, no solo texto libre.
+
+Por qué no se implementó ahora: es un cambio TRANSVERSAL al motor de
+plantillas (afecta las 20+ plantillas existentes, todas con diagnóstico
+en texto libre hoy), no una pieza aislada de una especialidad --
+requiere su propia decisión de diseño (¿campo adicional junto al texto
+libre? ¿autocompletar contra la API en tiempo real? ¿se guarda el
+código junto al texto o lo reemplaza?) antes de tocar código. Se
+revisará cuando el volumen real de reportes a MSP/aseguradoras lo
+justifique, o si una clínica lo solicita explícitamente.
+
 ## Integraciones clave (por prioridad regulatoria)
 
 1. **e-CF/DGII**: obligatorio para pequeños/microcontribuyentes desde el 15 de noviembre de 2026 (Ley 32-23). Prioridad de calendario alta.
