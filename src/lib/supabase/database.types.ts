@@ -379,6 +379,101 @@ export type Database = {
           },
         ]
       }
+      clinic_member_disabled_specialties: {
+        Row: {
+          clinic_id: string
+          clinic_member_id: string
+          disabled_at: string
+          disabled_by_user_id: string
+          id: string
+          specialty_template_id: string
+        }
+        Insert: {
+          clinic_id: string
+          clinic_member_id: string
+          disabled_at?: string
+          disabled_by_user_id: string
+          id?: string
+          specialty_template_id: string
+        }
+        Update: {
+          clinic_id?: string
+          clinic_member_id?: string
+          disabled_at?: string
+          disabled_by_user_id?: string
+          id?: string
+          specialty_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_member_disabled_specialties_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_member_disabled_specialties_clinic_member_id_fkey"
+            columns: ["clinic_member_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_member_disabled_specialties_specialty_template_id_fkey"
+            columns: ["specialty_template_id"]
+            isOneToOne: false
+            referencedRelation: "specialty_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_member_preferred_specialties: {
+        Row: {
+          clinic_id: string
+          clinic_member_id: string
+          created_at: string
+          id: string
+          specialty_template_id: string
+        }
+        Insert: {
+          clinic_id: string
+          clinic_member_id: string
+          created_at?: string
+          id?: string
+          specialty_template_id: string
+        }
+        Update: {
+          clinic_id?: string
+          clinic_member_id?: string
+          created_at?: string
+          id?: string
+          specialty_template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_member_preferred_specialties_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_member_preferred_specialties_clinic_member_id_fkey"
+            columns: ["clinic_member_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clinic_member_preferred_specialties_specialty_template_id_fkey"
+            columns: ["specialty_template_id"]
+            isOneToOne: false
+            referencedRelation: "specialty_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_members: {
         Row: {
           clinic_id: string
@@ -1480,6 +1575,14 @@ export type Database = {
         Returns: boolean
       }
       is_platform_operator: { Args: never; Returns: boolean }
+      is_specialty_enabled_for_clinician: {
+        Args: {
+          target_clinic_id: string
+          target_specialty_template_id: string
+          target_user_id: string
+        }
+        Returns: boolean
+      }
       revoke_consent: {
         Args: { reason: string; target_consent_id: string }
         Returns: undefined

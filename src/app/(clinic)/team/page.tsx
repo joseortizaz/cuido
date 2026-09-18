@@ -62,6 +62,14 @@ export default async function TeamPage() {
             </div>
             {isAdmin ? (
               <div className="flex items-center gap-2">
+                {member.role === "medico" && (
+                  <Link
+                    href={`/team/${member.id}/specialties`}
+                    className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium transition-colors hover:bg-black/[.04] dark:border-zinc-700 dark:hover:bg-white/[.08]"
+                  >
+                    Especialidades
+                  </Link>
+                )}
                 <MemberRoleForm memberId={member.id} currentRole={member.role} />
                 <RemoveMemberForm memberId={member.id} />
               </div>
