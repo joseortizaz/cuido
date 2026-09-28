@@ -26,7 +26,7 @@ El diferenciador central frente a plataformas genéricas (Medilink, Doctoralia P
 | Supabase (Postgres) | Base de datos, Auth, RLS multi-tenant, Storage, Edge Functions |
 | GitHub | `joseortizaz/cuido` — control de versiones, CI/CD vía Actions |
 | Vercel | Despliegue, preview deployments automáticos por PR, proyecto `cuido` en team `cuido1` |
-| Cloudflare | DNS y dominio (cuido.com), WAF/CDN delante de Vercel |
+| Cloudflare | DNS y dominio (cuido.net), WAF/CDN delante de Vercel |
 | Claude Code | Desarrollo asistido de features, migraciones, RLS, Edge Functions |
 
 - Proyecto Supabase: `pieueeejyehuufbdxdeb`
