@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { poppins } from "@/app/_landing/fonts";
 import { LandingHeader } from "@/app/_landing/header";
 import { LandingFooter } from "@/app/_landing/footer";
 import { getAllPosts } from "@/lib/blog";
+
+// Mismo copy que ya está escrito en el <p> de la página -- reusado, no
+// reinventado, para que metadata y contenido visible digan lo mismo.
+export const metadata: Metadata = {
+  title: "Avances en Salud | Cuido",
+  description: "Novedades sobre normativa, tecnología y gestión clínica en República Dominicana.",
+};
 
 /**
  * "Avances en Salud" — enlazada desde la navegación de la landing desde
