@@ -1,9 +1,45 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { poppins } from "@/app/_landing/fonts";
 import { LandingHeader } from "@/app/_landing/header";
 import { LandingFooter } from "@/app/_landing/footer";
 import { getPostBySlug } from "@/lib/blog";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+  if (!post) return { title: "Cuido" };
+
+  return {
+    title: `${post.title} | Cuido`,
+    description: post.excerpt,
+    openGraph: {
+      // Next.js NO hace deep-merge de objetos anidados entre layout.tsx
+      // y generateMetadata -- definir `openGraph` aquí REEMPLAZA por
+      // completo el de layout.tsx, no lo extiende (encontrado al
+      // verificar: sin esto, siteName/locale desaparecían del artículo).
+      // Se repiten explícitamente en vez de asumir herencia.
+      siteName: "Cuido",
+      locale: "es_DO",
+      title: post.title,
+      description: post.excerpt,
+      type: "article",
+      publishedTime: post.date,
+      images: post.cover ? [{ url: post.cover }] : undefined,
+    },
+    twitter: {
+      card: post.cover ? "summary_large_image" : "summary",
+      title: post.title,
+      description: post.excerpt,
+      images: post.cover ? [post.cover] : undefined,
+    },
+  };
+}
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

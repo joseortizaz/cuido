@@ -20,6 +20,13 @@ const PUBLIC_PATHS = [
   // redirigía a /login y recibía HTML en vez del JSON del manifest,
   // rompiendo la instalación como PWA por completo.
   "/manifest.webmanifest",
+  // Mismo problema exacto, encontrado al agregar sitemap.ts/robots.ts
+  // (SEO técnico base): Googlebot nunca tiene sesión, así que sin estas
+  // dos entradas cada crawl de /sitemap.xml o /robots.txt recibía un
+  // 307 a /login (HTML) en vez del XML/texto real -- rompiendo la
+  // indexación por completo, no solo degradándola.
+  "/sitemap.xml",
+  "/robots.txt",
 ];
 
 function isPublicPath(pathname: string) {
