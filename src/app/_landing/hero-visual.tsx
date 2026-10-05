@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { CUIDO_LOGO_SRC } from "./constants";
 import { FEATURES } from "./features-data";
+import { StethoscopeIcon } from "./stethoscope-icon";
 
 /**
  * Visual del Hero -- mockup de laptop en CSS/React, NO una imagen estática.
@@ -36,6 +37,12 @@ import { FEATURES } from "./features-data";
  *    prescinde de ella por completo -- el mockup del laptop solo ya
  *    comunica "esto es un producto de software" sin ese riesgo.
  *
+ * Estetoscopio decorativo (stethoscope-icon.tsx): SVG propio colgando del
+ * borde superior-izquierdo del marco, con el degradado de marca. Es un
+ * dibujo vectorial, no una foto -- no reabre el problema de derechos de
+ * imagen del punto 3. Offsets distintos en mobile/sm para no salirse del
+ * gutter de 16px del Hero en pantallas pequeñas ni invadir la pantalla.
+ *
  * Sin librerías nuevas ni animaciones -- todo Tailwind estático, mismas
  * clases de marca (brand-blue/brand-teal) ya usadas en el resto de la
  * landing.
@@ -46,6 +53,10 @@ export function LandingHeroVisual() {
       <div className="absolute -inset-6 rounded-[3rem] bg-linear-to-br from-brand-blue/20 to-brand-teal/20 blur-2xl" />
 
       <div className="relative rounded-2xl border-[10px] border-zinc-800 bg-zinc-800 shadow-2xl shadow-brand-blue/20">
+        <StethoscopeIcon
+          gradient
+          className="pointer-events-none absolute -left-[30px] -top-[42px] z-10 w-20 drop-shadow-sm sm:-left-[38px] sm:-top-[56px] sm:w-28"
+        />
         <div className="aspect-4/3 overflow-hidden rounded-lg bg-white p-3 sm:aspect-16/10 sm:p-5">
           <div className="mb-3 flex items-center gap-2 border-b border-zinc-100 pb-2.5 sm:mb-4 sm:pb-3">
             <Image src={CUIDO_LOGO_SRC} alt="" width={1254} height={1254} className="h-4 w-4 rounded sm:h-5 sm:w-5" />
