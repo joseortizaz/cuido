@@ -19,19 +19,29 @@ import {
  * para que ambos muestren exactamente los mismos títulos sin
  * duplicar/desincronizar la lista.
  *
- * "12 especialidades" (no 17, como se sugirió al pedir el rediseño de
- * landing) -- verificado contra specialty_templates en el proyecto
- * Supabase real antes de escribir esta copia: 19 filas/plantillas, pero 12
- * especialidades distintas (algunas tienen más de una plantilla -- p. ej.
- * Cirugía General tiene nota preoperatoria y descripción postoperatoria
- * como plantillas separadas de la misma especialidad).
+ * "14 especialidades, con 21 plantillas" -- contado sobre
+ * supabase/migrations/ (inserts en specialty_templates menos las
+ * desactivadas), con este criterio:
+ *   - Solo plantillas ACTIVAS. Las 2 desactivadas (cirugia_general y
+ *     gineco_obstetricia, versiones planas originales reemplazadas en
+ *     20260820171621_specialty_templates_normativa_msp.sql) no cuentan.
+ *     El conteo original de esta copia ("19 plantillas") sí las incluía.
+ *   - Una especialidad con varias plantillas cuenta una vez (p. ej.
+ *     Cirugía General: nota preoperatoria + descripción postoperatoria).
+ *   - La Orden de Terapia Física cuenta como plantilla de Ortopedia y
+ *     Traumatología, no como especialidad aparte (decisión de José).
+ * Las 14: Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía
+ * General, Anestesiología, Gastroenterología, Nefrología, Cardiología,
+ * Endocrinología, Neumología, Otorrinolaringología, Salud Mental /
+ * Psicología, Ortopedia y Traumatología, Nutriología Clínica.
+ * Al agregar o desactivar una plantilla, recontar con este mismo criterio.
  */
 export const FEATURES = [
   {
     icon: ClipboardIcon,
     title: "Historias Clínicas Digitales",
     description:
-      "12 especialidades, con 19 plantillas clínicas alineadas a la normativa del Ministerio de Salud Pública.",
+      "14 especialidades, con 21 plantillas clínicas alineadas a la normativa del Ministerio de Salud Pública.",
   },
   {
     icon: ReceiptIcon,
