@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { CUIDO_LOGO_SRC } from "./constants";
 import { FEATURES } from "./features-data";
-import { StethoscopeIcon } from "./stethoscope-icon";
 
 /**
  * Visual del Hero -- mockup de laptop en CSS/React, NO una imagen estática.
@@ -37,11 +36,21 @@ import { StethoscopeIcon } from "./stethoscope-icon";
  *    prescinde de ella por completo -- el mockup del laptop solo ya
  *    comunica "esto es un producto de software" sin ese riesgo.
  *
- * Estetoscopio decorativo (stethoscope-icon.tsx): SVG propio colgando del
- * borde superior-izquierdo del marco, con el degradado de marca. Es un
- * dibujo vectorial, no una foto -- no reabre el problema de derechos de
- * imagen del punto 3. Offsets distintos en mobile/sm para no salirse del
- * gutter de 16px del Hero en pantallas pequeñas ni invadir la pantalla.
+ * Estetoscopio decorativo (public/hero-estetoscopio.png): imagen
+ * realista colgando del borde superior-izquierdo del marco -- el tubo
+ * pasa sobre el bisel superior y baja por el lateral izquierdo, con la
+ * campana por fuera del marco para no tapar los títulos de las tarjetas.
+ * Fuente: generada por José Ortiz con ChatGPT (OpenAI) el 5 de octubre de
+ * 2026 -- los términos de OpenAI asignan al usuario los derechos sobre el
+ * resultado, apto para uso comercial. Es solo el objeto, sin personas, así
+ * que no reabre el problema de derechos de imagen del punto 3. ChatGPT la
+ * entregó como JPG con el damero de "transparencia" pintado; el fondo se
+ * quitó por color (PIL) y se guardó como PNG con canal alfa real (378x646
+ * px; se muestra a 64/96/128px de ancho según breakpoint).
+ * El contenedor reserva a la izquierda el ancho de la imagen
+ * (pl-12 / sm:pl-20 / lg:pl-28) para que nunca desborde el gutter de
+ * 16px del Hero ni se monte sobre el texto de la columna izquierda en
+ * desktop.
  *
  * Sin librerías nuevas ni animaciones -- todo Tailwind estático, mismas
  * clases de marca (brand-blue/brand-teal) ya usadas en el resto de la
@@ -49,13 +58,19 @@ import { StethoscopeIcon } from "./stethoscope-icon";
  */
 export function LandingHeroVisual() {
   return (
-    <div className="relative mx-auto w-full max-w-xl">
+    <div className="relative mx-auto w-full max-w-xl pl-12 sm:pl-20 lg:pl-28">
       <div className="absolute -inset-6 rounded-[3rem] bg-linear-to-br from-brand-blue/20 to-brand-teal/20 blur-2xl" />
 
       <div className="relative rounded-2xl border-[10px] border-zinc-800 bg-zinc-800 shadow-2xl shadow-brand-blue/20">
-        <StethoscopeIcon
-          gradient
-          className="pointer-events-none absolute -left-[30px] -top-[42px] z-10 w-20 drop-shadow-sm sm:-left-[38px] sm:-top-[56px] sm:w-28"
+        <Image
+          src="/hero-estetoscopio.png"
+          alt=""
+          aria-hidden="true"
+          width={378}
+          height={646}
+          priority
+          sizes="(min-width: 1024px) 128px, (min-width: 640px) 96px, 64px"
+          className="pointer-events-none absolute -left-[56px] -top-[8px] z-10 w-16 drop-shadow-[0_8px_12px_rgba(30,58,138,0.25)] sm:-left-[84px] sm:-top-[10px] sm:w-24 lg:-left-[116px] lg:w-32"
         />
         <div className="aspect-4/3 overflow-hidden rounded-lg bg-white p-3 sm:aspect-16/10 sm:p-5">
           <div className="mb-3 flex items-center gap-2 border-b border-zinc-100 pb-2.5 sm:mb-4 sm:pb-3">
