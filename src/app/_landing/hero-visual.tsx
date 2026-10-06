@@ -36,21 +36,28 @@ import { FEATURES } from "./features-data";
  *    prescinde de ella por completo -- el mockup del laptop solo ya
  *    comunica "esto es un producto de software" sin ese riesgo.
  *
- * Estetoscopio decorativo (public/hero-estetoscopio.png): imagen
- * realista colgando del borde superior-izquierdo del marco -- el tubo
- * pasa sobre el bisel superior y baja por el lateral izquierdo, con la
- * campana por fuera del marco para no tapar los títulos de las tarjetas.
- * Fuente: generada por José Ortiz con ChatGPT (OpenAI) el 5 de octubre de
- * 2026 -- los términos de OpenAI asignan al usuario los derechos sobre el
- * resultado, apto para uso comercial. Es solo el objeto, sin personas, así
- * que no reabre el problema de derechos de imagen del punto 3. ChatGPT la
- * entregó como JPG con el damero de "transparencia" pintado; el fondo se
- * quitó por color (PIL) y se guardó como PNG con canal alfa real (378x646
- * px; se muestra a 64/96/128px de ancho según breakpoint).
- * El contenedor reserva a la izquierda el ancho de la imagen
- * (pl-12 / sm:pl-20 / lg:pl-28) para que nunca desborde el gutter de
- * 16px del Hero ni se monte sobre el texto de la columna izquierda en
- * desktop.
+ * Estetoscopio decorativo (public/hero-estetoscopio.png, 640x1064, PNG
+ * con alfa real): descansa en la esquina INFERIOR izquierda del marco --
+ * la campana sobre el borde izquierdo (mitad bisel, mitad padding de la
+ * pantalla, sin tapar títulos de tarjetas), el arco de las olivas fuera
+ * del laptop a la izquierda y el lazo azul colgando por debajo del marco.
+ * Fuente: generada con IA por José Ortiz con Gemini (Google), octubre de
+ * 2026 -- Google no reclama la propiedad del contenido generado. Es solo
+ * el objeto, sin personas, así que no reabre el problema de derechos de
+ * imagen del punto 3. Proceso: recortado por José de fondo blanco y
+ * rotado 90° a la izquierda;
+ * aquí solo se recortó al contorno, se erosionó 1px el alfa (quita un halo
+ * claro visible sobre el bisel oscuro) y se redujo a 640px de ancho.
+ *
+ * Medidas, en % del marco (maqueta aprobada: marco 580x440): top 48%,
+ * voladizo izquierdo 22% (27% en mobile, donde las tarjetas quedan más
+ * cerca del borde y con 22% la campana tapaba un título). Ancho 35% en
+ * mobile (pantalla 4/3, misma proporción que la maqueta: el lazo cuelga
+ * ~25% bajo el marco); en sm+ la pantalla es 16/10 -- más baja --, así
+ * que se usa 29% para mantener ese mismo voladizo inferior en vez de ~40%. El contenedor reserva a la
+ * izquierda el voladizo (pl-[76px] / sm:pl-[104px] >= voladizo, sin
+ * desbordar el gutter de 16px ni invadir la columna de texto) y abajo el
+ * lazo (pb-8 / sm:pb-10).
  *
  * Sin librerías nuevas ni animaciones -- todo Tailwind estático, mismas
  * clases de marca (brand-blue/brand-teal) ya usadas en el resto de la
@@ -58,7 +65,7 @@ import { FEATURES } from "./features-data";
  */
 export function LandingHeroVisual() {
   return (
-    <div className="relative mx-auto w-full max-w-xl pl-12 sm:pl-20 lg:pl-28">
+    <div className="relative mx-auto w-full max-w-xl pb-8 pl-[76px] sm:pb-10 sm:pl-[104px]">
       <div className="absolute -inset-6 rounded-[3rem] bg-linear-to-br from-brand-blue/20 to-brand-teal/20 blur-2xl" />
 
       <div className="relative rounded-2xl border-[10px] border-zinc-800 bg-zinc-800 shadow-2xl shadow-brand-blue/20">
@@ -66,11 +73,11 @@ export function LandingHeroVisual() {
           src="/hero-estetoscopio.png"
           alt=""
           aria-hidden="true"
-          width={378}
-          height={646}
+          width={640}
+          height={1064}
           priority
-          sizes="(min-width: 1024px) 128px, (min-width: 640px) 96px, 64px"
-          className="pointer-events-none absolute -left-[56px] -top-[8px] z-10 w-16 drop-shadow-[0_8px_12px_rgba(30,58,138,0.25)] sm:-left-[84px] sm:-top-[10px] sm:w-24 lg:-left-[116px] lg:w-32"
+          sizes="(min-width: 640px) 140px, 100px"
+          className="pointer-events-none absolute left-[-27%] top-[48%] z-10 h-auto w-[35%] drop-shadow-[0_8px_12px_rgba(30,58,138,0.25)] sm:left-[-22%] sm:w-[29%]"
         />
         <div className="aspect-4/3 overflow-hidden rounded-lg bg-white p-3 sm:aspect-16/10 sm:p-5">
           <div className="mb-3 flex items-center gap-2 border-b border-zinc-100 pb-2.5 sm:mb-4 sm:pb-3">
