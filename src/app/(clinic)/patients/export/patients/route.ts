@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { exportBlockedMessage } from "@/lib/supabase/clinic-access";
 import {
   fetchPatientsExportData,
   generatePatientsExportCsv,
@@ -32,6 +33,10 @@ export async function GET(request: Request) {
   if (!membership || membership.role !== "admin") {
     return NextResponse.json({ error: "Solo el administrador de la clínica puede exportar pacientes." }, { status: 403 });
   }
+
+  // Clínica bloqueada o suspendida: RLS ya no entrega datos; un archivo vacío engañaría.
+  const blocked = await exportBlockedMessage(supabase);
+  if (blocked) return NextResponse.json({ error: blocked }, { status: 403 });
 
   const format = new URL(request.url).searchParams.get("format") === "csv" ? "csv" : "xlsx";
 

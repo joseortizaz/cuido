@@ -17,6 +17,7 @@ import {
 } from "../labels";
 import {
   ActiveStatusForm,
+  BlockAgreementForm,
   ExemptForm,
   ExtendTrialForm,
   NoteForm,
@@ -174,6 +175,33 @@ export default async function OperatorClinicDetailPage({
             )}
           </p>
           <p>
+            Bloqueo total y cancelación:{" "}
+            {access?.blocked_on ? (
+              <>
+                <strong>{formatDate(access.blocked_on)}</strong>
+                {access.days_to_block !== null && access.days_to_block > 0 && (
+                  <span className="text-zinc-500"> (en {days(access.days_to_block)})</span>
+                )}
+                {access.block_deferred_until && (
+                  <span className="text-zinc-500"> · acuerdo hasta {formatDate(access.block_deferred_until)}</span>
+                )}
+              </>
+            ) : (
+              "—"
+            )}
+          </p>
+          <p>
+            Conservación de datos hasta:{" "}
+            {access?.retention_until ? (
+              <>
+                <strong>{formatDate(access.retention_until)}</strong>
+                <span className="text-zinc-500"> (2 años desde la cancelación; no eliminar antes)</span>
+              </>
+            ) : (
+              "—"
+            )}
+          </p>
+          <p>
             Plan: {subscription?.billing_period_days ? `${subscription.billing_period_days} días` : "—"} · Monto:{" "}
             {formatPrice(subscription?.price ?? null)}
           </p>
@@ -217,6 +245,11 @@ export default async function OperatorClinicDetailPage({
       <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <h2 className="text-lg font-medium">Exención</h2>
         <ExemptForm clinicId={clinic.id} isExempt={subscription?.access_exempt ?? false} />
+      </section>
+
+      <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <h2 className="text-lg font-medium">Acuerdo de bloqueo</h2>
+        <BlockAgreementForm clinicId={clinic.id} currentUntil={access?.block_deferred_until ?? null} today={today} />
       </section>
 
       <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">

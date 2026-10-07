@@ -662,6 +662,7 @@ export type Database = {
         Row: {
           access_exempt: boolean
           billing_period_days: number | null
+          block_deferred_until: string | null
           clinic_id: string
           included_clinician_seats: number | null
           next_payment_due_on: string | null
@@ -675,6 +676,7 @@ export type Database = {
         Insert: {
           access_exempt?: boolean
           billing_period_days?: number | null
+          block_deferred_until?: string | null
           clinic_id: string
           included_clinician_seats?: number | null
           next_payment_due_on?: string | null
@@ -688,6 +690,7 @@ export type Database = {
         Update: {
           access_exempt?: boolean
           billing_period_days?: number | null
+          block_deferred_until?: string | null
           clinic_id?: string
           included_clinician_seats?: number | null
           next_payment_due_on?: string | null
@@ -1623,6 +1626,25 @@ export type Database = {
         Args: { p_clinic_id: string; p_today?: string }
         Returns: string
       }
+      clinic_is_accessible: { Args: { p_clinic_id: string }; Returns: boolean }
+      clinic_lifecycle_dates: {
+        Args: { p_clinic_id: string }
+        Returns: {
+          block_deferred_until: string
+          blocked_on: string
+          due_on: string
+          readonly_from: string
+          retention_until: string
+        }[]
+      }
+      clinic_lifecycle_offsets: {
+        Args: never
+        Returns: {
+          grace_days: number
+          readonly_days: number
+          retention_years: number
+        }[]
+      }
       clinician_seats_used: { Args: { p_clinic_id: string }; Returns: number }
       complete_appointment_with_encounter: {
         Args: { target_appointment_id: string; target_encounter_id: string }
@@ -1657,6 +1679,7 @@ export type Database = {
         Args: never
         Returns: {
           clinic_id: string
+          days_to_block: number
           days_to_expiry: number
           days_to_readonly: number
           seats_included: number
@@ -1672,6 +1695,10 @@ export type Database = {
           target_user_id: string
         }
         Returns: string
+      }
+      is_admin_of_active_clinic: {
+        Args: { target_clinic_id: string }
+        Returns: boolean
       }
       is_billing_staff_of_active_clinic: {
         Args: { target_clinic_id: string }
@@ -1701,14 +1728,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_policies_open_when_blocked: { Args: never; Returns: string[] }
       list_unguarded_tables: { Args: never; Returns: string[] }
       operator_clinic_access_overview: {
         Args: never
         Returns: {
+          block_deferred_until: string
+          blocked_on: string
           clinic_id: string
+          days_to_block: number
           days_to_expiry: number
           days_to_readonly: number
           due_on: string
+          retention_until: string
           seats_used: number
           state: string
         }[]
@@ -1741,6 +1773,10 @@ export type Database = {
           reason: string
           target_clinic_id: string
         }
+        Returns: undefined
+      }
+      set_clinic_block_agreement: {
+        Args: { p_reason: string; p_until: string; target_clinic_id: string }
         Returns: undefined
       }
       set_clinic_clinician_seats: {

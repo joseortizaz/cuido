@@ -2,13 +2,13 @@ import { cache } from "react";
 import { createClient } from "./server";
 
 import type { ClinicAccess, ClinicAccessState } from "@/lib/domain/clinic-access";
-import { READONLY_MESSAGE, SUSPENDED_MESSAGE } from "@/lib/domain/clinic-access";
+import { BLOCKED_MESSAGE, READONLY_MESSAGE, SUSPENDED_MESSAGE } from "@/lib/domain/clinic-access";
 
 // Tipos, textos y la lógica del aviso viven en src/lib/domain/clinic-access.ts
 // (módulo puro, probable con fechas límite). Se re-exportan aquí para que los
 // llamadores existentes sigan importando todo desde un solo lugar.
 export type { ClinicAccess, ClinicAccessState } from "@/lib/domain/clinic-access";
-export { CONTACT_NARNIA, READONLY_MESSAGE, SUSPENDED_MESSAGE } from "@/lib/domain/clinic-access";
+export { BLOCKED_MESSAGE, CONTACT_NARNIA, READONLY_MESSAGE, SUSPENDED_MESSAGE } from "@/lib/domain/clinic-access";
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -35,15 +35,16 @@ export async function getClinicAccess(supabase: ServerClient): Promise<ClinicAcc
     state,
     daysToExpiry: row.days_to_expiry,
     daysToReadonly: row.days_to_readonly,
+    daysToBlock: row.days_to_block,
     seatsUsed: row.seats_used,
     seatsIncluded: row.seats_included,
-    isReadOnly: state === "solo_lectura" || state === "suspendida",
+    isReadOnly: state === "solo_lectura" || state === "bloqueada" || state === "suspendida",
   };
 }
 
 /**
  * Para las Server Actions que ESCRIBEN: devuelve el mensaje claro a mostrar si
- * la clínica está en solo lectura (o suspendida), o null si puede escribir.
+ * la clínica está en solo lectura, bloqueada o suspendida, o null si puede escribir.
  *
  *   const blocked = await readOnlyBlock(supabase);
  *   if (blocked) return { error: blocked };
@@ -54,7 +55,21 @@ export async function getClinicAccess(supabase: ServerClient): Promise<ClinicAcc
 export async function readOnlyBlock(supabase: ServerClient): Promise<string | null> {
   const access = await getClinicAccess(supabase);
   if (!access?.isReadOnly) return null;
-  return access.state === "suspendida" ? SUSPENDED_MESSAGE : READONLY_MESSAGE;
+  if (access.state === "suspendida") return SUSPENDED_MESSAGE;
+  return access.state === "bloqueada" ? BLOCKED_MESSAGE : READONLY_MESSAGE;
+}
+
+/**
+ * Para los Route Handlers de exportación: en una clínica bloqueada o suspendida
+ * RLS ya no entrega ningún dato, así que el archivo saldría VACÍO y parecería
+ * una exportación completa. Devuelve el mensaje a responder (403) en esos
+ * estados, o null si se puede exportar (solo lectura incluido).
+ */
+export async function exportBlockedMessage(supabase: ServerClient): Promise<string | null> {
+  const access = await getClinicAccess(supabase);
+  if (access?.state === "suspendida") return SUSPENDED_MESSAGE;
+  if (access?.state === "bloqueada") return BLOCKED_MESSAGE;
+  return null;
 }
 
 /**

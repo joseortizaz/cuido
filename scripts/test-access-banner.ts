@@ -30,9 +30,10 @@ function banner(
   state: ClinicAccessState,
   daysToExpiry: number | null,
   daysToReadonly: number | null,
-  isAdmin = true
+  isAdmin = true,
+  daysToBlock: number | null = null
 ): AccessBanner | null {
-  return describeAccessBanner({ state, daysToExpiry, daysToReadonly }, isAdmin);
+  return describeAccessBanner({ state, daysToExpiry, daysToReadonly, daysToBlock }, isAdmin);
 }
 
 function expect(name: string, b: AccessBanner | null, tone: string, titleHas: string) {
@@ -82,6 +83,33 @@ check(
     !/descarg/.test(banner("solo_lectura", -31, 0)?.detail ?? ""),
   JSON.stringify(banner("solo_lectura", -31, 0))
 );
+check(
+  "solo lectura con días para el bloqueo: avisa cuántos quedan y que se cancela",
+  /en 90 días tu clínica se bloqueará por completo/.test(banner("solo_lectura", -31, 0, true, 90)?.detail ?? "") &&
+    /suscripción se cancelará/.test(banner("solo_lectura", -31, 0, true, 90)?.detail ?? ""),
+  JSON.stringify(banner("solo_lectura", -31, 0, true, 90))
+);
+check(
+  "el último día de solo lectura avisa 'en 1 día' (singular)",
+  /en 1 día tu clínica se bloqueará/.test(banner("solo_lectura", -120, -89, true, 1)?.detail ?? ""),
+  JSON.stringify(banner("solo_lectura", -120, -89, true, 1))
+);
+check(
+  "el aviso de bloqueo llega a todo el equipo, no solo al admin",
+  /se bloqueará por completo/.test(banner("solo_lectura", -31, 0, false, 90)?.detail ?? ""),
+  JSON.stringify(banner("solo_lectura", -31, 0, false, 90))
+);
+check(
+  "solo lectura sin días para el bloqueo (dato ausente) no inventa una cuenta regresiva",
+  !/se bloqueará/.test(banner("solo_lectura", -31, 0)?.detail ?? ""),
+  JSON.stringify(banner("solo_lectura", -31, 0))
+);
+expect("bloqueada => enfático, acceso bloqueado", banner("bloqueada", -121, -90, true, 0), "danger", "bloqueado");
+check(
+  "bloqueada explica que la suscripción fue cancelada",
+  /cancelada/.test(banner("bloqueada", -121, -90, true, 0)?.detail ?? ""),
+  JSON.stringify(banner("bloqueada", -121, -90, true, 0))
+);
 expect("suspendida => enfático", banner("suspendida", null, null), "danger", "suspendida");
 
 console.log("\nSin aviso:");
@@ -96,6 +124,7 @@ const all: (AccessBanner | null)[] = [
   banner("vencida_en_gracia", -1, 30),
   banner("solo_lectura", -31, 0),
   banner("suspendida", null, null),
+  banner("bloqueada", -121, -90, true, 0),
 ];
 check(
   "todo aviso trae el correo y el WhatsApp de Narnia",

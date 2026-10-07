@@ -13,6 +13,7 @@ export type ClinicAccessState =
   | "por_renovar"
   | "vencida_en_gracia"
   | "solo_lectura"
+  | "bloqueada"
   | "suspendida"
   | "exenta"
   | "sin_plan";
@@ -24,10 +25,12 @@ export type ClinicAccess = {
   daysToExpiry: number | null;
   /** 0 el primer día de solo lectura. */
   daysToReadonly: number | null;
+  /** 0 el primer día bloqueada (bloqueo total = cancelación). null sin fechas o exenta. */
+  daysToBlock: number | null;
   /** Solo para el admin (get_my_clinic_access los devuelve null al resto). */
   seatsUsed: number | null;
   seatsIncluded: number | null;
-  /** Una clínica en solo lectura o suspendida no puede escribir. */
+  /** Una clínica en solo lectura, bloqueada o suspendida no puede escribir. */
   isReadOnly: boolean;
 };
 
@@ -39,6 +42,10 @@ export const READONLY_MESSAGE =
   "Tu clínica está en modo solo lectura: puedes consultar toda la información y el administrador puede " +
   `exportar toda la información de la clínica, pero no se puede crear ni modificar nada. Contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
 
+export const BLOCKED_MESSAGE =
+  "El acceso de tu clínica está bloqueado por falta de renovación y su suscripción fue cancelada. " +
+  `Para reactivarla, contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
+
 export const SUSPENDED_MESSAGE =
   `Tu clínica está suspendida. Contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
 
@@ -48,6 +55,7 @@ export const ACCESS_STATE_LABELS: Record<ClinicAccessState, string> = {
   por_renovar: "Por renovar",
   vencida_en_gracia: "Vencida (en período de gracia)",
   solo_lectura: "Solo lectura",
+  bloqueada: "Bloqueada (suscripción cancelada)",
   suspendida: "Suspendida",
   exenta: "Exenta",
   sin_plan: "Sin plan asignado",
@@ -78,10 +86,10 @@ function days(n: number): string {
  * parámetro es defensa en profundidad.
  */
 export function describeAccessBanner(
-  access: Pick<ClinicAccess, "state" | "daysToExpiry" | "daysToReadonly">,
+  access: Pick<ClinicAccess, "state" | "daysToExpiry" | "daysToReadonly"> & { daysToBlock?: number | null },
   isAdmin: boolean
 ): AccessBanner | null {
-  const { state, daysToExpiry, daysToReadonly } = access;
+  const { state, daysToExpiry, daysToReadonly, daysToBlock } = access;
 
   switch (state) {
     case "prueba": {
@@ -124,14 +132,28 @@ export function describeAccessBanner(
       };
     }
 
-    case "solo_lectura":
+    case "solo_lectura": {
+      const warning =
+        daysToBlock !== null && daysToBlock !== undefined && daysToBlock > 0
+          ? ` Si no se renueva, en ${days(daysToBlock)} tu clínica se bloqueará por completo y su suscripción se cancelará: ` +
+            "ya no podrás consultar ni exportar nada. Exporta tu información antes."
+          : "";
       return {
         tone: "danger",
         title: "Tu clínica está en modo solo lectura",
         detail:
           "Puedes seguir consultando toda tu información, y el administrador puede exportar toda la información de la clínica, " +
-          "pero no se puede crear ni modificar nada. " +
-          `Para reactivarla, contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`,
+          "pero no se puede crear ni modificar nada." +
+          warning +
+          ` Para reactivarla, contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`,
+      };
+    }
+
+    case "bloqueada":
+      return {
+        tone: "danger",
+        title: "El acceso de tu clínica está bloqueado",
+        detail: BLOCKED_MESSAGE,
       };
 
     case "suspendida":

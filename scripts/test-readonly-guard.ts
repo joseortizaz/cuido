@@ -324,6 +324,210 @@ async function main() {
 
   const { data: evs } = await admin.from("clinic_subscription_events").select("kind").eq("clinic_id", cidS).eq("kind", "seats_changed");
   check("los cambios de cupo quedan en el historial (3)", (evs ?? []).length === 3, JSON.stringify(evs));
+
+  // ------------------------------------------------ clínica bloqueada (total)
+  console.log("\nCobertura del bloqueo total (políticas):");
+  const { data: openPolicies, error: openPoliciesErr } = await admin.rpc("list_policies_open_when_blocked");
+  check(
+    "toda política pasa por una función de clínica activa (o está justificada en la lista explícita)",
+    openPoliciesErr === null && (openPolicies ?? []).length === 0,
+    openPoliciesErr?.message ?? `abiertas: ${JSON.stringify(openPolicies)}`
+  );
+
+  const ownerK = await createUser("admin-k");
+  const medicoK = await createUser("medico-k");
+  const recep = await createUser("recepcion");
+  const cidK = await createClinic(ownerK, "K");
+  await admin.from("clinic_members").insert([
+    { clinic_id: cidK, user_id: medicoK.userId, role: "medico" },
+    { clinic_id: cidK, user_id: recep.userId, role: "recepcion" },
+  ]);
+  const { data: tpls } = await admin.from("specialty_templates").select("id, code, requires_explicit_access");
+  const tplInterna = tpls?.find((t) => t.code === "medicina_interna");
+  const tplCirugia = tpls?.find((t) => t.code === "cirugia_general");
+  const tplSensible = tpls?.find((t) => t.requires_explicit_access);
+  const { data: consentTpl } = await admin.from("consent_templates").select("id").limit(1).single();
+  if (!tplInterna || !tplCirugia || !tplSensible || !consentTpl) throw new Error("Faltan plantillas base.");
+
+  const { data: pk, error: pkErr } = await admin.from("patients").insert(newPatient(cidK)).select("id").single();
+  if (pkErr || !pk) throw new Error(`insert paciente: ${pkErr?.message}`);
+  const { data: ek, error: ekErr } = await admin
+    .from("encounters")
+    .insert({ clinic_id: cidK, patient_id: pk.id, provider_id: ownerK.userId, specialty_template_id: tplInterna.id, specialty_data: {} })
+    .select("id")
+    .single();
+  if (ekErr || !ek) throw new Error(`insert consulta: ${ekErr?.message}`);
+  const { error: apErr } = await admin.from("appointments").insert({
+    clinic_id: cidK,
+    patient_id: pk.id,
+    provider_id: ownerK.userId,
+    specialty_template_id: tplCirugia.id,
+    appointment_type: "procedimiento_quirurgico",
+    scheduled_at: new Date(Date.now() + 86400_000).toISOString(),
+    created_by: ownerK.userId,
+  });
+  if (apErr) throw new Error(`insert cita: ${apErr.message}`);
+  const { error: csErr } = await admin.from("consents").insert({
+    clinic_id: cidK,
+    patient_id: pk.id,
+    consent_template_id: consentTpl.id,
+    document_title: "Consentimiento",
+    document_content: "Texto",
+    document_hash: "h",
+    signer_name: "Paciente",
+    signer_relationship: "paciente",
+    status: "firmado",
+    recorded_by: ownerK.userId,
+  });
+  if (csErr) throw new Error(`insert consentimiento: ${csErr.message}`);
+  const { error: fdErr } = await admin.from("fiscal_documents").insert({
+    clinic_id: cidK,
+    patient_id: pk.id,
+    comprador_nombre: "Paciente",
+    monto_gravado_total: 0,
+    monto_exento: 10,
+    total_itbis: 0,
+    monto_total: 10,
+    status: "borrador",
+    created_by: ownerK.userId,
+  });
+  if (fdErr) throw new Error(`insert comprobante: ${fdErr.message}`);
+  const { data: insK, error: insKErr } = await admin
+    .from("patient_insurers")
+    .insert({ clinic_id: cidK, patient_id: pk.id, insurer_name: "SENASA", affiliate_number: "A-1", recorded_by: ownerK.userId })
+    .select("id")
+    .single();
+  if (insKErr || !insK) throw new Error(`insert seguro: ${insKErr?.message}`);
+  const { error: elErr } = await admin
+    .from("eligibility_checks")
+    .insert({ clinic_id: cidK, patient_id: pk.id, patient_insurer_id: insK.id, result: "elegible", checked_by: ownerK.userId });
+  if (elErr) throw new Error(`insert elegibilidad: ${elErr.message}`);
+  const { error: clmErr } = await admin
+    .from("insurance_claims")
+    .insert({ clinic_id: cidK, encounter_id: ek.id, patient_insurer_id: insK.id, status: "pendiente", created_by: ownerK.userId });
+  if (clmErr) throw new Error(`insert reclamación: ${clmErr.message}`);
+  const { error: fpErr } = await admin.from("clinic_fiscal_profiles").insert({
+    clinic_id: cidK,
+    rnc: "131000001",
+    business_name: "Clínica de prueba",
+    fiscal_address: "Calle 1",
+    economic_activity: "Salud",
+  });
+  if (fpErr) throw new Error(`insert perfil fiscal: ${fpErr.message}`);
+  const { error: seqErr } = await admin
+    .from("clinic_ecf_sequences")
+    .insert({ clinic_id: cidK, tipo_ecf: "32", range_start: 1, range_end: 100, next_number: 1, valid_until: addDays(today, 365) });
+  if (seqErr) throw new Error(`insert secuencia: ${seqErr.message}`);
+  const { error: bbErr } = await admin.from("bulk_import_batches").insert({
+    clinic_id: cidK,
+    import_type: "patients",
+    file_name: "x.xlsx",
+    row_count: 0,
+    valid_row_count: 0,
+    error_row_count: 0,
+    rows: [],
+    created_by: ownerK.userId,
+  });
+  if (bbErr) throw new Error(`insert lote: ${bbErr.message}`);
+  const { data: memberRow } = await admin.from("clinic_members").select("id").eq("clinic_id", cidK).eq("user_id", medicoK.userId).single();
+  const { error: prefErr } = await admin
+    .from("clinic_member_preferred_specialties")
+    .insert({ clinic_id: cidK, clinic_member_id: memberRow!.id, specialty_template_id: tplInterna.id });
+  if (prefErr) throw new Error(`insert preferencia: ${prefErr.message}`);
+  const { error: disErr } = await admin
+    .from("clinic_member_disabled_specialties")
+    .insert({ clinic_id: cidK, clinic_member_id: memberRow!.id, specialty_template_id: tplInterna.id, disabled_by_user_id: ownerK.userId });
+  if (disErr) throw new Error(`insert restricción: ${disErr.message}`);
+  const { error: grErr } = await admin.from("sensitive_specialty_access_grants").insert({
+    clinic_id: cidK,
+    patient_id: pk.id,
+    specialty_template_id: tplSensible.id,
+    granted_to_user_id: medicoK.userId,
+    granted_by_user_id: ownerK.userId,
+    reason: "prueba de bloqueo",
+  });
+  if (grErr) throw new Error(`insert concesión: ${grErr.message}`);
+
+  // [tabla, quién la lee]: admin, médico o recepción -- según quién puede verla.
+  const readers: [string, "owner" | "medico" | "recep"][] = [
+    ["patients", "owner"],
+    ["patients", "medico"],
+    ["patients", "recep"],
+    ["encounters", "owner"],
+    ["appointments", "owner"],
+    ["appointment_surgical_checklist", "medico"],
+    ["consents", "owner"],
+    ["fiscal_documents", "recep"],
+    ["patient_insurers", "owner"],
+    ["eligibility_checks", "owner"],
+    ["insurance_claims", "owner"],
+    ["clinic_fiscal_profiles", "owner"],
+    ["clinic_ecf_sequences", "owner"],
+    ["bulk_import_batches", "owner"],
+    ["clinic_member_preferred_specialties", "medico"],
+    ["clinic_member_disabled_specialties", "medico"],
+    ["sensitive_specialty_access_grants", "owner"],
+  ];
+  const clients = { owner: ownerK.client, medico: medicoK.client, recep: recep.client };
+  const countRows = async (table: string, who: "owner" | "medico" | "recep") => {
+    const { data } = await clients[who]
+      .from(table as never)
+      .select("*")
+      .eq("clinic_id" as never, cidK as never)
+      .limit(5);
+    return (data ?? []).length;
+  };
+
+  // Control: con la clínica en prueba cada tabla se lee (si no, la prueba de abajo pasaría en vacío).
+  const seeded = readers;
+  const emptyBefore: string[] = [];
+  for (const [table, who] of seeded) {
+    if ((await countRows(table, who)) < 1) emptyBefore.push(`${table}/${who}`);
+  }
+  check("control (clínica con acceso): cada tabla sembrada se puede leer", emptyBefore.length === 0, `sin filas: ${JSON.stringify(emptyBefore)}`);
+
+  // Bloqueo total: vencida hace 121 días.
+  await setSub(cidK, { trial_ends_at: addDays(today, -121), next_payment_due_on: null, block_deferred_until: null });
+  const { data: stK } = await admin.rpc("clinic_access_state", { p_clinic_id: cidK });
+  check("la clínica quedó bloqueada", stK === "bloqueada", `estado = ${stK}`);
+
+  console.log("\nClínica bloqueada: nadie lee datos clínicos ni fiscales:");
+  const stillReadable: string[] = [];
+  for (const [table, who] of readers) {
+    if ((await countRows(table, who)) > 0) stillReadable.push(`${table}/${who}`);
+  }
+  check("las 17 lecturas (admin, médico, recepción) devuelven 0 filas", stillReadable.length === 0, `todavía legibles: ${JSON.stringify(stillReadable)}`);
+
+  const { error: blockedIns } = await ownerK.client.from("patients").insert(newPatient(cidK));
+  check("tampoco puede escribir", blockedIns !== null, "el INSERT pasó");
+  const { data: ownClinic } = await ownerK.client.from("clinics").select("id").eq("id", cidK);
+  const { data: roster } = await ownerK.client.from("clinic_members").select("id").eq("clinic_id", cidK);
+  const { data: subRow } = await ownerK.client.from("clinic_subscriptions").select("clinic_id").eq("clinic_id", cidK);
+  check(
+    "el admin SÍ sigue viendo su clínica, su equipo y su suscripción (para saber por qué y cómo regularizar)",
+    (ownClinic ?? []).length === 1 && (roster ?? []).length === 3 && (subRow ?? []).length === 1,
+    JSON.stringify({ clinica: ownClinic?.length, equipo: roster?.length, suscripcion: subRow?.length })
+  );
+  const { data: myAccess } = await ownerK.client.rpc("get_my_clinic_access");
+  const ma = Array.isArray(myAccess) ? myAccess[0] : myAccess;
+  check("get_my_clinic_access sigue respondiendo (bloqueada)", ma?.state === "bloqueada", JSON.stringify(ma));
+
+  // Acuerdo: diferir el bloqueo devuelve la lectura (solo lectura), y el bloqueo vuelve al vencer.
+  const { error: agrErr } = await op.rpc("set_clinic_block_agreement", {
+    target_clinic_id: cidK,
+    p_until: addDays(today, 3),
+    p_reason: "descarga de la información",
+  });
+  const { data: readAgain } = await ownerK.client.from("patients").select("id").eq("clinic_id", cidK);
+  check("con acuerdo vuelve la lectura (para exportar) pero no la escritura", agrErr === null && (readAgain ?? []).length === 1, agrErr?.message ?? JSON.stringify(readAgain));
+  const { error: stillNoWrite } = await ownerK.client.from("patients").insert(newPatient(cidK));
+  check("con acuerdo sigue sin poder escribir", isReadonlyError(stillNoWrite), stillNoWrite?.message ?? "el INSERT pasó");
+
+  // Un pago la reactiva al instante.
+  await setSub(cidK, { billing_period_days: 30 });
+  await op.rpc("register_clinic_payment", { target_clinic_id: cidK, p_paid_on: today, p_amount: 100, p_note: "regulariza" });
+  const { data: afterPayK } = await ownerK.client.from("patients").insert(newPatient(cidK)).select("id").single();
+  check("tras el pago, la clínica vuelve a escribir", !!afterPayK, "no pudo crear un paciente");
 }
 
 async function cleanup() {
@@ -347,5 +551,5 @@ main()
       console.error(`\nFALLÓ: ${failures.length} verificación(es) no pasaron.`);
       process.exit(1);
     }
-    console.log("\nOK: bloqueo de solo lectura y cupos verificados.");
+    console.log("\nOK: bloqueo de solo lectura, bloqueo total y cupos verificados.");
   });

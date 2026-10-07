@@ -143,6 +143,17 @@ export default async function OperatorPage() {
                       {state !== "exenta" && access?.days_to_expiry !== null && access?.days_to_expiry !== undefined && (
                         <div className="text-xs text-zinc-500">{relativeDays(access.days_to_expiry)}</div>
                       )}
+                      {(state === "vencida_en_gracia" || state === "solo_lectura") && access?.blocked_on && (
+                        <div className="text-xs text-red-700 dark:text-red-400">
+                          Bloqueo {relativeDays(access.days_to_block)} ({formatDate(access.blocked_on)})
+                          {access.block_deferred_until && " · acuerdo"}
+                        </div>
+                      )}
+                      {state === "bloqueada" && access?.blocked_on && (
+                        <div className="text-xs text-red-700 dark:text-red-400">
+                          Cancelada el {formatDate(access.blocked_on)} · conservar hasta {formatDate(access.retention_until)}
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 pr-4">
                       {BUSINESS_MODEL_LABELS[clinic.business_model]?.split(" — ")[0] ?? clinic.business_model}
