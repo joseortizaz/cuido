@@ -39,7 +39,7 @@ export function ReadOnlyPage({
       </Link>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Esta acción no está disponible mientras tu clínica esté en modo solo lectura. Puedes seguir consultando tu
-        información, y el administrador puede exportar el listado de pacientes.
+        información, y el administrador puede exportar los pacientes y las consultas.
       </p>
       {children}
     </div>
