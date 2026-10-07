@@ -8,7 +8,7 @@ import type { MetadataRoute } from "next";
  * -- appointments, billing, claims, dashboard, patients, profile,
  * settings, team -- más operator/onboarding y las páginas del flujo de
  * autenticación) -- deja abierto solo landing/blog/normativa/privacidad/
- * eliminación de datos, que es exactamente lo que expone sitemap.ts.
+ * términos/eliminación de datos, que es exactamente lo que expone sitemap.ts.
  */
 export default function robots(): MetadataRoute.Robots {
   return {

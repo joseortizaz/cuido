@@ -16,7 +16,7 @@ const BASE_URL = "https://cuido.net";
  * listarlas aquí sería contradictorio.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = ["", "/normativa", "/privacidad", "/eliminacion-datos", "/blog"].map(
+  const staticRoutes = ["", "/normativa", "/privacidad", "/terminos", "/eliminacion-datos", "/blog"].map(
     (route) => ({
       url: `${BASE_URL}${route}`,
       lastModified: new Date(),
