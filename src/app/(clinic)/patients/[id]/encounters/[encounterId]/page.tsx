@@ -6,7 +6,7 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { ClaimForm } from "./claims/claim-form";
 import { ClaimStatusForm } from "@/app/(clinic)/claims/claim-status-form";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 const CLAIM_STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
@@ -109,9 +109,7 @@ export default async function EncounterDetailPage({
           {new Date(encounter.encounter_date).toLocaleString("es-DO")}
         </p>
         <div className="mt-2 flex flex-col gap-1">
-          {readOnly ? (
-            <ReadOnlyNotice />
-          ) : (
+          {!readOnly && (
             <>
               <Link
                 href={`/patients/${id}/consents/new?encounterId=${encounterId}`}

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { SpecialtyToggle } from "./specialty-toggle";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 /**
  * Autoservicio del mecanismo 1 (preferencia de UI, ver
@@ -62,7 +62,6 @@ export default async function ProfileSpecialtiesPage() {
           preferencia tuya — nunca te impide usar otra especialidad no marcada.
         </p>
       </div>
-      <ReadOnlyNotice />
       {availableTemplates.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           No tienes ninguna especialidad habilitada todavía.

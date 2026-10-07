@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { InviteForm } from "./invite-form";
 import { MemberRoleForm, RemoveMemberForm } from "./member-actions";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
@@ -62,8 +62,6 @@ export default async function TeamPage() {
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">Equipo</h1>
       </div>
-
-      <ReadOnlyNotice />
 
       <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
         {(members ?? []).map((member) => (

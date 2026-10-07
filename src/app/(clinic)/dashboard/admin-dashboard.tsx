@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { BUSINESS_MODEL_LABELS, PAYMENT_STATUS_LABELS, formatPrice } from "@/app/operator/labels";
+import { PlanCard } from "./plan-card";
 
 /**
  * Dashboard de admin/recepción -- comparten la misma vista (confirmado
@@ -61,8 +61,8 @@ export async function AdminDashboard({
   // Montos, estado de pago y renovación son SOLO del admin: desde la
   // migración 20261006100000 la política de clinic_subscriptions ya no deja
   // leerlos a recepción. Recepción comparte este dashboard, así que la
-  // tarjeta de plan simplemente no se consulta ni se muestra para ella
-  // (en vez de mostrarle un engañoso "sin información de plan").
+  // tarjeta de plan (PlanCard, que hace sus propias consultas) simplemente no se
+  // renderiza para ella, en vez de mostrarle un engañoso "sin información de plan".
   const canSeePlan = role === "admin";
   const supabase = await createClient();
 
@@ -78,7 +78,6 @@ export async function AdminDashboard({
     { data: claimsRaw },
     { count: patientCount },
     { data: members },
-    { data: subscription },
   ] = await Promise.all([
     supabase
       .from("appointments")
@@ -97,9 +96,6 @@ export async function AdminDashboard({
       .in("status", ["pendiente", "enviada"]),
     supabase.from("patients").select("id", { count: "exact", head: true }),
     supabase.from("clinic_members").select("role"),
-    canSeePlan
-      ? supabase.from("clinic_subscriptions").select("*").eq("clinic_id", clinicId).maybeSingle()
-      : Promise.resolve({ data: null }),
   ]);
 
   // ---- Hoy ----
@@ -259,31 +255,7 @@ export async function AdminDashboard({
               ))}
             </div>
           </div>
-          {canSeePlan && (
-            <div className="rounded-xl border border-zinc-200 p-4 sm:col-span-2 dark:border-zinc-800">
-              <p className="text-xs text-zinc-500">Plan y facturación</p>
-              {subscription ? (
-                <div className="mt-1 flex flex-col gap-0.5 text-sm">
-                  <span>{BUSINESS_MODEL_LABELS[businessModel] ?? businessModel}</span>
-                  <span>
-                    Estado de pago:{" "}
-                    <strong>{PAYMENT_STATUS_LABELS[subscription.payment_status] ?? subscription.payment_status}</strong>
-                  </span>
-                  <span>Precio: {formatPrice(subscription.price)}</span>
-                  {subscription.next_payment_due_on && (
-                    <span>
-                      Próximo pago:{" "}
-                      {new Date(`${subscription.next_payment_due_on}T00:00:00`).toLocaleDateString("es-DO", {
-                        dateStyle: "medium",
-                      })}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="mt-1 text-sm text-zinc-500">Sin información de plan todavía.</p>
-              )}
-            </div>
-          )}
+          {canSeePlan && <PlanCard clinicId={clinicId} businessModel={businessModel} />}
         </div>
       </section>
     </div>

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ReviewActions } from "./review-actions";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 type PatientBatchRow = { row_number: number; raw: Record<string, string>; errors: string[] };
 type EncounterBatchGroup = {
@@ -72,8 +72,6 @@ export default async function ImportReviewPage({ params }: { params: Promise<{ b
           {batch.file_name} · {items.length} {rowLabel.toLowerCase()}
         </p>
       </div>
-
-      <ReadOnlyNotice />
 
       {batch.status === "validado" && (
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">

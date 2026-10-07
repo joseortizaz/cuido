@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { FiscalProfileForm } from "./fiscal-profile-form";
 import { SequenceForm } from "./sequence-form";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function FiscalSettingsPage() {
   const supabase = await createClient();
@@ -43,8 +43,6 @@ export default async function FiscalSettingsPage() {
           Necesarios para generar comprobantes fiscales electrónicos (e-CF).
         </p>
       </div>
-
-      <ReadOnlyNotice />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Emisor</h2>

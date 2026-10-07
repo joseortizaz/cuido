@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ClinicNav } from "./_components/clinic-nav";
+import { AccessBanner } from "./_components/access-banner";
 
 /**
  * Layout compartido de las pantallas de clínica (dashboard, pacientes,
@@ -35,6 +36,7 @@ export default async function ClinicLayout({ children }: { children: ReactNode }
   return (
     <div className="flex min-h-full flex-col">
       <ClinicNav clinicName={clinic?.name ?? null} />
+      <AccessBanner isAdmin={membership.role === "admin"} />
       <div className="flex flex-1 flex-col">{children}</div>
     </div>
   );

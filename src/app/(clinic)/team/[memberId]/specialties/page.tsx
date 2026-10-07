@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { MemberSpecialtiesForm } from "./member-specialties-form";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 /**
  * Mecanismo 2 (restricción real, admin-only, ver
@@ -64,7 +64,6 @@ export default async function MemberSpecialtiesPage({
           consultas nuevas de ella. No afecta las consultas que ya existen.
         </p>
       </div>
-      <ReadOnlyNotice />
       {!templates || templates.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           No hay plantillas de especialidad configuradas todavía.
