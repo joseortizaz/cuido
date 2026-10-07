@@ -52,6 +52,9 @@ export function LandingFooter() {
           <Link href="/privacidad" className="text-sm text-white/70 hover:text-white">
             Política de Privacidad
           </Link>
+          <Link href="/terminos" className="text-sm text-white/70 hover:text-white">
+            Términos y Condiciones
+          </Link>
           <Link href="/eliminacion-datos" className="text-sm text-white/70 hover:text-white">
             Eliminación de Datos
           </Link>
