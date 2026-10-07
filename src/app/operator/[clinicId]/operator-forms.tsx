@@ -12,6 +12,7 @@ import {
   setClinicActiveStatus,
   setClinicClinicianSeats,
   setClinicPlanPeriod,
+  setMemberAttendsPatients,
   startExpiredRetentionDeletion,
   updateClinicPlan,
   withdrawDeletionRequest,
@@ -341,7 +342,7 @@ export function SeatsForm({ clinicId, currentSeats }: { clinicId: string; curren
         {pending ? "Guardando…" : "Fijar cupo"}
       </button>
       <p className="w-full text-xs text-zinc-500">
-        Cuentan admin y médico; recepción no consume cupo. Súbelo tras confirmar el pago del médico adicional.
+        Cuentan los médicos y los administradores que atienden pacientes (se fija más abajo); recepción no consume cupo. Súbelo tras confirmar el pago del médico adicional.
       </p>
       <FormFeedback state={state} />
     </form>
@@ -491,6 +492,48 @@ export function ExecuteDeletionForm({
           {pending ? "Eliminando…" : "Ejecutar eliminación"}
         </button>
       </div>
+      <FormFeedback state={state} />
+    </form>
+  );
+}
+
+export function AttendsPatientsForm({
+  clinicId,
+  userId,
+  email,
+  attends,
+}: {
+  clinicId: string;
+  userId: string;
+  email: string;
+  attends: boolean;
+}) {
+  const boundAction = setMemberAttendsPatients.bind(null, clinicId, userId);
+  const [state, formAction, pending] = useActionState<OperatorActionState, FormData>(boundAction, undefined);
+
+  return (
+    <form action={formAction} className="flex flex-wrap items-end gap-2">
+      <p className="w-full text-sm">
+        <strong>{email}</strong> (administrador)
+      </p>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`attends_${userId}`} className={labelClass}>
+          ¿Atiende pacientes?
+        </label>
+        <select id={`attends_${userId}`} name="attends" defaultValue={attends ? "si" : "no"} className={inputClass}>
+          <option value="si">Sí, ocupa un cupo</option>
+          <option value="no">No, no ocupa cupo</option>
+        </select>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={`attends_reason_${userId}`} className={labelClass}>
+          Motivo
+        </label>
+        <input id={`attends_reason_${userId}`} name="reason" type="text" required className={`${inputClass} w-72`} />
+      </div>
+      <button type="submit" disabled={pending} className={buttonClass}>
+        {pending ? "Guardando…" : "Guardar"}
+      </button>
       <FormFeedback state={state} />
     </form>
   );

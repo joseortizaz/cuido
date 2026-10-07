@@ -98,6 +98,9 @@ export function describeSubscriptionEvent(kind: string, rawDetails: unknown): st
     case "exempt_changed":
       return `${d.exempt ? "Exención activada." : "Exención quitada."}${reason}`;
     case "seats_changed":
+      if (d.new_attends_patients !== undefined) {
+        return `Un administrador ${d.new_attends_patients ? "ahora atiende pacientes (ocupa cupo)" : "ya no atiende pacientes (no ocupa cupo)"}.${reason}`;
+      }
       return `${d.previous_seats ?? "ilimitado"} → ${d.new_seats ?? "ilimitado"}.${reason}`;
     case "block_agreement":
       return `${d.new_until ? `Bloqueo diferido hasta el ${formatDate(typeof d.new_until === "string" ? d.new_until : null)}` : "Acuerdo retirado"} (antes: ${d.previous_until ? formatDate(typeof d.previous_until === "string" ? d.previous_until : null) : "sin acuerdo"}).${reason}`;

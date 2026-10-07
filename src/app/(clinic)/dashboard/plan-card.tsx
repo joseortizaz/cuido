@@ -77,7 +77,7 @@ export async function PlanCard({ clinicId, businessModel }: { clinicId: string; 
           </span>
           {sub.included_clinician_seats !== null && (
             <span>
-              Médicos incluidos (admin y médico): {access?.seatsUsed ?? "—"} de {sub.included_clinician_seats}
+              Médicos incluidos (médicos y administradores que atienden pacientes): {access?.seatsUsed ?? "—"} de {sub.included_clinician_seats}
             </span>
           )}
           {access?.state === "por_renovar" && (

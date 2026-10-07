@@ -325,6 +325,103 @@ async function main() {
   const { data: evs } = await admin.from("clinic_subscription_events").select("kind").eq("clinic_id", cidS).eq("kind", "seats_changed");
   check("los cambios de cupo quedan en el historial (3)", (evs ?? []).length === 3, JSON.stringify(evs));
 
+  // ----------------------------------- cupo: el operador fija quién atiende
+  console.log("\nCupo: solo cuentan los administradores que atienden (lo fija el operador):");
+  const ownerQ = await createUser("admin-q");
+  const medQ = await createUser("medico-q");
+  const med2Q = await createUser("medico-q2");
+  const recepQ = await createUser("recep-q");
+  const cidQ = await createClinic(ownerQ, "Q");
+  await op.rpc("set_clinic_clinician_seats", { target_clinic_id: cidQ, p_seats: 1, p_reason: "plan de 1 médico" });
+  const seatsUsedQ = async () => {
+    const { data } = await ownerQ.client.rpc("get_my_clinic_access");
+    const row = Array.isArray(data) ? data[0] : data;
+    return row?.seats_used as number | null | undefined;
+  };
+  check("por defecto el admin atiende y ocupa el cupo (1 de 1)", (await seatsUsedQ()) === 1, `seats_used = ${await seatsUsedQ()}`);
+  const { data: adminRow } = await admin.from("clinic_members").select("attends_patients").eq("clinic_id", cidQ).eq("user_id", ownerQ.userId).single();
+  check("la columna attends_patients es true por defecto", adminRow?.attends_patients === true, JSON.stringify(adminRow));
+
+  // El admin NO puede evadir el cupo.
+  const { error: selfFlip } = await ownerQ.client
+    .from("clinic_members")
+    .update({ attends_patients: false })
+    .eq("clinic_id", cidQ)
+    .eq("user_id", ownerQ.userId);
+  check("el admin NO puede cambiar attends_patients (permiso por columna)", selfFlip !== null && /permission denied/i.test(selfFlip.message), selfFlip?.message ?? "lo permitió");
+  const { error: insFlag } = await ownerQ.client
+    .from("clinic_members")
+    .insert({ clinic_id: cidQ, user_id: recepQ.userId, role: "recepcion", attends_patients: false } as never);
+  check("ni al invitar a alguien con esa columna", insFlag !== null && /permission denied/i.test(insFlag.message), insFlag?.message ?? "lo permitió");
+  const { error: normalInvite } = await ownerQ.client.from("clinic_members").insert({ clinic_id: cidQ, user_id: recepQ.userId, role: "recepcion" });
+  check("invitar con las columnas de siempre (clinic_id, user_id, role) sigue funcionando", normalInvite === null, normalInvite?.message ?? "");
+  const { error: roleSame } = await ownerQ.client.from("clinic_members").update({ role: "recepcion" }).eq("clinic_id", cidQ).eq("user_id", recepQ.userId);
+  check("cambiar el rol (columna permitida) sigue funcionando", roleSame === null, roleSame?.message ?? "");
+  const { data: stillTrue } = await admin.from("clinic_members").select("attends_patients").eq("clinic_id", cidQ).eq("user_id", ownerQ.userId).single();
+  check("la columna del admin no cambió", stillTrue?.attends_patients === true, JSON.stringify(stillTrue));
+
+  // RPC del operador.
+  const { error: notOpAttends } = await ownerQ.client.rpc("set_member_attends_patients", {
+    target_clinic_id: cidQ,
+    target_user_id: ownerQ.userId,
+    p_attends: false,
+    p_reason: "yo mismo",
+  });
+  check("un admin de clínica NO puede usar la RPC del operador", notOpAttends !== null, "la RPC se lo permitió");
+  const { error: noReasonAttends } = await op.rpc("set_member_attends_patients", {
+    target_clinic_id: cidQ,
+    target_user_id: ownerQ.userId,
+    p_attends: false,
+    p_reason: " ",
+  });
+  check("sin motivo se rechaza", noReasonAttends !== null, "aceptó un motivo vacío");
+  const { error: notAdmin } = await op.rpc("set_member_attends_patients", {
+    target_clinic_id: cidQ,
+    target_user_id: recepQ.userId,
+    p_attends: false,
+    p_reason: "x",
+  });
+  check("solo aplica a administradores (recepción se rechaza)", notAdmin !== null && /administradores/.test(notAdmin.message), notAdmin?.message ?? "lo permitió");
+
+  const { error: offErr } = await op.rpc("set_member_attends_patients", {
+    target_clinic_id: cidQ,
+    target_user_id: ownerQ.userId,
+    p_attends: false,
+    p_reason: "administra pero no atiende",
+  });
+  check("el operador marca que el admin NO atiende", offErr === null, offErr?.message ?? "");
+  check("el cupo usado baja a 0", (await seatsUsedQ()) === 0, `seats_used = ${await seatsUsedQ()}`);
+  const { error: medOk } = await admin.from("clinic_members").insert({ clinic_id: cidQ, user_id: medQ.userId, role: "medico" });
+  check("ahora cabe un médico (ocupa el único cupo)", medOk === null, medOk?.message ?? "");
+  const { error: med2Err } = await admin.from("clinic_members").insert({ clinic_id: cidQ, user_id: med2Q.userId, role: "medico" });
+  check("un segundo médico se rechaza (cupo 1)", med2Err !== null && /Plan actual incluye 1 médico/.test(med2Err.message), med2Err?.message ?? "no falló");
+
+  const { error: onFull } = await op.rpc("set_member_attends_patients", {
+    target_clinic_id: cidQ,
+    target_user_id: ownerQ.userId,
+    p_attends: true,
+    p_reason: "ahora sí atiende",
+  });
+  check("marcar 'atiende' sin cupo libre se rechaza con el mensaje del plan", onFull !== null && /Plan actual incluye 1 médico/.test(onFull.message), onFull?.message ?? "lo permitió");
+  const { data: stillOff } = await admin.from("clinic_members").select("attends_patients").eq("clinic_id", cidQ).eq("user_id", ownerQ.userId).single();
+  check("y el admin sigue como 'no atiende'", stillOff?.attends_patients === false, JSON.stringify(stillOff));
+  const { error: roleSwap } = await admin.from("clinic_members").update({ role: "medico" }).eq("clinic_id", cidQ).eq("user_id", ownerQ.userId);
+  check("un admin que no atiende no puede pasar a médico sin cupo libre", roleSwap !== null && /Plan actual incluye/.test(roleSwap.message), roleSwap?.message ?? "lo permitió");
+
+  // Funciona aunque la clínica esté en solo lectura (decisión comercial del operador).
+  await op.rpc("set_clinic_clinician_seats", { target_clinic_id: cidQ, p_seats: 2, p_reason: "ampliación" });
+  await setSub(cidQ, { trial_ends_at: addDays(today, -31), next_payment_due_on: null });
+  const { error: roOn } = await op.rpc("set_member_attends_patients", {
+    target_clinic_id: cidQ,
+    target_user_id: ownerQ.userId,
+    p_attends: true,
+    p_reason: "con la clínica en solo lectura",
+  });
+  check("el operador puede fijarlo con la clínica en solo lectura", roOn === null, roOn?.message ?? "");
+  const { data: attendsEvs } = await admin.from("clinic_subscription_events").select("details").eq("clinic_id", cidQ).eq("kind", "seats_changed");
+  const memberEvs = (attendsEvs ?? []).filter((e) => (e.details as { member_user_id?: string }).member_user_id === ownerQ.userId);
+  check("cada cambio queda en el historial con el miembro y el motivo (2)", memberEvs.length === 2, JSON.stringify(memberEvs));
+
   // ------------------------------------------------ clínica bloqueada (total)
   console.log("\nCobertura del bloqueo total (políticas):");
   const { data: openPolicies, error: openPoliciesErr } = await admin.rpc("list_policies_open_when_blocked");

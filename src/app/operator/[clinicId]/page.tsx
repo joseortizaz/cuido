@@ -27,6 +27,7 @@ import {
 } from "../labels";
 import {
   ActiveStatusForm,
+  AttendsPatientsForm,
   BlockAgreementForm,
   ExecuteDeletionForm,
   ExpiredRetentionForm,
@@ -73,7 +74,7 @@ export default async function OperatorClinicDetailPage({
       .eq("id", clinicId)
       .maybeSingle(),
     supabase.from("clinic_subscriptions").select("*").eq("clinic_id", clinicId).maybeSingle(),
-    supabase.from("clinic_members").select("id", { count: "exact" }).eq("clinic_id", clinicId),
+    supabase.from("clinic_members").select("id, user_id, role, attends_patients").eq("clinic_id", clinicId),
     supabase.rpc("operator_clinic_access_overview"),
     supabase
       .from("clinic_payments")
@@ -122,6 +123,8 @@ export default async function OperatorClinicDetailPage({
   for (const n of notes ?? []) userIds.add(n.created_by);
   for (const p of payments ?? []) userIds.add(p.registered_by);
   for (const e of accessEvents ?? []) if (e.changed_by) userIds.add(e.changed_by);
+  const admins = (members ?? []).filter((m) => m.role === "admin");
+  for (const a of admins) userIds.add(a.user_id);
 
   const admin = createAdminClient();
   const emailByUserId = new Map<string, string>();
@@ -232,7 +235,7 @@ export default async function OperatorClinicDetailPage({
             {formatDate(subscription?.trial_ends_at ?? null)}
           </p>
           <p>
-            Médicos (admin y médico): {access?.seats_used ?? 0} de{" "}
+            Médicos (médicos y administradores que atienden): {access?.seats_used ?? 0} de{" "}
             {subscription?.included_clinician_seats ?? "ilimitado"}
           </p>
           <p>Modelo: {BUSINESS_MODEL_LABELS[clinic.business_model]?.split(" — ")[0] ?? clinic.business_model}</p>
@@ -277,6 +280,23 @@ export default async function OperatorClinicDetailPage({
       <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <h2 className="text-lg font-medium">Cupo de médicos</h2>
         <SeatsForm clinicId={clinic.id} currentSeats={subscription?.included_clinician_seats ?? null} />
+        <div className="mt-2 flex flex-col gap-4">
+          <h3 className="text-sm font-medium">Administradores y cupo</h3>
+          <p className="text-xs text-zinc-500">
+            Un administrador ocupa cupo solo si atiende pacientes; un médico independiente que es su propio administrador
+            sí atiende. Solo tú puedes cambiarlo: el administrador de la clínica no puede.
+          </p>
+          {admins.map((a) => (
+            <AttendsPatientsForm
+              key={a.id}
+              clinicId={clinic.id}
+              userId={a.user_id}
+              email={emailByUserId.get(a.user_id) ?? a.user_id}
+              attends={a.attends_patients}
+            />
+          ))}
+          {admins.length === 0 && <p className="text-sm text-zinc-500">Esta clínica no tiene administradores.</p>}
+        </div>
       </section>
 
       <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
