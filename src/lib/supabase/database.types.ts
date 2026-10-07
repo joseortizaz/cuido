@@ -703,6 +703,7 @@ export type Database = {
       }
       clinic_members: {
         Row: {
+          attends_patients: boolean
           clinic_id: string
           created_at: string
           id: string
@@ -710,6 +711,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attends_patients?: boolean
           clinic_id: string
           created_at?: string
           id?: string
@@ -717,6 +719,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attends_patients?: boolean
           clinic_id?: string
           created_at?: string
           id?: string
@@ -2051,6 +2054,15 @@ export type Database = {
           p_period_days: number
           p_start_on: string
           target_clinic_id: string
+        }
+        Returns: undefined
+      }
+      set_member_attends_patients: {
+        Args: {
+          p_attends: boolean
+          p_reason: string
+          target_clinic_id: string
+          target_user_id: string
         }
         Returns: undefined
       }

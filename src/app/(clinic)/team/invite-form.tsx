@@ -10,7 +10,7 @@ const inputClass =
  * `seats` solo llega para clínicas con cupo de médicos (included_clinician_seats
  * no es null) -- la barrera real es el trigger seat_limit de la base; esto es
  * cortesía para que el admin no tenga que adivinar por qué una invitación
- * falla. Cuentan los roles admin y médico; recepción no consume cupo.
+ * falla. Cuentan los médicos y los administradores que atienden pacientes (lo fija Narnia); recepción no consume cupo.
  */
 export function InviteForm({ seats }: { seats: { used: number; included: number } | null }) {
   const noRoom = seats !== null && seats.used >= seats.included;
@@ -62,7 +62,7 @@ export function InviteForm({ seats }: { seats: { used: number; included: number 
       </button>
       {seats && (
         <p className="w-full text-xs text-zinc-500">
-          Médicos incluidos en tu plan (admin y médico): {seats.used} de {seats.included}.
+          Médicos incluidos en tu plan (médicos y administradores que atienden pacientes): {seats.used} de {seats.included}.
           {noRoom &&
             " Ya no hay cupo: para agregar otro médico, contacta a Narnia (info@narniats.com / WhatsApp 829-374-8878)."}
         </p>

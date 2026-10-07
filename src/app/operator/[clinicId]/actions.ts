@@ -348,6 +348,35 @@ export async function executeDeletion(
   redirect(`/operator?deleted=${encodeURIComponent(clinicId)}${failed.length ? `&orphans_failed=${failed.length}` : ""}`);
 }
 
+/**
+ * Fija si un administrador atiende pacientes (y por tanto ocupa un cupo de médico).
+ * Solo el operador (la RPC se autogatea): el administrador no puede evadir el cupo
+ * marcándose como "no atiende".
+ */
+export async function setMemberAttendsPatients(
+  clinicId: string,
+  userId: string,
+  _prevState: OperatorActionState,
+  formData: FormData
+): Promise<OperatorActionState> {
+  const supabase = await requireSignedIn();
+  const attendsRaw = String(formData.get("attends") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (attendsRaw !== "si" && attendsRaw !== "no") return { error: "Indica si atiende pacientes." };
+  if (!reason) return { error: "El motivo es requerido." };
+
+  const { error } = await supabase.rpc("set_member_attends_patients", {
+    target_clinic_id: clinicId,
+    target_user_id: userId,
+    p_attends: attendsRaw === "si",
+    p_reason: reason,
+  });
+  if (error) return { error: error.message };
+
+  revalidateClinic(clinicId);
+  return { success: attendsRaw === "si" ? "Ahora ocupa un cupo." : "Ya no ocupa cupo." };
+}
+
 export async function addClinicInternalNote(
   clinicId: string,
   _prevState: OperatorActionState,
