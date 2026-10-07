@@ -1702,6 +1702,17 @@ export type Database = {
         Returns: boolean
       }
       list_unguarded_tables: { Args: never; Returns: string[] }
+      operator_clinic_access_overview: {
+        Args: never
+        Returns: {
+          clinic_id: string
+          days_to_expiry: number
+          days_to_readonly: number
+          due_on: string
+          seats_used: number
+          state: string
+        }[]
+      }
       readonly_guard_exempt_tables: { Args: never; Returns: string[] }
       register_clinic_payment: {
         Args: {
@@ -1741,14 +1752,6 @@ export type Database = {
           p_amount: number
           p_period_days: number
           p_start_on: string
-          target_clinic_id: string
-        }
-        Returns: undefined
-      }
-      update_clinic_payment_status: {
-        Args: {
-          new_next_payment_due_on: string
-          new_payment_status: string
           target_clinic_id: string
         }
         Returns: undefined

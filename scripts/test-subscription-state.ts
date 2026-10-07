@@ -358,6 +358,30 @@ async function main() {
   await op.rpc("set_clinic_access_exempt", { target_clinic_id: cid, p_exempt: false, p_reason: "fin del piloto" });
   check("quitar la exención => vuelve a solo_lectura", (await state(cid, today)) === "solo_lectura", `estado = ${await state(cid, today)}`);
 
+  console.log("\nVista del operador (operator_clinic_access_overview):");
+  const { data: overview, error: overviewErr } = await op.rpc("operator_clinic_access_overview");
+  const mine = (overview ?? []).find((r: { clinic_id: string }) => r.clinic_id === cid);
+  check("el operador recibe una fila por clínica, incluida la de la prueba", overviewErr === null && !!mine, overviewErr?.message ?? "no está la clínica");
+  check(
+    "el estado de la vista coincide con clinic_access_state (única fuente de verdad)",
+    mine?.state === (await state(cid, today)),
+    `${mine?.state} vs ${await state(cid, today)}`
+  );
+  check(
+    "fechas y días coherentes (vence hace 100 días => solo lectura desde hace 69)",
+    mine?.due_on === addDays(today, -100) && mine?.days_to_expiry === -100 && mine?.days_to_readonly === -69,
+    JSON.stringify(mine)
+  );
+  check("trae el cupo usado (admin + médico = 2)", mine?.seats_used === 2, JSON.stringify(mine));
+  const { error: overviewAdminErr } = await adminUser.client.rpc("operator_clinic_access_overview");
+  check("un admin de clínica NO puede usar la vista del operador", overviewAdminErr !== null, "el admin pudo llamarla");
+  const { error: legacyErr } = await op.rpc("update_clinic_payment_status", {
+    target_clinic_id: cid,
+    new_payment_status: "al_dia",
+    new_next_payment_due_on: "2099-01-01",
+  });
+  check("el RPC viejo update_clinic_payment_status ya no existe (el vencimiento no se edita sin historial)", legacyErr !== null, "todavía existe");
+
   console.log("\nHistorial:");
   const { data: evs } = await admin.from("clinic_subscription_events").select("kind").eq("clinic_id", cid);
   const kinds = (evs ?? []).map((e) => e.kind as string);
