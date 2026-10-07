@@ -1,7 +1,6 @@
 import { poppins } from "@/app/_landing/fonts";
 import { LandingHeader } from "@/app/_landing/header";
 import { LandingFooter } from "@/app/_landing/footer";
-import { LegalNotice } from "@/app/_landing/legal-notice";
 import { CONTACT_EMAIL } from "@/app/_landing/constants";
 
 /**
@@ -35,7 +34,7 @@ export default function PrivacidadPage() {
       <main className="flex-1 px-4 pb-20 pt-32 sm:pt-40">
         <div className="mx-auto max-w-3xl">
           <h1 className="text-3xl font-bold text-brand-navy sm:text-4xl">Política de Privacidad</h1>
-          <LegalNotice lastUpdated="23 de agosto de 2026" />
+          <p className="mt-3 text-sm text-zinc-500">Última actualización: 7 de octubre de 2026.</p>
 
           <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-zinc-700 sm:text-base">
             <section>

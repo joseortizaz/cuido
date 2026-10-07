@@ -15,6 +15,7 @@
     "test:export-encounters": "tsx scripts/test-export-encounters.ts",
     "test:export-records": "tsx scripts/test-export-records.ts",
     "test:data-deletion": "tsx scripts/test-data-deletion.ts",
+    "test:terms-acceptance": "tsx scripts/test-terms-acceptance.ts",
     "provision:clinic": "tsx scripts/provision-clinic.ts",
     "grant:operator": "tsx scripts/grant-platform-operator.ts"
   },

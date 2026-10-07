@@ -4,6 +4,7 @@ import { LandingHeader } from "@/app/_landing/header";
 import { LandingFooter } from "@/app/_landing/footer";
 import { CONTACT_EMAIL } from "@/app/_landing/constants";
 import { DELETION_WARNING_TEXT } from "@/lib/domain/data-deletion";
+import { TERMS_EFFECTIVE_LABEL, TERMS_VERSION } from "@/lib/domain/terms";
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones de Servicio — Cuido",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Términos y Condiciones de Servicio -- versión 4, revisada y aprobada por
+ * Términos y Condiciones de Servicio -- versión 4 (src/lib/domain/terms.ts), revisada y aprobada por
  * José (y su asesor legal) el 7 de octubre de 2026. El texto reproduce la
  * sección «Texto propuesto» del borrador v4 sin cambios de fondo.
  *
@@ -32,7 +33,8 @@ export default function TerminosPage() {
         <div className="mx-auto max-w-3xl">
           <h1 className="text-3xl font-bold text-brand-navy sm:text-4xl">Términos y Condiciones de Servicio</h1>
           <p className="mt-3 text-sm text-zinc-500">
-            Versión 4 · Vigente desde el 7 de octubre de 2026 · Narnia Tech Solution, SRL (RNC 1-33-74485-6)
+            Versión {TERMS_VERSION} · Vigente desde el {TERMS_EFFECTIVE_LABEL} · Narnia Tech Solution, SRL (RNC
+            1-33-74485-6)
           </p>
 
           <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-zinc-700 sm:text-base">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { PasswordInput } from "../_auth/password-input";
 import { signup, type SignupState } from "./actions";
+import { TERMS_PATH } from "@/lib/domain/terms";
 
 export function SignupForm() {
   const [state, formAction, pending] = useActionState<SignupState, FormData>(signup, undefined);
@@ -42,6 +43,27 @@ export function SignupForm() {
         </label>
         <PasswordInput id="password" name="password" autoComplete="new-password" required minLength={8} />
       </div>
+      <label htmlFor="accepted_terms" className="flex items-start gap-2 text-sm text-zinc-700">
+        <input
+          id="accepted_terms"
+          name="accepted_terms"
+          type="checkbox"
+          required
+          className="mt-0.5 h-4 w-4 shrink-0 accent-brand-teal"
+        />
+        <span>
+          He leído y acepto los{" "}
+          <Link
+            href={TERMS_PATH}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-brand-teal hover:underline"
+          >
+            Términos y Condiciones
+          </Link>
+          .
+        </span>
+      </label>
       {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
       <button
         type="submit"
