@@ -98,6 +98,11 @@ jobs:
       - name: Run export test
         run: npm run test:export-encounters
 
+      # Exportación de consentimientos, comprobantes fiscales, reclamaciones, citas y seguros:
+      # completitud (>1000 filas), contenido (anulados/revocados/rechazados), RLS y seguridad del archivo.
+      - name: Run export records test
+        run: npm run test:export-records
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/database.types";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { RECORD_DATASETS, RECORD_DATASET_TITLES, type RecordDataset } from "@/lib/bulk-import/export-records";
 
 export default async function ExportLandingPage() {
   const supabase = await createClient();
@@ -31,6 +33,23 @@ export default async function ExportLandingPage() {
   const withEncounters = counted.filter((t) => t.count > 0);
   const total = withEncounters.reduce((n, t) => n + t.count, 0);
 
+  // Cuántas filas tiene cada conjunto de datos para este admin (RLS aplica igual).
+  const recordTables = {
+    consents: "consents",
+    fiscal: "fiscal_documents",
+    fiscal_lines: "fiscal_document_items",
+    claims: "insurance_claims",
+    appointments: "appointments",
+    insurers: "patient_insurers",
+    eligibility: "eligibility_checks",
+  } as const satisfies Record<RecordDataset, keyof Database["public"]["Tables"]>;
+  const recordCounts = await Promise.all(
+    RECORD_DATASETS.map(async (ds) => {
+      const { count } = await supabase.from(recordTables[ds]).select("id", { count: "exact", head: true });
+      return { ds, count: count ?? 0 };
+    })
+  );
+
   const linkClass = "text-brand-blue hover:underline";
 
   return (
@@ -44,6 +63,22 @@ export default async function ExportLandingPage() {
           Descarga los datos de tu clínica. Solo se incluye lo que tú tienes permiso de ver. La exportación
           funciona también si tu clínica está en modo solo lectura.
         </p>
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+        <h2 className="font-semibold">Exportación completa de la clínica</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Un solo libro .xlsx con todo lo de abajo: pacientes, alergias, medicamentos, citas, consentimientos
+          firmados, comprobantes fiscales y sus líneas, reclamaciones, seguros, verificaciones de
+          elegibilidad y una hoja por especialidad con sus consultas. La hoja «Resumen» lista cuántas filas
+          tiene cada hoja, para que puedas cotejar que no falta nada.
+        </p>
+        <div className="mt-2 flex gap-3 text-sm">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/patients/export/records?dataset=all" className={linkClass}>
+            Descargar todo (.xlsx)
+          </a>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
@@ -113,6 +148,37 @@ export default async function ExportLandingPage() {
             </ul>
           </>
         )}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+        <div>
+          <h2 className="font-semibold">Otros registros</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Cada uno es una tabla. El .csv conserva los textos largos completos (consentimientos, XML de los
+            comprobantes); en el .xlsx un texto que supere el límite de una celda de Excel se recorta y se
+            avisa.
+          </p>
+        </div>
+        <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+          {recordCounts.map(({ ds, count }) => (
+            <li key={ds} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+              <span>
+                {RECORD_DATASET_TITLES[ds]}{" "}
+                <span className="text-zinc-500">
+                  ({count} fila{count === 1 ? "" : "s"})
+                </span>
+              </span>
+              <span className="flex gap-3">
+                <a href={`/patients/export/records?dataset=${ds}`} className={linkClass}>
+                  .xlsx
+                </a>
+                <a href={`/patients/export/records?dataset=${ds}&format=csv`} className={linkClass}>
+                  .csv
+                </a>
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
