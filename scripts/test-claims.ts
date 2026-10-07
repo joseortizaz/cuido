@@ -249,13 +249,16 @@ async function main() {
     JSON.stringify(activeNames) === JSON.stringify([...EXPECTED_ACTIVE].sort()),
     JSON.stringify(activeNames)
   );
-  const palic = (catalogForAdmin ?? []).find((i) => i.name === "ARS Palic Salud");
-  check("ARS Palic Salud (fuera del listado) queda desactivada, no borrada", !!palic && palic.is_active === false, JSON.stringify(palic));
+  const mapfre = (catalogForAdmin ?? []).find((i) => i.name === "MAPFRE SALUD ARS");
   check(
-    "«Primera ARS de Humano» conserva «ARS Humano» y «Primera de Humano» como alias",
-    (catalogForAdmin ?? []).some((i) => i.name === "Primera ARS de Humano" && i.aliases.includes("ARS Humano") && i.aliases.includes("Primera de Humano")),
-    JSON.stringify((catalogForAdmin ?? []).find((i) => i.name === "Primera ARS de Humano"))
+    "ARS Palic Salud se fusionó en MAPFRE: ya no existe como ARS y sus nombres son alias de MAPFRE",
+    !(catalogForAdmin ?? []).some((i) => i.name === "ARS Palic Salud") &&
+      !!mapfre &&
+      mapfre.aliases.includes("ARS Palic Salud") &&
+      mapfre.aliases.includes("Palic"),
+    JSON.stringify(mapfre)
   );
+
 
 
   const { error: adminInsert } = await adminA.client.from("insurers").insert({ name: "ARS Pirata" });
@@ -302,7 +305,8 @@ async function main() {
     ["ARS Yunen", true],
     ["Colegio Médico Dominicano", true],
     ["Mapfre", true],
-    ["Palic", false], // desactivada: no se reconoce
+    ["Palic", true], // Palic se transformó en MAPFRE: se reconoce como MAPFRE
+    ["ARS Palic Salud", true],
     ["ARS Desconocida XYZ", false],
   ];
   const matchResults: string[] = [];
