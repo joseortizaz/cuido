@@ -153,7 +153,9 @@ export default function PrivacidadPage() {
               <p className="mt-2">
                 Puedes solicitar acceso a tus datos, su rectificación, o su eliminación. El proceso
                 de eliminación, incluyendo la distinción entre datos de cuenta y datos de pacientes
-                dentro de una clínica, se explica en detalle en nuestra{" "}
+                dentro de una clínica, el plazo de 30 días, los comprobantes fiscales que se conservan
+                archivados y cuánto tiempo conservamos los datos de una clínica inactiva por falta de
+                pago, se explica en detalle en nuestra{" "}
                 <a href="/eliminacion-datos" className="font-medium text-brand-blue hover:underline">
                   Política de Eliminación de Datos
                 </a>

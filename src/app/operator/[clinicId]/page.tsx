@@ -5,6 +5,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOperatorPage } from "@/lib/supabase/operator-context";
 import { ACCESS_STATE_LABELS, type ClinicAccessState } from "@/lib/domain/clinic-access";
 import {
+  DELETION_CHANNEL_LABELS,
+  DELETION_STATUS_LABELS,
+  DELETION_WAIT_DAYS,
+  DELETION_WARNING_TEXT,
+  RETENTION_YEARS,
+  deletionStep,
+  type DeletionChannel,
+  type DeletionStatus,
+} from "@/lib/domain/data-deletion";
+import {
   ACCESS_STATE_BADGE,
   addDaysIso,
   BUSINESS_MODEL_LABELS,
@@ -18,13 +28,17 @@ import {
 import {
   ActiveStatusForm,
   BlockAgreementForm,
+  ExecuteDeletionForm,
+  ExpiredRetentionForm,
   ExemptForm,
   ExtendTrialForm,
   NoteForm,
   PaymentForm,
   PlanForm,
   PlanPeriodForm,
+  RegisterDeletionForm,
   SeatsForm,
+  WithdrawRequestForm,
 } from "./operator-forms";
 
 function days(n: number): string {
@@ -51,6 +65,7 @@ export default async function OperatorClinicDetailPage({
     { data: statusChanges },
     { data: planChanges },
     { data: notes },
+    { data: deletionRequests },
   ] = await Promise.all([
     supabase
       .from("clinics")
@@ -86,6 +101,11 @@ export default async function OperatorClinicDetailPage({
       .select("id, note, created_by, created_at")
       .eq("clinic_id", clinicId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("clinic_deletion_requests")
+      .select("id, status, channel, requested_by_email, requested_at, export_confirmed_at, scheduled_for")
+      .eq("clinic_id", clinicId)
+      .order("requested_at", { ascending: false }),
   ]);
 
   if (!clinic) notFound();
@@ -116,6 +136,8 @@ export default async function OperatorClinicDetailPage({
     new Date(value).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short" });
 
   const today = todayInSantoDomingo();
+  const hasOpenDeletion = (deletionRequests ?? []).some((r) => r.status === "solicitada");
+  const retentionExpired = state === "bloqueada" && !!access?.retention_until && access.retention_until <= today;
   const trialIsDue =
     !!subscription &&
     !!access?.due_on &&
@@ -303,6 +325,70 @@ export default async function OperatorClinicDetailPage({
             <li className="py-2 text-sm text-zinc-500">Sin cambios de acceso todavía.</li>
           )}
         </ul>
+      </section>
+
+      <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <h2 className="text-lg font-medium">Eliminación de datos</h2>
+        <p className="text-xs text-zinc-500">
+          Nada se elimina automáticamente. La clínica puede solicitarla desde su panel (espera de {DELETION_WAIT_DAYS} días
+          tras confirmar la descarga), o por correo si está bloqueada. También procede al vencer la conservación de{" "}
+          {RETENTION_YEARS} años de una clínica cancelada.
+        </p>
+        <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-900">
+          {(deletionRequests ?? []).map((r) => {
+            const step = deletionStep(
+              {
+                status: r.status as DeletionStatus,
+                exportConfirmedAt: r.export_confirmed_at,
+                scheduledFor: r.scheduled_for,
+              },
+              today
+            );
+            const executable = r.status === "solicitada" && (r.channel === "conservacion_vencida" ? true : step === "lista");
+            return (
+              <li key={r.id} className="flex flex-col gap-2 py-3 text-sm">
+                <p>
+                  <strong>{DELETION_STATUS_LABELS[r.status as DeletionStatus] ?? r.status}</strong> ·{" "}
+                  {DELETION_CHANNEL_LABELS[r.channel as DeletionChannel] ?? r.channel} · pidió {r.requested_by_email}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  Solicitada {formatDateTime(r.requested_at)}
+                  {r.export_confirmed_at ? ` · descarga confirmada ${formatDateTime(r.export_confirmed_at)}` : " · descarga sin confirmar"}
+                  {r.scheduled_for ? ` · eliminación desde el ${formatDate(r.scheduled_for)}` : ""}
+                </p>
+                {r.status === "solicitada" && (
+                  <>
+                    {executable ? (
+                      <ExecuteDeletionForm clinicId={clinic.id} requestId={r.id} clinicName={clinic.name} />
+                    ) : (
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        Todavía no se puede ejecutar:{" "}
+                        {step === "descargar" ? "falta que la clínica descargue y confirme." : "no ha pasado la espera."}
+                      </p>
+                    )}
+                    <WithdrawRequestForm clinicId={clinic.id} requestId={r.id} />
+                  </>
+                )}
+              </li>
+            );
+          })}
+          {(deletionRequests ?? []).length === 0 && (
+            <li className="py-2 text-sm text-zinc-500">Sin solicitudes de eliminación.</li>
+          )}
+        </ul>
+        {!hasOpenDeletion && (
+          <>
+            {retentionExpired && <ExpiredRetentionForm clinicId={clinic.id} />}
+            <details className="text-sm">
+              <summary className="cursor-pointer text-zinc-600 dark:text-zinc-400">
+                Registrar una solicitud recibida por correo
+              </summary>
+              <div className="mt-3">
+                <RegisterDeletionForm clinicId={clinic.id} warningText={DELETION_WARNING_TEXT} />
+              </div>
+            </details>
+          </>
+        )}
       </section>
 
       <section className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">

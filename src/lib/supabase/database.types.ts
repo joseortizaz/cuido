@@ -199,6 +199,133 @@ export type Database = {
           },
         ]
       }
+      archived_fiscal_document_items: {
+        Row: {
+          description: string
+          fiscal_document_id: string
+          id: string
+          itbis_indicator: string
+          line_number: number
+          line_total: number
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          description: string
+          fiscal_document_id: string
+          id: string
+          itbis_indicator: string
+          line_number: number
+          line_total: number
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          description?: string
+          fiscal_document_id?: string
+          id?: string
+          itbis_indicator?: string
+          line_number?: number
+          line_total?: number
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_fiscal_document_items_fiscal_document_id_fkey"
+            columns: ["fiscal_document_id"]
+            isOneToOne: false
+            referencedRelation: "archived_fiscal_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_fiscal_documents: {
+        Row: {
+          archived_at: string
+          clinic_name: string
+          comprador_nombre: string
+          comprador_rnc_cedula: string | null
+          deletion_request_id: string
+          dgii_track_id: string | null
+          e_ncf: string | null
+          emisor_rnc: string | null
+          fecha_vencimiento_secuencia: string | null
+          id: string
+          issued_at: string
+          monto_exento: number
+          monto_gravado_total: number
+          monto_total: number
+          retain_until: string
+          source_clinic_id: string
+          status: string
+          tipo_ecf: string
+          total_itbis: number
+          voided_at: string | null
+          voided_reason: string | null
+          xml: string | null
+          xml_is_signed: boolean
+        }
+        Insert: {
+          archived_at?: string
+          clinic_name: string
+          comprador_nombre: string
+          comprador_rnc_cedula?: string | null
+          deletion_request_id: string
+          dgii_track_id?: string | null
+          e_ncf?: string | null
+          emisor_rnc?: string | null
+          fecha_vencimiento_secuencia?: string | null
+          id: string
+          issued_at: string
+          monto_exento: number
+          monto_gravado_total: number
+          monto_total: number
+          retain_until: string
+          source_clinic_id: string
+          status: string
+          tipo_ecf: string
+          total_itbis: number
+          voided_at?: string | null
+          voided_reason?: string | null
+          xml?: string | null
+          xml_is_signed?: boolean
+        }
+        Update: {
+          archived_at?: string
+          clinic_name?: string
+          comprador_nombre?: string
+          comprador_rnc_cedula?: string | null
+          deletion_request_id?: string
+          dgii_track_id?: string | null
+          e_ncf?: string | null
+          emisor_rnc?: string | null
+          fecha_vencimiento_secuencia?: string | null
+          id?: string
+          issued_at?: string
+          monto_exento?: number
+          monto_gravado_total?: number
+          monto_total?: number
+          retain_until?: string
+          source_clinic_id?: string
+          status?: string
+          tipo_ecf?: string
+          total_itbis?: number
+          voided_at?: string | null
+          voided_reason?: string | null
+          xml?: string | null
+          xml_is_signed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_fiscal_documents_deletion_request_id_fkey"
+            columns: ["deletion_request_id"]
+            isOneToOne: false
+            referencedRelation: "clinic_deletion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulk_import_batches: {
         Row: {
           clinic_id: string
@@ -262,6 +389,74 @@ export type Database = {
           },
         ]
       }
+      clinic_deletion_requests: {
+        Row: {
+          channel: string
+          clinic_id: string | null
+          clinic_name: string
+          created_at: string
+          deletion_summary: Json | null
+          executed_at: string | null
+          executed_by_email: string | null
+          export_confirmed_at: string | null
+          id: string
+          note: string | null
+          requested_at: string
+          requested_by_email: string
+          scheduled_for: string | null
+          status: string
+          warning_hash: string
+          warning_text: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          channel: string
+          clinic_id?: string | null
+          clinic_name: string
+          created_at?: string
+          deletion_summary?: Json | null
+          executed_at?: string | null
+          executed_by_email?: string | null
+          export_confirmed_at?: string | null
+          id?: string
+          note?: string | null
+          requested_at?: string
+          requested_by_email: string
+          scheduled_for?: string | null
+          status?: string
+          warning_hash: string
+          warning_text: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          channel?: string
+          clinic_id?: string | null
+          clinic_name?: string
+          created_at?: string
+          deletion_summary?: Json | null
+          executed_at?: string | null
+          executed_by_email?: string | null
+          export_confirmed_at?: string | null
+          id?: string
+          note?: string | null
+          requested_at?: string
+          requested_by_email?: string
+          scheduled_for?: string | null
+          status?: string
+          warning_hash?: string
+          warning_text?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_deletion_requests_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_ecf_sequences: {
         Row: {
           clinic_id: string
@@ -296,6 +491,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "clinic_ecf_sequences_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_export_log: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_export_log_clinic_id_fkey"
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
@@ -1650,6 +1877,10 @@ export type Database = {
         Args: { target_appointment_id: string; target_encounter_id: string }
         Returns: undefined
       }
+      confirm_deletion_export: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
       create_clinic_with_admin: {
         Args: {
           clinic_business_model: Database["public"]["Enums"]["clinic_business_model"]
@@ -1658,7 +1889,19 @@ export type Database = {
         }
         Returns: string
       }
+      current_user_email: { Args: never; Returns: string }
+      data_deletion_offsets: {
+        Args: never
+        Returns: {
+          fiscal_archive_years: number
+          wait_days: number
+        }[]
+      }
       dr_today: { Args: { p_ts?: string }; Returns: string }
+      execute_clinic_data_deletion: {
+        Args: { p_confirm_name: string; p_request_id: string }
+        Returns: string[]
+      }
       extend_clinic_trial: {
         Args: { p_days: number; p_reason: string; target_clinic_id: string }
         Returns: undefined
@@ -1730,6 +1973,8 @@ export type Database = {
       }
       list_policies_open_when_blocked: { Args: never; Returns: string[] }
       list_unguarded_tables: { Args: never; Returns: string[] }
+      log_clinic_export: { Args: { p_kind: string }; Returns: undefined }
+      my_admin_clinic_id: { Args: never; Returns: string }
       operator_clinic_access_overview: {
         Args: never
         Returns: {
@@ -1745,6 +1990,19 @@ export type Database = {
           state: string
         }[]
       }
+      operator_register_deletion_request: {
+        Args: {
+          p_note: string
+          p_requester_email: string
+          p_warning_text: string
+          target_clinic_id: string
+        }
+        Returns: string
+      }
+      operator_start_expired_retention_deletion: {
+        Args: { target_clinic_id: string }
+        Returns: string
+      }
       readonly_guard_exempt_tables: { Args: never; Returns: string[] }
       register_clinic_payment: {
         Args: {
@@ -1754,6 +2012,10 @@ export type Database = {
           target_clinic_id: string
         }
         Returns: undefined
+      }
+      request_clinic_data_deletion: {
+        Args: { p_accepted: boolean; p_warning_text: string }
+        Returns: string
       }
       revoke_consent: {
         Args: { reason: string; target_consent_id: string }
@@ -1816,6 +2078,10 @@ export type Database = {
       }
       void_fiscal_document: {
         Args: { reason: string; target_fiscal_document_id: string }
+        Returns: undefined
+      }
+      withdraw_clinic_data_deletion: {
+        Args: { p_request_id: string }
         Returns: undefined
       }
     }
