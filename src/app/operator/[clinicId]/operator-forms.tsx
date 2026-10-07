@@ -3,14 +3,18 @@
 import { useActionState } from "react";
 import {
   addClinicInternalNote,
+  executeDeletion,
   extendClinicTrial,
   registerClinicPayment,
+  registerDeletionRequest,
   setClinicAccessExempt,
   setClinicBlockAgreement,
   setClinicActiveStatus,
   setClinicClinicianSeats,
   setClinicPlanPeriod,
+  startExpiredRetentionDeletion,
   updateClinicPlan,
+  withdrawDeletionRequest,
   type OperatorActionState,
 } from "./actions";
 
@@ -387,6 +391,106 @@ export function BlockAgreementForm({
         Mientras dure, la clínica queda en solo lectura (puede exportar) en lugar de bloquearse. Un pago registrado
         cierra el acuerdo. Para dar acceso temporal de exportación a una clínica ya bloqueada, fija aquí una fecha.
       </p>
+      <FormFeedback state={state} />
+    </form>
+  );
+}
+
+export function RegisterDeletionForm({ clinicId, warningText }: { clinicId: string; warningText: string }) {
+  const boundAction = registerDeletionRequest.bind(null, clinicId);
+  const [state, formAction, pending] = useActionState<OperatorActionState, FormData>(boundAction, undefined);
+
+  return (
+    <form action={formAction} className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="del_requester" className={labelClass}>
+          Correo de quien solicita (identidad ya verificada)
+        </label>
+        <input id="del_requester" name="requester_email" type="email" required className={`${inputClass} w-80`} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="del_warning" className={labelClass}>
+          Advertencia enviada por escrito
+        </label>
+        <textarea id="del_warning" name="warning_text" rows={5} defaultValue={warningText} className={inputClass} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="del_note" className={labelClass}>
+          Nota (opcional)
+        </label>
+        <input id="del_note" name="note" type="text" className={inputClass} />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="warning_sent" /> Envié esta advertencia por escrito a quien solicita.
+      </label>
+      <div>
+        <button type="submit" disabled={pending} className={buttonClass}>
+          {pending ? "Registrando…" : "Registrar solicitud recibida por correo"}
+        </button>
+      </div>
+      <FormFeedback state={state} />
+    </form>
+  );
+}
+
+export function ExpiredRetentionForm({ clinicId }: { clinicId: string }) {
+  const boundAction = startExpiredRetentionDeletion.bind(null, clinicId);
+  const [state, formAction, pending] = useActionState<OperatorActionState>(boundAction, undefined);
+  return (
+    <form action={formAction} className="flex flex-col gap-2">
+      <div>
+        <button type="submit" disabled={pending} className={buttonClass}>
+          {pending ? "Creando…" : "Iniciar eliminación por vencimiento de la conservación"}
+        </button>
+      </div>
+      <FormFeedback state={state} />
+    </form>
+  );
+}
+
+export function WithdrawRequestForm({ clinicId, requestId }: { clinicId: string; requestId: string }) {
+  const boundAction = withdrawDeletionRequest.bind(null, clinicId, requestId);
+  const [state, formAction, pending] = useActionState<OperatorActionState>(boundAction, undefined);
+  return (
+    <form action={formAction} className="flex flex-col gap-1">
+      <div>
+        <button type="submit" disabled={pending} className="text-sm text-zinc-600 underline dark:text-zinc-400">
+          {pending ? "Retirando…" : "Retirar la solicitud"}
+        </button>
+      </div>
+      <FormFeedback state={state} />
+    </form>
+  );
+}
+
+export function ExecuteDeletionForm({
+  clinicId,
+  requestId,
+  clinicName,
+}: {
+  clinicId: string;
+  requestId: string;
+  clinicName: string;
+}) {
+  const boundAction = executeDeletion.bind(null, clinicId, requestId);
+  const [state, formAction, pending] = useActionState<OperatorActionState, FormData>(boundAction, undefined);
+  return (
+    <form action={formAction} className="flex flex-col gap-2 rounded-lg border border-red-300 p-3 dark:border-red-900">
+      <p className="text-sm text-red-800 dark:text-red-300">
+        Irreversible. Elimina TODOS los datos de la clínica (los e-CF se archivan) y las cuentas de sus miembros que no
+        pertenezcan a otra clínica. Escribe el nombre exacto de la clínica para confirmar:{" "}
+        <strong>{clinicName}</strong>
+      </p>
+      <input name="confirm_name" type="text" required autoComplete="off" aria-label="Nombre exacto de la clínica para confirmar" className={`${inputClass} w-96`} />
+      <div>
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-full bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50"
+        >
+          {pending ? "Eliminando…" : "Ejecutar eliminación"}
+        </button>
+      </div>
       <FormFeedback state={state} />
     </form>
   );

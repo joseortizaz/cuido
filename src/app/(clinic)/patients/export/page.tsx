@@ -180,6 +180,14 @@ export default async function ExportLandingPage() {
           ))}
         </ul>
       </div>
+
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        ¿Quieres que eliminemos los datos de tu clínica?{" "}
+        <Link href="/settings/deletion" className={linkClass}>
+          Solicitar la eliminación de los datos
+        </Link>
+        .
+      </p>
     </div>
   );
 }

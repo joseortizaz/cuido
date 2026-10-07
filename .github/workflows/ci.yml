@@ -103,6 +103,11 @@ jobs:
       - name: Run export records test
         run: npm run test:export-records
 
+      # Eliminación de datos a solicitud: advertencia, descarga registrada, 30 días, ejecución solo del
+      # operador, archivo fiscal sin vínculo clínico, conservación vencida y aislamiento.
+      - name: Run data deletion test
+        run: npm run test:data-deletion
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

@@ -4,6 +4,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type OperatorActionState = { error?: string; success?: string } | undefined;
@@ -256,6 +257,95 @@ export async function setClinicBlockAgreement(
 
   revalidateClinic(clinicId);
   return { success: until ? `Bloqueo diferido hasta el ${until}.` : "Acuerdo retirado." };
+}
+
+/**
+ * Eliminación de datos (ver supabase/migrations/20261010100000_clinic_data_deletion.sql).
+ * La autorización vive en las RPC (solo operador). Nada de esto es automático:
+ * cada paso lo da una persona.
+ */
+export async function registerDeletionRequest(
+  clinicId: string,
+  _prevState: OperatorActionState,
+  formData: FormData
+): Promise<OperatorActionState> {
+  const supabase = await requireSignedIn();
+  const requester = String(formData.get("requester_email") ?? "").trim();
+  const warning = String(formData.get("warning_text") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+  if (!requester) return { error: "El correo de quien solicita es requerido." };
+  if (formData.get("warning_sent") !== "on") {
+    return { error: "Confirma que enviaste la advertencia por escrito a quien solicita." };
+  }
+
+  const { error } = await supabase.rpc("operator_register_deletion_request", {
+    target_clinic_id: clinicId,
+    p_requester_email: requester,
+    p_warning_text: warning,
+    p_note: note,
+  });
+  if (error) return { error: error.message };
+
+  revalidateClinic(clinicId);
+  return { success: "Solicitud registrada." };
+}
+
+export async function startExpiredRetentionDeletion(
+  clinicId: string,
+  _prevState: OperatorActionState
+): Promise<OperatorActionState> {
+  const supabase = await requireSignedIn();
+  const { error } = await supabase.rpc("operator_start_expired_retention_deletion", { target_clinic_id: clinicId });
+  if (error) return { error: error.message };
+
+  revalidateClinic(clinicId);
+  return { success: "Solicitud por vencimiento de la conservación creada. Falta ejecutarla." };
+}
+
+export async function withdrawDeletionRequest(
+  clinicId: string,
+  requestId: string,
+  _prevState: OperatorActionState
+): Promise<OperatorActionState> {
+  const supabase = await requireSignedIn();
+  const { error } = await supabase.rpc("withdraw_clinic_data_deletion", { p_request_id: requestId });
+  if (error) return { error: error.message };
+
+  revalidateClinic(clinicId);
+  return { success: "Solicitud retirada." };
+}
+
+/**
+ * EJECUTA la eliminación (irreversible). La RPC borra la clínica y archiva los
+ * e-CF; luego se eliminan de auth.users SOLO los miembros que no pertenecen a
+ * ninguna otra clínica (los devuelve la RPC), con el cliente de servicio
+ * (auth.users no está expuesto por la Data API).
+ */
+export async function executeDeletion(
+  clinicId: string,
+  requestId: string,
+  _prevState: OperatorActionState,
+  formData: FormData
+): Promise<OperatorActionState> {
+  const supabase = await requireSignedIn();
+  const confirmName = String(formData.get("confirm_name") ?? "");
+
+  const { data: orphans, error } = await supabase.rpc("execute_clinic_data_deletion", {
+    p_request_id: requestId,
+    p_confirm_name: confirmName,
+  });
+  if (error) return { error: error.message };
+
+  const admin = createAdminClient();
+  const failed: string[] = [];
+  for (const userId of (orphans ?? []) as string[]) {
+    const { error: delError } = await admin.auth.admin.deleteUser(userId);
+    if (delError) failed.push(userId);
+  }
+
+  revalidatePath("/operator");
+  // La clínica ya no existe: su página de detalle tampoco.
+  redirect(`/operator?deleted=${encodeURIComponent(clinicId)}${failed.length ? `&orphans_failed=${failed.length}` : ""}`);
 }
 
 export async function addClinicInternalNote(

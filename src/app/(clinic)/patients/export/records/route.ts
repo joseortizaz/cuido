@@ -137,6 +137,11 @@ export async function GET(request: Request) {
         .map((t) => buildEncounterTable(t, byTemplate.get(t.id) ?? [], emailByUserId)),
     ];
 
+    // Constancia de la descarga completa: la eliminación de datos a solicitud la exige.
+    // Si no se puede registrar, no se entrega el archivo como si todo estuviera en orden.
+    const { error: logError } = await supabase.rpc("log_clinic_export", { p_kind: "all" });
+    if (logError) throw new Error(`No se pudo registrar la exportación (${logError.message}).`);
+
     return xlsxResponse(
       await generateTablesXlsx(tables, {
         generatedOn: stamp,

@@ -22,7 +22,12 @@ function relativeDays(n: number | null): string {
   return n > 0 ? `en ${label}` : `hace ${label}`;
 }
 
-export default async function OperatorPage() {
+export default async function OperatorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deleted?: string; orphans_failed?: string }>;
+}) {
+  const { deleted, orphans_failed } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,7 +36,14 @@ export default async function OperatorPage() {
 
   await requireOperatorPage(supabase);
 
-  const [{ data: clinics }, { data: subscriptions }, { data: members }, { data: overview }] = await Promise.all([
+  const [
+    { data: clinics },
+    { data: subscriptions },
+    { data: members },
+    { data: overview },
+    { data: openDeletions },
+    { data: executedDeletions },
+  ] = await Promise.all([
     supabase
       .from("clinics")
       .select("id, name, province, business_model, is_active, created_at")
@@ -41,6 +53,16 @@ export default async function OperatorPage() {
     // El estado de acceso lo calcula UNA sola función en la base de datos
     // (la misma que usa el trigger de solo lectura): aquí nunca se recalcula.
     supabase.rpc("operator_clinic_access_overview"),
+    supabase
+      .from("clinic_deletion_requests")
+      .select("id, clinic_id, clinic_name, channel, scheduled_for, export_confirmed_at")
+      .eq("status", "solicitada"),
+    supabase
+      .from("clinic_deletion_requests")
+      .select("id, clinic_name, channel, requested_by_email, executed_at, executed_by_email, deletion_summary")
+      .eq("status", "ejecutada")
+      .order("executed_at", { ascending: false })
+      .limit(20),
   ]);
 
   const subByClinic = new Map((subscriptions ?? []).map((s) => [s.clinic_id, s]));
@@ -87,6 +109,34 @@ export default async function OperatorPage() {
           </Link>
         )}
       </div>
+
+      {deleted && (
+        <p className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200">
+          Eliminación ejecutada. La constancia queda al final de esta página.
+          {orphans_failed ? ` No se pudieron eliminar ${orphans_failed} cuenta(s) de usuario: revísalas a mano.` : ""}
+        </p>
+      )}
+
+      {(openDeletions ?? []).length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="font-medium">Solicitudes de eliminación abiertas</p>
+          <ul className="mt-1 list-disc pl-5">
+            {(openDeletions ?? []).map((d) => (
+              <li key={d.id}>
+                <Link href={`/operator/${d.clinic_id}`} className="underline">
+                  {d.clinic_name}
+                </Link>{" "}
+                —{" "}
+                {d.scheduled_for
+                  ? `se puede ejecutar desde el ${formatDate(d.scheduled_for)}`
+                  : d.channel === "conservacion_vencida"
+                    ? "lista para ejecutar"
+                    : "falta que la clínica descargue y confirme"}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {summary.length > 0 && (
         <div className="flex flex-wrap gap-2 text-xs">
@@ -172,6 +222,25 @@ export default async function OperatorPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {(executedDeletions ?? []).length > 0 && (
+        <section className="flex flex-col gap-2 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <h2 className="text-lg font-medium">Eliminaciones ejecutadas (constancias)</h2>
+          <ul className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-900">
+            {(executedDeletions ?? []).map((d) => (
+              <li key={d.id} className="py-2 text-sm">
+                <p>
+                  <strong>{d.clinic_name}</strong> · pidió {d.requested_by_email} · ejecutó {d.executed_by_email}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  {d.executed_at ? new Date(d.executed_at).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short" }) : ""}{" "}
+                  · {JSON.stringify((d.deletion_summary as { deleted_rows?: unknown } | null)?.deleted_rows ?? {})}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );
