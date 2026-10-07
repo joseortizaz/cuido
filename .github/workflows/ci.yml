@@ -108,6 +108,10 @@ jobs:
       - name: Run data deletion test
         run: npm run test:data-deletion
 
+      # Aceptación de los términos en el registro (lógica pura, sin base de datos).
+      - name: Run terms acceptance test
+        run: npm run test:terms-acceptance
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
