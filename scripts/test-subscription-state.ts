@@ -382,14 +382,89 @@ async function main() {
   });
   check("el RPC viejo update_clinic_payment_status ya no existe (el vencimiento no se edita sin historial)", legacyErr !== null, "todavía existe");
 
+  console.log("\nBloqueo total y cancelación (bloqueada = vencimiento + 30 gracia + 90 solo lectura + 1):");
+  const V = "2026-10-31";
+  await setSub(cid, { trial_ends_at: null, next_payment_due_on: V, billing_period_days: 30 });
+  await admin.from("clinic_subscriptions").update({ block_deferred_until: null }).eq("clinic_id", cid);
+  const bordes: [string, string][] = [
+    [addDays(V, 30), "vencida_en_gracia"],
+    [addDays(V, 31), "solo_lectura"],
+    [addDays(V, 120), "solo_lectura"], // día 90 en solo lectura: todavía consulta
+    [addDays(V, 121), "bloqueada"], // primer día bloqueada (= cancelación)
+    [addDays(V, 400), "bloqueada"],
+  ];
+  for (const [date, expected] of bordes) {
+    const got = await state(cid, date);
+    check(`vence ${V}: ${date} => ${expected}`, got === expected, `estado = ${got}`);
+  }
+
+  await setSub(cid, { trial_ends_at: null, next_payment_due_on: addDays(today, -121), billing_period_days: 30 });
+  check("hoy = vencimiento + 121 => bloqueada", (await state(cid, today)) === "bloqueada", `estado = ${await state(cid, today)}`);
+  const { data: wBlocked } = await admin.rpc("is_clinic_writable", { p_clinic_id: cid });
+  check("una clínica bloqueada no es escribible", wBlocked === false, `is_clinic_writable = ${wBlocked}`);
+  const { data: ov1 } = await op.rpc("operator_clinic_access_overview");
+  const row1 = (ov1 ?? []).find((r: { clinic_id: string }) => r.clinic_id === cid);
+  check(
+    "vista del operador: bloqueo hoy (0 días), cancelación = bloqueo, conservación = +2 años",
+    row1?.state === "bloqueada" &&
+      row1?.days_to_block === 0 &&
+      row1?.blocked_on === today &&
+      row1?.retention_until === `${Number(today.slice(0, 4)) + 2}${today.slice(4)}`,
+    JSON.stringify(row1)
+  );
+  const { data: mineBlocked } = await adminUser.client.rpc("get_my_clinic_access");
+  const mb = Array.isArray(mineBlocked) ? mineBlocked[0] : mineBlocked;
+  check("el admin ve su estado bloqueada y 0 días para el bloqueo (get_my_clinic_access)", mb?.state === "bloqueada" && mb?.days_to_block === 0, JSON.stringify(mb));
+
+  console.log("\nAcuerdo del operador (set_clinic_block_agreement):");
+  const until = addDays(today, 10);
+  const { error: agrErr } = await op.rpc("set_clinic_block_agreement", { target_clinic_id: cid, p_until: until, p_reason: "acuerdo de pago" });
+  check("el operador pacta un acuerdo", agrErr === null, agrErr?.message ?? "");
+  check(
+    "con acuerdo: sigue en solo lectura hasta la fecha pactada (inclusive) y bloquea al día siguiente",
+    (await state(cid, today)) === "solo_lectura" &&
+      (await state(cid, until)) === "solo_lectura" &&
+      (await state(cid, addDays(until, 1))) === "bloqueada",
+    `${await state(cid, today)} / ${await state(cid, until)} / ${await state(cid, addDays(until, 1))}`
+  );
+  const { data: ov2 } = await op.rpc("operator_clinic_access_overview");
+  const row2 = (ov2 ?? []).find((r: { clinic_id: string }) => r.clinic_id === cid);
+  check("la vista muestra el acuerdo y el bloqueo diferido", row2?.block_deferred_until === until && row2?.blocked_on === addDays(until, 1), JSON.stringify(row2));
+  const { error: pastErr } = await op.rpc("set_clinic_block_agreement", { target_clinic_id: cid, p_until: addDays(today, -1), p_reason: "x" });
+  check("un acuerdo con fecha pasada se rechaza", pastErr !== null, "aceptó una fecha pasada");
+  const { error: noReasonAgr } = await op.rpc("set_clinic_block_agreement", { target_clinic_id: cid, p_until: until, p_reason: " " });
+  check("un acuerdo sin motivo se rechaza", noReasonAgr !== null, "aceptó un motivo vacío");
+  const { error: adminAgr } = await adminUser.client.rpc("set_clinic_block_agreement", { target_clinic_id: cid, p_until: until, p_reason: "yo mismo" });
+  check("el admin de la clínica NO puede pactar el acuerdo", adminAgr !== null, "el admin pudo diferir su propio bloqueo");
+  const { error: clearErr } = await op.rpc("set_clinic_block_agreement", { target_clinic_id: cid, p_until: null as unknown as string, p_reason: "acuerdo roto" });
+  check("retirar el acuerdo (fecha vacía) vuelve a bloquear", clearErr === null && (await state(cid, today)) === "bloqueada", clearErr?.message ?? `estado = ${await state(cid, today)}`);
+
+  console.log("\nPrecedencias y reactivación:");
+  await op.rpc("set_clinic_access_exempt", { target_clinic_id: cid, p_exempt: true, p_reason: "piloto" });
+  check("una clínica exenta nunca se bloquea", (await state(cid, today)) === "exenta", `estado = ${await state(cid, today)}`);
+  await op.rpc("set_clinic_access_exempt", { target_clinic_id: cid, p_exempt: false, p_reason: "fin del piloto" });
+  await op.rpc("set_clinic_active_status", { target_clinic_id: cid, new_is_active: false, reason: "prueba de precedencia" });
+  check("suspendida gana sobre bloqueada", (await state(cid, today)) === "suspendida", `estado = ${await state(cid, today)}`);
+  await op.rpc("set_clinic_active_status", { target_clinic_id: cid, new_is_active: true, reason: "fin de la prueba" });
+  await op.rpc("set_clinic_block_agreement", { target_clinic_id: cid, p_until: until, p_reason: "otro acuerdo" });
+  const { error: payErr } = await op.rpc("register_clinic_payment", { target_clinic_id: cid, p_paid_on: today, p_amount: 100, p_note: "regulariza" });
+  const { data: afterPay } = await admin.from("clinic_subscriptions").select("block_deferred_until, next_payment_due_on").eq("clinic_id", cid).single();
+  check(
+    "un pago reactiva al instante (activa) y limpia el acuerdo",
+    payErr === null && (await state(cid, today)) === "activa" && afterPay?.block_deferred_until === null,
+    payErr?.message ?? JSON.stringify(afterPay)
+  );
+  const { data: agrEvents } = await admin.from("clinic_subscription_events").select("kind").eq("clinic_id", cid).eq("kind", "block_agreement");
+  check("cada acuerdo pactado o retirado queda en el historial (3)", (agrEvents ?? []).length === 3, `eventos: ${(agrEvents ?? []).length}`);
+
   console.log("\nHistorial:");
   const { data: evs } = await admin.from("clinic_subscription_events").select("kind").eq("clinic_id", cid);
   const kinds = (evs ?? []).map((e) => e.kind as string);
   check(
-    "registra el plan, las 2 extensiones y los 2 cambios de exención",
+    "registra el plan, las 2 extensiones y los 4 cambios de exención",
     kinds.includes("plan_set") &&
       kinds.filter((k) => k === "trial_extended").length === 2 &&
-      kinds.filter((k) => k === "exempt_changed").length === 2,
+      kinds.filter((k) => k === "exempt_changed").length === 4,
     JSON.stringify(kinds)
   );
 }

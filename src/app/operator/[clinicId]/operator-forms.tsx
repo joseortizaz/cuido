@@ -6,6 +6,7 @@ import {
   extendClinicTrial,
   registerClinicPayment,
   setClinicAccessExempt,
+  setClinicBlockAgreement,
   setClinicActiveStatus,
   setClinicClinicianSeats,
   setClinicPlanPeriod,
@@ -337,6 +338,54 @@ export function SeatsForm({ clinicId, currentSeats }: { clinicId: string; curren
       </button>
       <p className="w-full text-xs text-zinc-500">
         Cuentan admin y médico; recepción no consume cupo. Súbelo tras confirmar el pago del médico adicional.
+      </p>
+      <FormFeedback state={state} />
+    </form>
+  );
+}
+
+export function BlockAgreementForm({
+  clinicId,
+  currentUntil,
+  today,
+}: {
+  clinicId: string;
+  currentUntil: string | null;
+  today: string;
+}) {
+  const boundAction = setClinicBlockAgreement.bind(null, clinicId);
+  const [state, formAction, pending] = useActionState<OperatorActionState, FormData>(
+    boundAction,
+    undefined
+  );
+
+  return (
+    <form action={formAction} className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="agreement_until" className={labelClass}>
+          Diferir el bloqueo hasta (vacío = retirar el acuerdo)
+        </label>
+        <input
+          id="agreement_until"
+          name="until"
+          type="date"
+          min={today}
+          defaultValue={currentUntil ?? ""}
+          className={`${inputClass} w-44`}
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="agreement_reason" className={labelClass}>
+          Motivo
+        </label>
+        <input id="agreement_reason" name="reason" type="text" required className={`${inputClass} w-72`} />
+      </div>
+      <button type="submit" disabled={pending} className={buttonClass}>
+        {pending ? "Guardando…" : "Guardar acuerdo"}
+      </button>
+      <p className="w-full text-xs text-zinc-500">
+        Mientras dure, la clínica queda en solo lectura (puede exportar) en lugar de bloquearse. Un pago registrado
+        cierra el acuerdo. Para dar acceso temporal de exportación a una clínica ya bloqueada, fija aquí una fecha.
       </p>
       <FormFeedback state={state} />
     </form>

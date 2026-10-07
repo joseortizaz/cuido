@@ -230,6 +230,34 @@ export async function setClinicClinicianSeats(
   return { success: seats === null ? "Cupo: ilimitado." : `Cupo fijado en ${seats}.` };
 }
 
+/**
+ * Acuerdo con la clínica: difiere el bloqueo total (y la cancelación) hasta una
+ * fecha. Mientras dure, la clínica queda en solo lectura y puede exportar -- es
+ * también la vía para dar acceso temporal de exportación a una clínica ya
+ * bloqueada. Fecha vacía = retirar el acuerdo.
+ */
+export async function setClinicBlockAgreement(
+  clinicId: string,
+  _prevState: OperatorActionState,
+  formData: FormData
+): Promise<OperatorActionState> {
+  const supabase = await requireSignedIn();
+  const until = String(formData.get("until") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (until && !/^\d{4}-\d{2}-\d{2}$/.test(until)) return { error: "Fecha inválida." };
+  if (!reason) return { error: "El motivo es requerido." };
+
+  const { error } = await supabase.rpc("set_clinic_block_agreement", {
+    target_clinic_id: clinicId,
+    p_until: (until || null) as unknown as string, // NULL = retirar el acuerdo, válido en runtime
+    p_reason: reason,
+  });
+  if (error) return { error: error.message };
+
+  revalidateClinic(clinicId);
+  return { success: until ? `Bloqueo diferido hasta el ${until}.` : "Acuerdo retirado." };
+}
+
 export async function addClinicInternalNote(
   clinicId: string,
   _prevState: OperatorActionState,

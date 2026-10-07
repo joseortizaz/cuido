@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { exportBlockedMessage } from "@/lib/supabase/clinic-access";
 import { slug, todayInSantoDomingo } from "@/lib/bulk-import/export-tables";
 import {
   buildEncounterTable,
@@ -42,6 +43,10 @@ export async function GET(request: Request) {
   if (!membership || membership.role !== "admin") {
     return NextResponse.json({ error: "Solo el administrador de la clínica puede exportar consultas." }, { status: 403 });
   }
+
+  // Clínica bloqueada o suspendida: RLS ya no entrega datos; un archivo vacío engañaría.
+  const blocked = await exportBlockedMessage(supabase);
+  if (blocked) return NextResponse.json({ error: blocked }, { status: 403 });
 
   const params = new URL(request.url).searchParams;
   const specialty = params.get("specialty") ?? "";

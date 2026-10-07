@@ -47,6 +47,7 @@ export const ACCESS_STATE_BADGE: Record<ClinicAccessState, string> = {
   por_renovar: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
   vencida_en_gracia: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
   solo_lectura: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
+  bloqueada: "bg-red-200 text-red-900 dark:bg-red-900 dark:text-red-200",
   suspendida: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300",
   exenta: "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300",
   sin_plan: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
@@ -57,14 +58,15 @@ export const ACCESS_STATE_BADGE: Record<ClinicAccessState, string> = {
  * mismo estado, por días hasta el vencimiento (los más urgentes arriba).
  */
 export const ACCESS_STATE_PRIORITY: Record<ClinicAccessState, number> = {
-  solo_lectura: 0,
-  vencida_en_gracia: 1,
-  por_renovar: 2,
-  prueba: 3,
-  suspendida: 4,
-  sin_plan: 5,
-  activa: 6,
-  exenta: 7,
+  bloqueada: 0,
+  solo_lectura: 1,
+  vencida_en_gracia: 2,
+  por_renovar: 3,
+  prueba: 4,
+  suspendida: 5,
+  sin_plan: 6,
+  activa: 7,
+  exenta: 8,
 };
 
 export const EVENT_KIND_LABELS: Record<string, string> = {
@@ -74,6 +76,7 @@ export const EVENT_KIND_LABELS: Record<string, string> = {
   exempt_changed: "Exención",
   seats_changed: "Cupo de médicos",
   backfill: "Carga inicial",
+  block_agreement: "Acuerdo de bloqueo",
 };
 
 function field(details: Record<string, unknown>, key: string): string {
@@ -96,6 +99,8 @@ export function describeSubscriptionEvent(kind: string, rawDetails: unknown): st
       return `${d.exempt ? "Exención activada." : "Exención quitada."}${reason}`;
     case "seats_changed":
       return `${d.previous_seats ?? "ilimitado"} → ${d.new_seats ?? "ilimitado"}.${reason}`;
+    case "block_agreement":
+      return `${d.new_until ? `Bloqueo diferido hasta el ${formatDate(typeof d.new_until === "string" ? d.new_until : null)}` : "Acuerdo retirado"} (antes: ${d.previous_until ? formatDate(typeof d.previous_until === "string" ? d.previous_until : null) : "sin acuerdo"}).${reason}`;
     case "backfill":
       return `Fecha base ${formatDate(typeof d.base_date === "string" ? d.base_date : null)}.`;
     default:

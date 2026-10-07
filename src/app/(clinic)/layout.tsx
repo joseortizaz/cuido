@@ -2,8 +2,10 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { getCurrentClinicAccess } from "@/lib/supabase/clinic-access";
 import { ClinicNav } from "./_components/clinic-nav";
 import { AccessBanner } from "./_components/access-banner";
+import { BlockedPage } from "./_components/blocked-page";
 
 /**
  * Layout compartido de las pantallas de clínica (dashboard, pacientes,
@@ -32,6 +34,19 @@ export default async function ClinicLayout({ children }: { children: ReactNode }
     .select("name")
     .eq("id", membership.clinicId)
     .maybeSingle();
+
+  // Clínica bloqueada (bloqueo total) o suspendida: la base de datos ya no
+  // entrega datos clínicos; se muestra una sola pantalla explicativa en vez de
+  // páginas vacías. getCurrentClinicAccess falla "abierto" (null) a propósito.
+  const access = await getCurrentClinicAccess();
+  if (access?.state === "bloqueada" || access?.state === "suspendida") {
+    return (
+      <div className="flex min-h-full flex-col">
+        <ClinicNav clinicName={clinic?.name ?? null} />
+        <BlockedPage suspended={access.state === "suspendida"} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-full flex-col">
