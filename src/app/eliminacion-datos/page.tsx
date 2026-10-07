@@ -1,7 +1,6 @@
 import { poppins } from "@/app/_landing/fonts";
 import { LandingHeader } from "@/app/_landing/header";
 import { LandingFooter } from "@/app/_landing/footer";
-import { LegalNotice } from "@/app/_landing/legal-notice";
 import { CONTACT_EMAIL } from "@/app/_landing/constants";
 import {
   DELETION_WAIT_DAYS,
@@ -29,7 +28,7 @@ export default function EliminacionDatosPage() {
       <main className="flex-1 px-4 pb-20 pt-32 sm:pt-40">
         <div className="mx-auto max-w-3xl">
           <h1 className="text-3xl font-bold text-brand-navy sm:text-4xl">Política de Eliminación de Datos</h1>
-          <LegalNotice lastUpdated="7 de octubre de 2026" />
+          <p className="mt-3 text-sm text-zinc-500">Última actualización: 7 de octubre de 2026.</p>
 
           <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-zinc-700 sm:text-base">
             <section>
@@ -143,11 +142,14 @@ export default function EliminacionDatosPage() {
                 Si la clínica no solicita la eliminación pero queda inactiva por falta de pago, sus datos{" "}
                 <strong>no se borran</strong>. Tras el vencimiento hay 30 días de gracia y luego el modo solo lectura
                 (se puede consultar y exportar, pero no modificar). Si la clínica permanece 90 días en solo lectura
-                sin renovar, su acceso se bloquea y su suscripción se cancela, salvo acuerdo con Narnia Tech
-                Solution. Desde la cancelación, Narnia conserva los datos durante{" "}
-                <strong>{RETENTION_YEARS} años</strong>, y la clínica puede reactivarse en ese tiempo regularizando
-                su pago. Al terminar ese periodo, la eliminación es una acción expresa de Narnia Tech Solution. La
-                clínica puede pedir su eliminación anticipada en cualquier momento, como se explica arriba.
+                sin renovar (121 días después del vencimiento), su acceso se bloquea y, a la vez, su suscripción se
+                cancela. Narnia Tech Solution y la clínica pueden pactar antes un acuerdo que difiera el bloqueo
+                hasta una fecha determinada; mientras dure, la clínica sigue en solo lectura y puede exportar. Desde
+                la cancelación, Narnia conserva los datos durante <strong>{RETENTION_YEARS} años</strong>, y la
+                clínica puede reactivarse en ese tiempo regularizando su pago. Al terminar ese periodo, Narnia Tech
+                Solution podrá eliminar los datos mediante una acción expresa: nunca ocurre de forma automática ni
+                inmediata, y se aplican las mismas reglas de las secciones 4 y 5. La clínica puede pedir su
+                eliminación anticipada en cualquier momento, como se explica arriba.
               </p>
             </section>
 

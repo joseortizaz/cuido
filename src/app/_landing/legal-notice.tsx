@@ -3,9 +3,9 @@ type LegalNoticeProps = {
 };
 
 /**
- * Aviso reutilizado en /privacidad y /eliminacion-datos -- ambas son
- * primeras versiones honestas basadas en lo que la plataforma hace hoy,
- * no documentos legales terminados. Ese aviso debe ser visible, no un
+ * Aviso de /privacidad -- primera versión honesta basada en lo que la plataforma
+ * hace hoy, no un documento legal terminado. (/eliminacion-datos ya pasó revisión
+ * legal y no lo muestra.) Ese aviso debe ser visible, no un
  * disclaimer escondido al final.
  */
 export function LegalNotice({ lastUpdated }: LegalNoticeProps) {
