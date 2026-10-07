@@ -16,6 +16,18 @@ function isValidRole(value: string): value is ClinicMemberRole {
   return (VALID_ROLES as string[]).includes(value);
 }
 
+/**
+ * Los triggers de la base (cupos de médicos, modo solo lectura) rechazan con
+ * un mensaje ya redactado para el usuario y un `hint` estable -- se
+ * muestran tal cual en vez del error genérico. Cualquier otro error sigue
+ * siendo genérico a propósito (no filtrar detalles internos).
+ */
+function friendlyTriggerError(error: { message: string; hint?: string | null }): string | null {
+  return error.hint === "clinician_seats_exceeded" || error.hint === "clinic_readonly"
+    ? error.message
+    : null;
+}
+
 async function requireAdminMembership(): Promise<{
   supabase: Awaited<ReturnType<typeof createClient>>;
   membership: ClinicMembership;
@@ -82,6 +94,8 @@ export async function inviteMember(
     role,
   });
   if (error) {
+    const friendly = friendlyTriggerError(error);
+    if (friendly) return { error: friendly };
     const alreadyMember = /duplicate|unique/i.test(error.message);
     return {
       error: alreadyMember
@@ -125,7 +139,7 @@ export async function updateMemberRole(
     .update({ role: newRole })
     .eq("id", memberId)
     .eq("clinic_id", membership.clinicId);
-  if (error) return { error: "No se pudo actualizar el rol." };
+  if (error) return { error: friendlyTriggerError(error) ?? "No se pudo actualizar el rol." };
 
   revalidatePath("/team");
   return { success: "Rol actualizado." };
@@ -159,7 +173,7 @@ export async function removeMember(
     .delete()
     .eq("id", memberId)
     .eq("clinic_id", membership.clinicId);
-  if (error) return { error: "No se pudo quitar al miembro." };
+  if (error) return { error: friendlyTriggerError(error) ?? "No se pudo quitar al miembro." };
 
   revalidatePath("/team");
   return { success: "Miembro eliminado." };

@@ -1608,6 +1608,7 @@ export type Database = {
         Args: { note: string; target_clinic_id: string }
         Returns: undefined
       }
+      attach_readonly_guard: { Args: { p_table: unknown }; Returns: undefined }
       can_access_sensitive_encounter: {
         Args: {
           target_clinic_id: string
@@ -1700,6 +1701,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_unguarded_tables: { Args: never; Returns: string[] }
+      readonly_guard_exempt_tables: { Args: never; Returns: string[] }
       register_clinic_payment: {
         Args: {
           p_amount: number
@@ -1727,6 +1730,10 @@ export type Database = {
           reason: string
           target_clinic_id: string
         }
+        Returns: undefined
+      }
+      set_clinic_clinician_seats: {
+        Args: { p_reason: string; p_seats: number; target_clinic_id: string }
         Returns: undefined
       }
       set_clinic_plan_period: {
