@@ -223,13 +223,40 @@ async function main() {
   check("un admin de clínica lee el catálogo (con la lista inicial)", (catalogForAdmin ?? []).length >= 10, `filas: ${catalogForAdmin?.length}`);
   const senasa = (catalogForAdmin ?? []).find((i) => i.name === "SENASA");
   check("SENASA está en el catálogo", !!senasa, "falta SENASA");
+  const EXPECTED_ACTIVE = [
+    "ARS APS",
+    "ARS ASEMAP",
+    "ARS Asistanet",
+    "ARS Banco Central",
+    "ARS CMD",
+    "ARS Futuro",
+    "ARS GMA",
+    "ARS Meta Salud",
+    "ARS Monumental",
+    "ARS Renacer",
+    "ARS Reservas",
+    "ARS SEMMA",
+    "ARS SIMAG",
+    "ARS Universal",
+    "ARS Yunén",
+    "MAPFRE SALUD ARS",
+    "Primera ARS de Humano",
+    "SENASA",
+  ];
+  const activeNames = (catalogForAdmin ?? []).filter((i) => i.is_active).map((i) => i.name).sort();
   check(
-    "el catálogo trae SEMMA y «Primera de Humano» (con «ARS Humano» como alias)",
-    (catalogForAdmin ?? []).some((i) => i.name === "SEMMA") &&
-      (catalogForAdmin ?? []).some((i) => i.name === "Primera de Humano" && i.aliases.includes("ARS Humano")) &&
-      !(catalogForAdmin ?? []).some((i) => i.name === "ARS Humano"),
-    JSON.stringify((catalogForAdmin ?? []).map((i) => i.name))
+    "las ARS activas son exactamente el listado vigente (18: 15 del listado + Banco Central, SENASA y SEMMA)",
+    JSON.stringify(activeNames) === JSON.stringify([...EXPECTED_ACTIVE].sort()),
+    JSON.stringify(activeNames)
   );
+  const palic = (catalogForAdmin ?? []).find((i) => i.name === "ARS Palic Salud");
+  check("ARS Palic Salud (fuera del listado) queda desactivada, no borrada", !!palic && palic.is_active === false, JSON.stringify(palic));
+  check(
+    "«Primera ARS de Humano» conserva «ARS Humano» y «Primera de Humano» como alias",
+    (catalogForAdmin ?? []).some((i) => i.name === "Primera ARS de Humano" && i.aliases.includes("ARS Humano") && i.aliases.includes("Primera de Humano")),
+    JSON.stringify((catalogForAdmin ?? []).find((i) => i.name === "Primera ARS de Humano"))
+  );
+
 
   const { error: adminInsert } = await adminA.client.from("insurers").insert({ name: "ARS Pirata" });
   check("un admin de clínica NO puede escribir el catálogo", adminInsert !== null, "insertó");
@@ -266,10 +293,16 @@ async function main() {
     ["Seguro Nacional de Salud", true],
     ["ARS Humano", true],
     ["humano", true],
-    ["Palic", true],
     ["Primera de Humano", true],
+    ["Humano Seguros", true],
+    ["Primera ARS de Humano", true],
     ["semma", true],
     ["ARS SEMMA", true],
+    ["Grupo Médico Asociado", true],
+    ["ARS Yunen", true],
+    ["Colegio Médico Dominicano", true],
+    ["Mapfre", true],
+    ["Palic", false], // desactivada: no se reconoce
     ["ARS Desconocida XYZ", false],
   ];
   const matchResults: string[] = [];
