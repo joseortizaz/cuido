@@ -1,6 +1,8 @@
 /**
- * Prueba de las funciones de estado de acceso (período de prueba y
- * suscripciones, Fase 1 -- supabase/migrations/20261006100000_subscription_access_state.sql).
+ * Prueba de las funciones de estado de acceso y los RPC del operador
+ * (período de prueba y suscripciones, Fase 1 --
+ * supabase/migrations/20261006100000_subscription_access_state.sql y
+ * 20261007100000_subscription_plan_periods_and_payments.sql).
  *
  * Qué verifica:
  *   1. Una clínica nueva nace con prueba de 14 días y como modelo_c, aunque
@@ -11,12 +13,16 @@
  *      (caso ICE Brens: vence 2027-04-04, solo lectura desde 2027-05-05).
  *   3. El cambio de día en America/Santo_Domingo vs UTC (11:30 pm del
  *      último día válido sigue siendo válido aunque en UTC ya sea mañana).
- *   4. Estados seguros: sin fila / sin fechas => sin_plan, nunca bloquea.
- *   5. Visibilidad: get_my_clinic_access() no devuelve montos y los cupos
- *      solo al admin; clinic_subscriptions solo la lee el admin; las
- *      funciones internas no son ejecutables por un usuario autenticado.
- *   6. La RPC del operador renew_clinic_subscription renueva y deja rastro;
- *      un admin de clínica NO puede usarla.
+ *   4. Ventanas de recordatorio por_renovar para planes de 30/90/180/365
+ *      días, y que el recordatorio es solo del admin.
+ *   5. Estados seguros (sin_plan), suspendida y exenta.
+ *   6. Visibilidad: get_my_clinic_access() no devuelve montos y los cupos
+ *      solo al admin; clinic_subscriptions y clinic_payments solo los lee
+ *      el admin; las funciones internas no son ejecutables por un usuario
+ *      autenticado.
+ *   7. Los RPC del operador (set_clinic_plan_period, register_clinic_payment,
+ *      extend_clinic_trial, set_clinic_access_exempt) calculan bien los
+ *      vencimientos, dejan rastro, y un admin de clínica NO puede usarlos.
  *
  * Todo con datos sintéticos que se limpian al terminar, pase o falle.
  *
@@ -86,12 +92,15 @@ function addDays(isoDate: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-async function setDates(
-  clinicId: string,
-  dates: { trial_ends_at?: string | null; next_payment_due_on?: string | null }
-) {
-  const { error } = await admin.from("clinic_subscriptions").update(dates).eq("clinic_id", clinicId);
-  if (error) throw new Error(`No se pudieron fijar fechas: ${error.message}`);
+type SubscriptionPatch = {
+  trial_ends_at?: string | null;
+  next_payment_due_on?: string | null;
+  billing_period_days?: number | null;
+};
+
+async function setSub(clinicId: string, patch: SubscriptionPatch) {
+  const { error } = await admin.from("clinic_subscriptions").update(patch).eq("clinic_id", clinicId);
+  if (error) throw new Error(`No se pudo fijar la suscripción: ${error.message}`);
 }
 
 async function main() {
@@ -114,6 +123,7 @@ async function main() {
 
   const { data: todayData } = await admin.rpc("dr_today");
   const today = todayData as string;
+  const op = operatorUser.client;
 
   console.log("\nAlta de clínica nueva:");
   const { data: clinicRow } = await admin.from("clinics").select("business_model").eq("id", cid).single();
@@ -128,10 +138,7 @@ async function main() {
     sub?.trial_ends_at === addDays(today, 14),
     `trial_ends_at = ${sub?.trial_ends_at}, esperado ${addDays(today, 14)}`
   );
-  const { data: events } = await admin
-    .from("clinic_subscription_events")
-    .select("kind")
-    .eq("clinic_id", cid);
+  const { data: events } = await admin.from("clinic_subscription_events").select("kind").eq("clinic_id", cid);
   check(
     "queda un evento trial_started en el historial",
     (events ?? []).some((e) => e.kind === "trial_started"),
@@ -139,13 +146,13 @@ async function main() {
   );
   check("estado inicial = prueba", (await state(cid, today)) === "prueba", `estado = ${await state(cid, today)}`);
 
-  console.log("\nBordes de la prueba (vence 2026-10-20):");
-  await setDates(cid, { trial_ends_at: "2026-10-20", next_payment_due_on: null });
+  console.log("\nBordes de la prueba (vence 2026-10-20; la prueba vencida TAMBIÉN tiene 30 días de gracia):");
+  await setSub(cid, { trial_ends_at: "2026-10-20", next_payment_due_on: null });
   const trialCases: [string, string][] = [
     ["2026-10-19", "prueba"],
     ["2026-10-20", "prueba"], // día de vencimiento = todavía válido
-    ["2026-10-21", "gracia"], // día 1 de gracia
-    ["2026-11-19", "gracia"], // día 30 de gracia
+    ["2026-10-21", "vencida_en_gracia"], // día 1 de gracia
+    ["2026-11-19", "vencida_en_gracia"], // día 30 de gracia
     ["2026-11-20", "solo_lectura"], // día 31
   ];
   for (const [date, expected] of trialCases) {
@@ -153,21 +160,8 @@ async function main() {
     check(`${date} => ${expected}`, got === expected, `se obtuvo ${got}`);
   }
 
-  console.log("\nBordes del plan pagado (caso ICE Brens, vence 2027-04-04):");
-  await setDates(cid, { trial_ends_at: "2026-10-06", next_payment_due_on: "2027-04-04" });
-  const paidCases: [string, string][] = [
-    ["2027-04-04", "activa"],
-    ["2027-04-05", "gracia"],
-    ["2027-05-04", "gracia"], // día 30 de gracia
-    ["2027-05-05", "solo_lectura"], // exactamente la fecha del backfill de ICE
-  ];
-  for (const [date, expected] of paidCases) {
-    const got = await state(cid, date);
-    check(`${date} => ${expected}`, got === expected, `se obtuvo ${got}`);
-  }
-
   console.log("\nUn vencimiento anterior al fin de la prueba no le quita días:");
-  await setDates(cid, { trial_ends_at: "2026-10-20", next_payment_due_on: "2026-10-10" });
+  await setSub(cid, { trial_ends_at: "2026-10-20", next_payment_due_on: "2026-10-10", billing_period_days: null });
   check(
     "2026-10-20 sigue válido y se etiqueta prueba",
     (await state(cid, "2026-10-20")) === "prueba",
@@ -184,29 +178,68 @@ async function main() {
   );
   check("a las 12:00 am en Santo Domingo ya es el día 21", nextMorning === "2026-10-21", `dr_today = ${nextMorning}`);
 
-  console.log("\nEstados seguros (nunca bloquean por un error de datos):");
-  await setDates(cid, { trial_ends_at: null, next_payment_due_on: null });
+  console.log("\nVentanas de recordatorio por_renovar (desde vencimiento − ventana hasta el día de vencimiento):");
+  const windows: [number, number, string][] = [
+    [30, 5, "2026-10-31"],
+    [90, 15, "2027-01-31"],
+    [180, 30, "2027-04-04"],
+    [365, 30, "2027-10-06"],
+  ];
+  for (const [period, window, due] of windows) {
+    await setSub(cid, { trial_ends_at: null, next_payment_due_on: due, billing_period_days: period });
+    const firstDay = addDays(due, -window);
+    const cases: [string, string][] = [
+      [addDays(firstDay, -1), "activa"],
+      [firstDay, "por_renovar"],
+      [due, "por_renovar"],
+      [addDays(due, 1), "vencida_en_gracia"],
+      [addDays(due, 30), "vencida_en_gracia"],
+      [addDays(due, 31), "solo_lectura"],
+    ];
+    for (const [date, expected] of cases) {
+      const got = await state(cid, date);
+      check(`plan de ${period} días (vence ${due}): ${date} => ${expected}`, got === expected, `se obtuvo ${got}`);
+    }
+  }
+  await setSub(cid, { trial_ends_at: null, next_payment_due_on: "2026-10-31", billing_period_days: 30 });
+  check(
+    "ejemplo del plan: vence 31-oct => recordatorio desde el 26-oct, solo lectura desde el 1-dic",
+    (await state(cid, "2026-10-25")) === "activa" &&
+      (await state(cid, "2026-10-26")) === "por_renovar" &&
+      (await state(cid, "2026-11-30")) === "vencida_en_gracia" &&
+      (await state(cid, "2026-12-01")) === "solo_lectura",
+    "el ejemplo del plan no se cumple"
+  );
+
+  console.log("\nEstados seguros, suspendida y exenta:");
+  await setSub(cid, { trial_ends_at: null, next_payment_due_on: null, billing_period_days: null });
   check("fila sin ninguna fecha => sin_plan", (await state(cid, today)) === "sin_plan", `estado = ${await state(cid, today)}`);
   check(
     "clínica sin fila => sin_plan",
     (await state(randomUUID(), today)) === "sin_plan",
     "una clínica inexistente debe dar sin_plan"
   );
-
-  console.log("\nis_clinic_writable con la fecha real de hoy:");
-  await setDates(cid, { trial_ends_at: addDays(today, -30), next_payment_due_on: null });
-  const { data: w30 } = await admin.rpc("is_clinic_writable", { p_clinic_id: cid });
-  await setDates(cid, { trial_ends_at: addDays(today, -31), next_payment_due_on: null });
+  await setSub(cid, { trial_ends_at: addDays(today, -31) });
   const { data: w31 } = await admin.rpc("is_clinic_writable", { p_clinic_id: cid });
-  check("día 30 de gracia => escribible", w30 === true, `is_clinic_writable = ${w30}`);
+  await setSub(cid, { trial_ends_at: addDays(today, -30) });
+  const { data: w30 } = await admin.rpc("is_clinic_writable", { p_clinic_id: cid });
+  check("día 30 de gracia con la fecha real de hoy => escribible", w30 === true, `is_clinic_writable = ${w30}`);
   check("día 31 => solo lectura (no escribible)", w31 === false, `is_clinic_writable = ${w31}`);
-  await setDates(cid, { trial_ends_at: addDays(today, 14), next_payment_due_on: null });
+  await admin.from("clinics").update({ is_active: false }).eq("id", cid);
+  const { data: wSusp } = await admin.rpc("is_clinic_writable", { p_clinic_id: cid });
+  check(
+    "clínica suspendida => estado suspendida y no escribible",
+    (await state(cid, today)) === "suspendida" && wSusp === false,
+    `estado = ${await state(cid, today)}, writable = ${wSusp}`
+  );
+  await admin.from("clinics").update({ is_active: true }).eq("id", cid);
 
   console.log("\nVisibilidad:");
+  await setSub(cid, { trial_ends_at: addDays(today, 14), next_payment_due_on: null });
   const { data: adminAccess } = await adminUser.client.rpc("get_my_clinic_access");
   const a = Array.isArray(adminAccess) ? adminAccess[0] : adminAccess;
   check("el admin ve estado prueba y 14 días", a?.state === "prueba" && a?.days_to_expiry === 14, JSON.stringify(a));
-  check("el admin ve los cupos usados (1 médico en el equipo)", a?.seats_used === 1, JSON.stringify(a));
+  check("el admin ve los cupos usados (admin + médico = 2)", a?.seats_used === 2, JSON.stringify(a));
   check(
     "get_my_clinic_access no devuelve ningún monto",
     a !== undefined && !("price" in a) && !("next_payment_due_on" in a),
@@ -230,34 +263,111 @@ async function main() {
     "la función interna es ejecutable por authenticated"
   );
 
-  console.log("\nRenovación por el operador:");
-  const { error: adminRenewError } = await adminUser.client.rpc("renew_clinic_subscription", {
-    target_clinic_id: cid,
-    new_due_on: "2027-04-04",
-    new_price: 100,
-    p_reason: "intento de un admin de clínica",
-  });
-  check("un admin de clínica NO puede renovar", adminRenewError !== null, "el admin pudo llamar la RPC del operador");
-  const { error: renewError } = await operatorUser.client.rpc("renew_clinic_subscription", {
-    target_clinic_id: cid,
-    new_due_on: "2027-04-04",
-    new_price: 100,
-    p_reason: "pago confirmado (prueba automatizada)",
-  });
-  check("el operador SÍ renueva", renewError === null, renewError?.message ?? "");
-  const { data: renewed } = await admin.from("clinic_subscriptions").select("*").eq("clinic_id", cid).single();
+  console.log("\nEl recordatorio de renovación es solo del admin:");
+  await setSub(cid, { trial_ends_at: null, next_payment_due_on: addDays(today, 2), billing_period_days: 30 });
+  const { data: aRenew } = await adminUser.client.rpc("get_my_clinic_access");
+  const { data: mRenew } = await medicoUser.client.rpc("get_my_clinic_access");
+  const ar = Array.isArray(aRenew) ? aRenew[0] : aRenew;
+  const mr = Array.isArray(mRenew) ? mRenew[0] : mRenew;
+  check("el admin ve por_renovar", ar?.state === "por_renovar", JSON.stringify(ar));
+  check("el médico ve activa (sin el recordatorio)", mr?.state === "activa", JSON.stringify(mr));
+
+  console.log("\nRPC del operador -- un admin de clínica NO puede usarlos:");
+  const planArgs = { target_clinic_id: cid, p_period_days: 180, p_amount: null, p_start_on: "2026-10-06" };
+  const callsByAdmin: [string, Record<string, unknown>][] = [
+    ["set_clinic_plan_period", planArgs],
+    ["register_clinic_payment", { target_clinic_id: cid, p_paid_on: "2026-10-20", p_amount: 100, p_note: "x" }],
+    ["extend_clinic_trial", { target_clinic_id: cid, p_days: 5, p_reason: "x" }],
+    ["set_clinic_access_exempt", { target_clinic_id: cid, p_exempt: true, p_reason: "x" }],
+  ];
+  for (const [fn, args] of callsByAdmin) {
+    const { error } = await adminUser.client.rpc(fn, args);
+    check(`un admin de clínica NO puede usar ${fn}`, error !== null, "el admin pudo llamar la RPC del operador");
+  }
+
+  console.log("\nset_clinic_plan_period (caso ICE Brens):");
+  const { error: planErr } = await op.rpc("set_clinic_plan_period", planArgs);
+  check("180 días, monto null, inicio 2026-10-06 funciona", planErr === null, planErr?.message ?? "");
+  const { data: planned } = await admin.from("clinic_subscriptions").select("*").eq("clinic_id", cid).single();
+  check("vencimiento = inicio + 180 = 2027-04-04", planned?.next_payment_due_on === "2027-04-04", JSON.stringify(planned));
   check(
-    "la renovación fija vencimiento y deja la clínica activa",
-    renewed?.next_payment_due_on === "2027-04-04" && renewed?.payment_status === "al_dia",
-    JSON.stringify(renewed)
+    "el plan de ICE entra en solo lectura exactamente el 2027-05-05",
+    (await state(cid, "2027-05-04")) === "vencida_en_gracia" && (await state(cid, "2027-05-05")) === "solo_lectura",
+    `${await state(cid, "2027-05-04")} / ${await state(cid, "2027-05-05")}`
   );
-  check("estado tras renovar = activa", (await state(cid, today)) === "activa", `estado = ${await state(cid, today)}`);
-  const { data: renewalEvents } = await admin
-    .from("clinic_subscription_events")
-    .select("kind")
-    .eq("clinic_id", cid)
-    .eq("kind", "renewal");
-  check("la renovación queda en el historial", (renewalEvents ?? []).length === 1, JSON.stringify(renewalEvents));
+  const { error: badPeriod } = await op.rpc("set_clinic_plan_period", { ...planArgs, p_period_days: 45 });
+  check("un periodo fuera de 30/90/180/365 se rechaza", badPeriod !== null, "aceptó 45 días");
+
+  console.log("\nregister_clinic_payment (plan de 30 días, vence 2026-10-31):");
+  await op.rpc("set_clinic_plan_period", {
+    target_clinic_id: cid,
+    p_period_days: 30,
+    p_amount: 100,
+    p_start_on: "2026-10-01",
+  });
+  const pay = async (paidOn: string): Promise<string> => {
+    const { error } = await op.rpc("register_clinic_payment", {
+      target_clinic_id: cid,
+      p_paid_on: paidOn,
+      p_amount: 100,
+      p_note: "prueba",
+    });
+    if (error) throw new Error(`register_clinic_payment(${paidOn}): ${error.message}`);
+    const { data } = await admin.from("clinic_subscriptions").select("next_payment_due_on").eq("clinic_id", cid).single();
+    return data?.next_payment_due_on as string;
+  };
+  check("a tiempo (paga 10-20, vence 10-31) => 11-30: vencimiento anterior + periodo", (await pay("2026-10-20")) === "2026-11-30", "no suma al vencimiento anterior");
+  check("tarde pero en gracia (paga 12-10, vence 11-30) => 12-30: no regala días", (await pay("2026-12-10")) === "2026-12-30", "pagar tarde no debe regalar días");
+  check("ya en solo lectura (vence 12-30, paga 2027-02-15) => 2027-03-17: fecha de pago + periodo", (await pay("2027-02-15")) === "2027-03-17", "debe contar desde la fecha de pago");
+  check("tras pagar, la clínica vuelve a poder escribir", (await state(cid, "2027-02-15")) !== "solo_lectura", `estado = ${await state(cid, "2027-02-15")}`);
+  const { data: payments } = await adminUser.client.from("clinic_payments").select("amount, resulting_due_on");
+  const { data: medicoPayments } = await medicoUser.client.from("clinic_payments").select("id");
+  check("el admin lee los pagos de su clínica (3)", (payments ?? []).length === 3, JSON.stringify(payments));
+  check("el médico NO lee los pagos", (medicoPayments ?? []).length === 0, JSON.stringify(medicoPayments));
+  const { error: directPay } = await adminUser.client.from("clinic_payments").insert({
+    clinic_id: cid,
+    amount: 1,
+    paid_on: "2026-10-01",
+    period_days: 30,
+    resulting_due_on: "2026-10-31",
+    registered_by: adminUser.userId,
+  });
+  check("un INSERT directo en clinic_payments se rechaza", directPay !== null, "el admin pudo insertar un pago");
+
+  console.log("\nextend_clinic_trial:");
+  await setSub(cid, { trial_ends_at: addDays(today, 5), next_payment_due_on: null });
+  await op.rpc("extend_clinic_trial", { target_clinic_id: cid, p_days: 10, p_reason: "demo" });
+  const { data: t1 } = await admin.from("clinic_subscriptions").select("trial_ends_at").eq("clinic_id", cid).single();
+  check("una prueba vigente se extiende desde su fin (hoy+5, +10)", t1?.trial_ends_at === addDays(today, 15), JSON.stringify(t1));
+  await setSub(cid, { trial_ends_at: addDays(today, -40), next_payment_due_on: null });
+  await op.rpc("extend_clinic_trial", { target_clinic_id: cid, p_days: 7, p_reason: "demo" });
+  const { data: t2 } = await admin.from("clinic_subscriptions").select("trial_ends_at").eq("clinic_id", cid).single();
+  check("una prueba vencida se extiende desde hoy (hoy +7)", t2?.trial_ends_at === addDays(today, 7), JSON.stringify(t2));
+  const { error: noReason } = await op.rpc("extend_clinic_trial", { target_clinic_id: cid, p_days: 3, p_reason: "  " });
+  check("extender sin motivo se rechaza", noReason !== null, "aceptó un motivo vacío");
+
+  console.log("\nset_clinic_access_exempt:");
+  await setSub(cid, { trial_ends_at: addDays(today, -100), next_payment_due_on: null });
+  await op.rpc("set_clinic_access_exempt", { target_clinic_id: cid, p_exempt: true, p_reason: "clínica piloto" });
+  const { data: wEx } = await admin.rpc("is_clinic_writable", { p_clinic_id: cid });
+  check(
+    "exenta: estado exenta y escribible aunque venciera hace 100 días",
+    (await state(cid, today)) === "exenta" && wEx === true,
+    `estado = ${await state(cid, today)}`
+  );
+  await op.rpc("set_clinic_access_exempt", { target_clinic_id: cid, p_exempt: false, p_reason: "fin del piloto" });
+  check("quitar la exención => vuelve a solo_lectura", (await state(cid, today)) === "solo_lectura", `estado = ${await state(cid, today)}`);
+
+  console.log("\nHistorial:");
+  const { data: evs } = await admin.from("clinic_subscription_events").select("kind").eq("clinic_id", cid);
+  const kinds = (evs ?? []).map((e) => e.kind as string);
+  check(
+    "registra el plan, las 2 extensiones y los 2 cambios de exención",
+    kinds.includes("plan_set") &&
+      kinds.filter((k) => k === "trial_extended").length === 2 &&
+      kinds.filter((k) => k === "exempt_changed").length === 2,
+    JSON.stringify(kinds)
+  );
 }
 
 async function cleanup() {
@@ -281,5 +391,5 @@ main()
       console.error(`\nFALLÓ: ${failures.length} verificación(es) no pasaron.`);
       process.exit(1);
     }
-    console.log("\nOK: estados de acceso verificados.");
+    console.log("\nOK: estados de acceso y RPC del operador verificados.");
   });
