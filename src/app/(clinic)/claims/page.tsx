@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ClaimStatusForm } from "./claim-status-form";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 const STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
@@ -26,7 +27,8 @@ export default async function ClaimsPage({
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
-  const canManageBilling = membership.role === "admin" || membership.role === "recepcion";
+  const readOnly = await isClinicReadOnly();
+  const canManageBilling = (membership.role === "admin" || membership.role === "recepcion") && !readOnly;
 
   const activeStatus = status && STATUSES.includes(status) ? status : undefined;
 
@@ -67,6 +69,7 @@ export default async function ClaimsPage({
           Seguimiento de reclamaciones ante aseguradoras — envío manual, sin integración en vivo.
         </p>
       </div>
+      <ReadOnlyNotice />
 
       <nav className="flex flex-wrap gap-2 text-sm">
         <Link

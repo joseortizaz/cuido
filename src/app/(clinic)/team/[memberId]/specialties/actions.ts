@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type MemberSpecialtiesActionState = { error?: string; success?: string } | undefined;
 
@@ -34,6 +35,8 @@ export async function updateDisabledSpecialties(
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (membership.role !== "admin") {
     return { error: "Solo un admin puede gestionar las especialidades de un miembro." };
   }

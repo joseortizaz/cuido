@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { RetrySignForm, VoidForm } from "./void-form";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 const STATUS_LABELS: Record<string, string> = {
   borrador: "Borrador",
@@ -52,7 +53,8 @@ export default async function FiscalDocumentDetailPage({
     supabase.from("patients").select("first_name, last_name").eq("id", document.patient_id).maybeSingle(),
   ]);
 
-  const canManage = membership.role === "admin" || membership.role === "recepcion";
+  const readOnly = await isClinicReadOnly();
+  const canManage = (membership.role === "admin" || membership.role === "recepcion") && !readOnly;
   const canVoid = canManage && (document.status === "borrador" || document.status === "generado");
 
   return (
@@ -61,6 +63,9 @@ export default async function FiscalDocumentDetailPage({
         <Link href="/billing" className="text-sm text-zinc-500 hover:underline">
           ← Facturación
         </Link>
+        <div className="mt-2">
+          <ReadOnlyNotice />
+        </div>
         <div className="mt-1 flex items-center gap-3">
           <h1 className="text-2xl font-semibold">{document.e_ncf ?? "e-CF sin número"}</h1>
           <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium dark:bg-zinc-800">

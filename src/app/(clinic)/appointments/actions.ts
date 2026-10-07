@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type AppointmentActionState = { error?: string } | undefined;
@@ -34,6 +35,8 @@ export async function updateAppointmentStatus(
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (membership.role !== "admin" && membership.role !== "recepcion") {
     return { error: "No tienes permiso para cambiar el estado de esta cita." };
   }

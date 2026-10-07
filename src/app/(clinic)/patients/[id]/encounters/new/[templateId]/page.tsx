@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { EncounterForm } from "./encounter-form";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function NewEncounterFormPage({
   params,
@@ -24,6 +25,9 @@ export default async function NewEncounterFormPage({
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin" && membership.role !== "medico") {
     redirect(`/patients/${id}`);
+  }
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref={`/patients/${id}`} backLabel="Paciente" />;
   }
 
   const { data: patient } = await supabase

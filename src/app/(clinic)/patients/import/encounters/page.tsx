@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { EncounterImportForm } from "./encounter-import-form";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function UploadEncounterImportPage() {
   const supabase = await createClient();
@@ -14,6 +15,9 @@ export default async function UploadEncounterImportPage() {
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin") redirect("/patients");
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref="/patients" backLabel="Pacientes" />;
+  }
 
   const { data: templates } = await supabase
     .from("specialty_templates")

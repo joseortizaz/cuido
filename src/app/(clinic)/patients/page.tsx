@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function PatientsPage() {
   const supabase = await createClient();
@@ -12,6 +13,8 @@ export default async function PatientsPage() {
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+
+  const readOnly = await isClinicReadOnly();
 
   const { data: patients } = await supabase
     .from("patients")
@@ -25,22 +28,27 @@ export default async function PatientsPage() {
         <div className="flex items-center gap-3">
           {membership.role === "admin" && (
             <>
-              <Link href="/patients/import" className="text-sm text-zinc-500 hover:underline">
-                Importar
-              </Link>
+              {!readOnly && (
+                <Link href="/patients/import" className="text-sm text-zinc-500 hover:underline">
+                  Importar
+                </Link>
+              )}
               <Link href="/patients/export" className="text-sm text-zinc-500 hover:underline">
                 Exportar
               </Link>
             </>
           )}
-          <Link
-            href="/patients/new"
-            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-          >
-            Nuevo paciente
-          </Link>
+          {!readOnly && (
+            <Link
+              href="/patients/new"
+              className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            >
+              Nuevo paciente
+            </Link>
+          )}
         </div>
       </div>
+      <ReadOnlyNotice />
       {!patients || patients.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Todavía no hay pacientes registrados.

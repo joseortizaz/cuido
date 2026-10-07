@@ -6,6 +6,7 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { ClaimForm } from "./claims/claim-form";
 import { ClaimStatusForm } from "@/app/(clinic)/claims/claim-status-form";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 const CLAIM_STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
@@ -38,7 +39,8 @@ export default async function EncounterDetailPage({
   if (!user) redirect("/login");
 
   const membership = await getCurrentClinicMembership(supabase);
-  const canManageBilling = membership?.role === "admin" || membership?.role === "recepcion";
+  const readOnly = await isClinicReadOnly();
+  const canManageBilling = (membership?.role === "admin" || membership?.role === "recepcion") && !readOnly;
 
   const { data: patient } = await supabase
     .from("patients")
@@ -107,18 +109,24 @@ export default async function EncounterDetailPage({
           {new Date(encounter.encounter_date).toLocaleString("es-DO")}
         </p>
         <div className="mt-2 flex flex-col gap-1">
-          <Link
-            href={`/patients/${id}/consents/new?encounterId=${encounterId}`}
-            className="text-sm text-zinc-500 hover:underline"
-          >
-            Firmar consentimiento para esta consulta →
-          </Link>
-          <Link
-            href={`/billing/new?patientId=${id}&encounterId=${encounterId}`}
-            className="text-sm text-zinc-500 hover:underline"
-          >
-            Generar e-CF para esta consulta →
-          </Link>
+          {readOnly ? (
+            <ReadOnlyNotice />
+          ) : (
+            <>
+              <Link
+                href={`/patients/${id}/consents/new?encounterId=${encounterId}`}
+                className="text-sm text-zinc-500 hover:underline"
+              >
+                Firmar consentimiento para esta consulta →
+              </Link>
+              <Link
+                href={`/billing/new?patientId=${id}&encounterId=${encounterId}`}
+                className="text-sm text-zinc-500 hover:underline"
+              >
+                Generar e-CF para esta consulta →
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import { buildUnsignedECFXml } from "@/lib/domain/ecf";
 import { signAndSubmitECF, ECFSigningNotConfiguredError } from "@/lib/domain/ecf-signing";
 import type { Database, Json } from "@/lib/supabase/database.types";
@@ -74,6 +75,8 @@ export async function generateFiscalDocument(
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const compradorNombre = String(formData.get("comprador_nombre") ?? "").trim();
   const compradorRnc = String(formData.get("comprador_rnc_cedula") ?? "").trim();
@@ -161,6 +164,8 @@ export async function retrySignFiscalDocument(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const { data: document } = await supabase
     .from("fiscal_documents")
@@ -188,6 +193,8 @@ export async function voidFiscalDocument(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const reason = String(formData.get("reason") ?? "").trim();
   if (!reason) return { error: "El motivo de anulación es requerido." };

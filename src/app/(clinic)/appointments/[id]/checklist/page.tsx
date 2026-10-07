@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ChecklistForm } from "./checklist-form";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 /**
  * Checklist prequirúrgico de una cita con appointment_type =
@@ -132,12 +133,15 @@ export default async function SurgicalChecklistPage({
         </p>
       </div>
 
-      <ChecklistForm
-        appointmentId={id}
-        evaluacionCardiovascular={checklist.evaluacion_cardiovascular}
-        analiticasSangre={checklist.analiticas_sangre}
-        implantesAprobadosSeguro={checklist.implantes_aprobados_seguro}
-      />
+      <ReadOnlyNotice />
+      <fieldset disabled={await isClinicReadOnly()} className="m-0 min-w-0 border-0 p-0">
+        <ChecklistForm
+          appointmentId={id}
+          evaluacionCardiovascular={checklist.evaluacion_cardiovascular}
+          analiticasSangre={checklist.analiticas_sangre}
+          implantesAprobadosSeguro={checklist.implantes_aprobados_seguro}
+        />
+      </fieldset>
     </div>
   );
 }

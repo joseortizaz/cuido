@@ -10,6 +10,7 @@ import { InsurerForm } from "./insurance/insurer-form";
 import { EligibilityForm } from "./insurance/eligibility-form";
 import { GrantAccessForm } from "./sensitive-access/grant-access-form";
 import { RevokeAccessForm } from "./sensitive-access/revoke-access-form";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -99,8 +100,11 @@ export default async function PatientDetailPage({
   const sensitiveSpecialties = (templates ?? [])
     .filter((t) => t.requires_explicit_access)
     .map((t) => ({ id: t.id, name: t.name }));
-  const canWriteClinical = membership.role === "admin" || membership.role === "medico";
-  const canManageBilling = membership.role === "admin" || membership.role === "recepcion";
+  // Solo lectura (o suspendida): se ocultan TODOS los controles que escriben. Es capa de
+  // comodidad -- el bloqueo real es el trigger de la base de datos.
+  const readOnly = await isClinicReadOnly();
+  const canWriteClinical = (membership.role === "admin" || membership.role === "medico") && !readOnly;
+  const canManageBilling = (membership.role === "admin" || membership.role === "recepcion") && !readOnly;
   const currentInsurer = (insurers ?? []).find((i) => i.is_current) ?? null;
 
   // El email no vive en `consents` (auth.users no está expuesto vía la Data
@@ -140,6 +144,8 @@ export default async function PatientDetailPage({
           {patient.national_id ? ` · ${patient.national_id}` : ""}
         </p>
       </div>
+
+      <ReadOnlyNotice />
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -218,12 +224,14 @@ export default async function PatientDetailPage({
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">Consentimientos</h2>
-          <Link
-            href={`/patients/${id}/consents/new`}
-            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-          >
-            Firmar consentimiento
-          </Link>
+          {!readOnly && (
+            <Link
+              href={`/patients/${id}/consents/new`}
+              className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            >
+              Firmar consentimiento
+            </Link>
+          )}
         </div>
         {!consents || consents.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin consentimientos firmados.</p>
@@ -399,16 +407,18 @@ export default async function PatientDetailPage({
                       {grant.revoked_reason ? ` — ${grant.revoked_reason}` : ""}
                     </p>
                   )}
-                  {!grant.revoked_at && <RevokeAccessForm patientId={id} grantId={grant.id} />}
+                  {!grant.revoked_at && !readOnly && <RevokeAccessForm patientId={id} grantId={grant.id} />}
                 </li>
               ))}
             </ul>
           )}
-          <GrantAccessForm
-            patientId={id}
-            sensitiveSpecialties={sensitiveSpecialties}
-            clinicMembers={clinicMembers}
-          />
+          {!readOnly && (
+            <GrantAccessForm
+              patientId={id}
+              sensitiveSpecialties={sensitiveSpecialties}
+              clinicMembers={clinicMembers}
+            />
+          )}
         </section>
       )}
     </div>

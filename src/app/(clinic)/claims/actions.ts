@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type ClaimActionState = { error?: string; success?: string } | undefined;
@@ -45,6 +46,8 @@ export async function createClaim(
   formData: FormData
 ): Promise<ClaimActionState> {
   const { supabase, userId, clinicId } = await requireClinicMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const patientInsurerId = String(formData.get("patient_insurer_id") ?? "");
   const claimedAmountRaw = String(formData.get("claimed_amount") ?? "").trim();
@@ -101,6 +104,8 @@ export async function updateClaimStatus(
   formData: FormData
 ): Promise<ClaimActionState> {
   const { supabase, userId } = await requireSignedIn();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const status = String(formData.get("status") ?? "");
   const rejectionReason = String(formData.get("rejection_reason") ?? "").trim();

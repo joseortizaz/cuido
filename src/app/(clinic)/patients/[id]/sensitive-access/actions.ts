@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type SensitiveAccessActionState = { error?: string; success?: string } | undefined;
 
@@ -25,6 +26,8 @@ export async function grantSensitiveAccess(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const specialtyTemplateId = String(formData.get("specialty_template_id") ?? "");
   const targetUserId = String(formData.get("target_user_id") ?? "");
@@ -61,6 +64,8 @@ export async function revokeSensitiveAccess(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const reason = String(formData.get("reason") ?? "").trim();
   if (!reason) return { error: "El motivo de la revocación es requerido." };

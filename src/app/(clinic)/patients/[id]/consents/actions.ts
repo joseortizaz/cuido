@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import { getSupabaseUrl } from "@/lib/supabase/env";
 
 export type ConsentActionState = { error?: string } | undefined;
@@ -26,6 +27,8 @@ export async function signConsent(
     data: { session },
   } = await supabase.auth.getSession();
   if (!session) redirect("/login");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const consentTemplateId = String(formData.get("consent_template_id") ?? "");
   const signerName = String(formData.get("signer_name") ?? "").trim();
@@ -83,6 +86,8 @@ export async function revokeConsent(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const reason = String(formData.get("reason") ?? "").trim();
   if (!reason) return { error: "El motivo de revocación es requerido." };

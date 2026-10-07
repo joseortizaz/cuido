@@ -4,6 +4,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import { createAdminClient, findOrInviteUserByEmail } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership, type ClinicMembership } from "@/lib/supabase/clinic-context";
 import type { Database } from "@/lib/supabase/database.types";
@@ -69,6 +70,8 @@ export async function inviteMember(
   formData: FormData
 ): Promise<TeamActionState> {
   const { supabase, membership } = await requireAdminMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (membership.role !== "admin") {
     return { error: "Solo un admin puede invitar miembros." };
   }
@@ -114,6 +117,8 @@ export async function updateMemberRole(
   formData: FormData
 ): Promise<TeamActionState> {
   const { supabase, membership } = await requireAdminMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (membership.role !== "admin") {
     return { error: "Solo un admin puede cambiar roles." };
   }
@@ -151,6 +156,8 @@ export async function removeMember(
   _formData: FormData
 ): Promise<TeamActionState> {
   const { supabase, membership } = await requireAdminMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (membership.role !== "admin") {
     return { error: "Solo un admin puede quitar miembros." };
   }

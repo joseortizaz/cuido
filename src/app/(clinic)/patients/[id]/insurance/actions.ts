@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type InsuranceActionState = { error?: string; success?: string } | undefined;
 
@@ -36,6 +37,8 @@ export async function registerInsurer(
   formData: FormData
 ): Promise<InsuranceActionState> {
   const { supabase, userId, clinicId } = await requireClinicMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const insurerName = String(formData.get("insurer_name") ?? "").trim();
   const affiliateNumber = String(formData.get("affiliate_number") ?? "").trim();
@@ -74,6 +77,8 @@ export async function recordEligibilityCheck(
   formData: FormData
 ): Promise<InsuranceActionState> {
   const { supabase, userId, clinicId } = await requireClinicMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const result = String(formData.get("result") ?? "");
   const notes = String(formData.get("notes") ?? "").trim();

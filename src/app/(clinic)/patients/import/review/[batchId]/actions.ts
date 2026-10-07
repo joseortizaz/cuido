@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership, type ClinicMembership } from "@/lib/supabase/clinic-context";
 import { validatePatientRows, type PatientImportRawRow } from "@/lib/bulk-import/patients";
@@ -38,6 +39,9 @@ async function requireAdminBatch(batchId: string) {
 
 export async function cancelImportBatch(batchId: string): Promise<void> {
   const { supabase, batch } = await requireAdminBatch(batchId);
+  // void: sin estado donde mostrar el mensaje; la página de revisión lo
+  // muestra. El bloqueo real es el trigger de la base de datos.
+  if (await readOnlyBlock(supabase)) return;
   if (!batch || batch.status !== "validado") return;
 
   await supabase.from("bulk_import_batches").update({ status: "cancelado" }).eq("id", batchId);
@@ -60,6 +64,8 @@ export async function confirmImportBatch(
   _formData: FormData
 ): Promise<BatchActionState> {
   const { supabase, user, membership, batch } = await requireAdminBatch(batchId);
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (!batch) return { error: "Lote no encontrado." };
   if (batch.status !== "validado") return { error: "Este lote ya fue confirmado o cancelado." };
 

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type ProfileSpecialtiesActionState = { error?: string; success?: string } | undefined;
 
@@ -45,6 +46,8 @@ export async function markSpecialtyAsPreferred(
   _formData: FormData
 ): Promise<ProfileSpecialtiesActionState> {
   const { supabase, clinicId, clinicMemberId } = await requireClinicMemberId();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   // clinic_id se deriva aquí de la membresía y, de nuevo, en el trigger
   // preferred_specialties_set_clinic_id en la base de datos — la
@@ -68,6 +71,8 @@ export async function unmarkSpecialtyAsPreferred(
   _formData: FormData
 ): Promise<ProfileSpecialtiesActionState> {
   const { supabase, clinicMemberId } = await requireClinicMemberId();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const { error } = await supabase
     .from("clinic_member_preferred_specialties")
