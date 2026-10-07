@@ -52,10 +52,18 @@ function daysAgo(iso: string): number {
 export async function AdminDashboard({
   clinicId,
   businessModel,
+  role,
 }: {
   clinicId: string;
   businessModel: string;
+  role: string;
 }) {
+  // Montos, estado de pago y renovación son SOLO del admin: desde la
+  // migración 20261006100000 la política de clinic_subscriptions ya no deja
+  // leerlos a recepción. Recepción comparte este dashboard, así que la
+  // tarjeta de plan simplemente no se consulta ni se muestra para ella
+  // (en vez de mostrarle un engañoso "sin información de plan").
+  const canSeePlan = role === "admin";
   const supabase = await createClient();
 
   const now = new Date();
@@ -89,7 +97,9 @@ export async function AdminDashboard({
       .in("status", ["pendiente", "enviada"]),
     supabase.from("patients").select("id", { count: "exact", head: true }),
     supabase.from("clinic_members").select("role"),
-    supabase.from("clinic_subscriptions").select("*").eq("clinic_id", clinicId).maybeSingle(),
+    canSeePlan
+      ? supabase.from("clinic_subscriptions").select("*").eq("clinic_id", clinicId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   // ---- Hoy ----
@@ -249,29 +259,31 @@ export async function AdminDashboard({
               ))}
             </div>
           </div>
-          <div className="rounded-xl border border-zinc-200 p-4 sm:col-span-2 dark:border-zinc-800">
-            <p className="text-xs text-zinc-500">Plan y facturación</p>
-            {subscription ? (
-              <div className="mt-1 flex flex-col gap-0.5 text-sm">
-                <span>{BUSINESS_MODEL_LABELS[businessModel] ?? businessModel}</span>
-                <span>
-                  Estado de pago:{" "}
-                  <strong>{PAYMENT_STATUS_LABELS[subscription.payment_status] ?? subscription.payment_status}</strong>
-                </span>
-                <span>Precio: {formatPrice(subscription.price)}</span>
-                {subscription.next_payment_due_on && (
+          {canSeePlan && (
+            <div className="rounded-xl border border-zinc-200 p-4 sm:col-span-2 dark:border-zinc-800">
+              <p className="text-xs text-zinc-500">Plan y facturación</p>
+              {subscription ? (
+                <div className="mt-1 flex flex-col gap-0.5 text-sm">
+                  <span>{BUSINESS_MODEL_LABELS[businessModel] ?? businessModel}</span>
                   <span>
-                    Próximo pago:{" "}
-                    {new Date(`${subscription.next_payment_due_on}T00:00:00`).toLocaleDateString("es-DO", {
-                      dateStyle: "medium",
-                    })}
+                    Estado de pago:{" "}
+                    <strong>{PAYMENT_STATUS_LABELS[subscription.payment_status] ?? subscription.payment_status}</strong>
                   </span>
-                )}
-              </div>
-            ) : (
-              <p className="mt-1 text-sm text-zinc-500">Sin información de plan todavía.</p>
-            )}
-          </div>
+                  <span>Precio: {formatPrice(subscription.price)}</span>
+                  {subscription.next_payment_due_on && (
+                    <span>
+                      Próximo pago:{" "}
+                      {new Date(`${subscription.next_payment_due_on}T00:00:00`).toLocaleDateString("es-DO", {
+                        dateStyle: "medium",
+                      })}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-zinc-500">Sin información de plan todavía.</p>
+              )}
+            </div>
+          )}
         </div>
       </section>
     </div>

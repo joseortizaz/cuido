@@ -79,6 +79,11 @@ jobs:
       - name: Run tenant isolation test
         run: npm run test:tenant-isolation
 
+      # Mismo job a propósito (no un check requerido nuevo): comparte el
+      # stack local de Supabase ya levantado arriba.
+      - name: Run subscription state test
+        run: npm run test:subscription-state
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
