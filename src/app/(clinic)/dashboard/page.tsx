@@ -36,7 +36,11 @@ export default async function DashboardPage() {
       {membership.role === "medico" ? (
         <DoctorDashboard userId={user.id} />
       ) : (
-        <AdminDashboard clinicId={membership.clinicId} businessModel={clinic?.business_model ?? ""} />
+        <AdminDashboard
+          clinicId={membership.clinicId}
+          businessModel={clinic?.business_model ?? ""}
+          role={membership.role}
+        />
       )}
     </div>
   );

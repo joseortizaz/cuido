@@ -506,6 +506,50 @@ export type Database = {
           },
         ]
       }
+      clinic_payments: {
+        Row: {
+          amount: number
+          clinic_id: string
+          created_at: string
+          id: string
+          note: string | null
+          paid_on: string
+          period_days: number
+          registered_by: string
+          resulting_due_on: string
+        }
+        Insert: {
+          amount: number
+          clinic_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          paid_on: string
+          period_days: number
+          registered_by: string
+          resulting_due_on: string
+        }
+        Update: {
+          amount?: number
+          clinic_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          paid_on?: string
+          period_days?: number
+          registered_by?: string
+          resulting_due_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_payments_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_plan_changes: {
         Row: {
           business_model: Database["public"]["Enums"]["clinic_business_model"]
@@ -579,29 +623,79 @@ export type Database = {
           },
         ]
       }
+      clinic_subscription_events: {
+        Row: {
+          changed_by: string | null
+          clinic_id: string
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+        }
+        Insert: {
+          changed_by?: string | null
+          clinic_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+        }
+        Update: {
+          changed_by?: string | null
+          clinic_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_subscription_events_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_subscriptions: {
         Row: {
+          access_exempt: boolean
+          billing_period_days: number | null
           clinic_id: string
+          included_clinician_seats: number | null
           next_payment_due_on: string | null
           payment_status: string
           plan_conditions: string | null
+          plan_started_on: string | null
           price: number | null
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
+          access_exempt?: boolean
+          billing_period_days?: number | null
           clinic_id: string
+          included_clinician_seats?: number | null
           next_payment_due_on?: string | null
           payment_status?: string
           plan_conditions?: string | null
+          plan_started_on?: string | null
           price?: number | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
+          access_exempt?: boolean
+          billing_period_days?: number | null
           clinic_id?: string
+          included_clinician_seats?: number | null
           next_payment_due_on?: string | null
           payment_status?: string
           plan_conditions?: string | null
+          plan_started_on?: string | null
           price?: number | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1523,6 +1617,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      clinic_access_due_on: { Args: { p_clinic_id: string }; Returns: string }
+      clinic_access_state: {
+        Args: { p_clinic_id: string; p_today?: string }
+        Returns: string
+      }
+      clinician_seats_used: { Args: { p_clinic_id: string }; Returns: number }
       complete_appointment_with_encounter: {
         Args: { target_appointment_id: string; target_encounter_id: string }
         Returns: undefined
@@ -1535,6 +1635,11 @@ export type Database = {
         }
         Returns: string
       }
+      dr_today: { Args: { p_ts?: string }; Returns: string }
+      extend_clinic_trial: {
+        Args: { p_days: number; p_reason: string; target_clinic_id: string }
+        Returns: undefined
+      }
       generate_fiscal_document: {
         Args: {
           comprador_direccion: string
@@ -1546,6 +1651,17 @@ export type Database = {
           target_patient_id: string
         }
         Returns: string
+      }
+      get_my_clinic_access: {
+        Args: never
+        Returns: {
+          clinic_id: string
+          days_to_expiry: number
+          days_to_readonly: number
+          seats_included: number
+          seats_used: number
+          state: string
+        }[]
       }
       grant_sensitive_specialty_access: {
         Args: {
@@ -1566,6 +1682,7 @@ export type Database = {
         Returns: boolean
       }
       is_clinic_member: { Args: { target_clinic_id: string }; Returns: boolean }
+      is_clinic_writable: { Args: { p_clinic_id: string }; Returns: boolean }
       is_clinician_of_active_clinic: {
         Args: { target_clinic_id: string }
         Returns: boolean
@@ -1583,6 +1700,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      register_clinic_payment: {
+        Args: {
+          p_amount: number
+          p_note: string
+          p_paid_on: string
+          target_clinic_id: string
+        }
+        Returns: undefined
+      }
       revoke_consent: {
         Args: { reason: string; target_consent_id: string }
         Returns: undefined
@@ -1591,10 +1717,23 @@ export type Database = {
         Args: { p_reason: string; target_grant_id: string }
         Returns: undefined
       }
+      set_clinic_access_exempt: {
+        Args: { p_exempt: boolean; p_reason: string; target_clinic_id: string }
+        Returns: undefined
+      }
       set_clinic_active_status: {
         Args: {
           new_is_active: boolean
           reason: string
+          target_clinic_id: string
+        }
+        Returns: undefined
+      }
+      set_clinic_plan_period: {
+        Args: {
+          p_amount: number
+          p_period_days: number
+          p_start_on: string
           target_clinic_id: string
         }
         Returns: undefined
