@@ -38,8 +38,8 @@ export function ReadOnlyPage({
         ← {backLabel}
       </Link>
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Esta acción no está disponible mientras tu clínica esté en modo solo lectura. Puedes seguir consultando y
-        descargando tu información.
+        Esta acción no está disponible mientras tu clínica esté en modo solo lectura. Puedes seguir consultando tu
+        información, y el administrador puede exportar el listado de pacientes.
       </p>
       {children}
     </div>
