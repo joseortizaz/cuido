@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { slug, todayInSantoDomingo } from "@/lib/bulk-import/export-tables";
 import {
   buildEncounterTable,
   fetchEncounterExportData,
@@ -29,21 +30,6 @@ import {
  * La lectura es COMPLETA y paginada; si algo falla, responde 500 en vez de
  * entregar un archivo incompleto como si estuviera completo.
  */
-
-function slug(name: string): string {
-  return (
-    name
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "especialidad"
-  );
-}
-
-function todayInSantoDomingo(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" });
-}
 
 export async function GET(request: Request) {
   const supabase = await createClient();

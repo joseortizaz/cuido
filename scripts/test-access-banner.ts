@@ -78,7 +78,7 @@ expect("solo lectura => enfático", banner("solo_lectura", -31, 0), "danger", "m
 check(
   "solo lectura aclara qué sigue disponible: consulta y exportar pacientes y consultas (sin prometer más)",
   /consultando toda tu información/.test(banner("solo_lectura", -31, 0)?.detail ?? "") &&
-    /exportar los pacientes y las consultas/.test(banner("solo_lectura", -31, 0)?.detail ?? "") &&
+    /exportar toda la información de la clínica/.test(banner("solo_lectura", -31, 0)?.detail ?? "") &&
     !/descarg/.test(banner("solo_lectura", -31, 0)?.detail ?? ""),
   JSON.stringify(banner("solo_lectura", -31, 0))
 );

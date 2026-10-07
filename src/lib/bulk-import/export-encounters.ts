@@ -1,10 +1,21 @@
-import ExcelJS from "exceljs";
-import Papa from "papaparse";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "../supabase/database.types";
 import { parseTemplateSchema, type TemplateField } from "../domain/specialty-template";
 import { VITAL_KEYS, VITAL_LABELS } from "../domain/vital-signs";
 import { fetchAllPages } from "./fetch-all";
+import {
+  formatDateTimeSantoDomingo,
+  generateTableCsv,
+  generateTablesXlsx,
+  safeSheetName,
+  uniqueHeaders,
+  type ExportCell,
+  type ExportTable,
+} from "./export-tables";
+
+// Re-exportados: el resto del código y las pruebas siguen importándolos de aquí.
+export { safeSheetName };
+export type { ExportCell, ExportTable };
 
 // Deliberadamente SIN `import "server-only"` -- ver la misma nota en
 // src/lib/bulk-import/patients.ts.
@@ -45,8 +56,6 @@ export type ExportEncounter = {
 
 export type ExportTemplate = { id: string; name: string; schema: Json };
 
-export type ExportCell = string | number;
-export type ExportTable = { name: string; headers: string[]; rows: ExportCell[][] };
 
 /** Todas las consultas visibles para el cliente (opcionalmente de una sola plantilla), sin truncar. */
 export async function fetchEncounterExportData(
@@ -91,19 +100,7 @@ type RawEncounterRow = {
 };
 
 /** "YYYY-MM-DD HH:mm" en America/Santo_Domingo. */
-export function formatEncounterDateTime(timestamp: string): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Santo_Domingo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date(timestamp));
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")} ${get("hour")}:${get("minute")}`;
-}
+export const formatEncounterDateTime = formatDateTimeSantoDomingo;
 
 function formatValue(value: unknown): ExportCell {
   if (value === null || value === undefined) return "";
@@ -111,16 +108,6 @@ function formatValue(value: unknown): ExportCell {
   if (typeof value === "boolean") return value ? "Sí" : "No";
   if (typeof value === "string") return value;
   return JSON.stringify(value);
-}
-
-/** Encabezados repetidos reciben " (2)", " (3)"... -- una columna nunca pisa a otra. */
-function uniqueHeaders(headers: string[]): string[] {
-  const seen = new Map<string, number>();
-  return headers.map((h) => {
-    const n = (seen.get(h) ?? 0) + 1;
-    seen.set(h, n);
-    return n === 1 ? h : `${h} (${n})`;
-  });
 }
 
 const FIXED_HEADERS = [
@@ -191,18 +178,6 @@ export function buildEncounterTable(
   return { name: template.name, headers, rows };
 }
 
-/** Nombre de hoja válido en Excel: ≤31 caracteres, sin \ / ? * [ ] : y único en el libro. */
-export function safeSheetName(name: string, used: Set<string>): string {
-  const base = name.replace(/[\\/?*[\]:]/g, "-").trim().slice(0, 31) || "Hoja";
-  let candidate = base;
-  for (let n = 2; used.has(candidate.toLowerCase()); n++) {
-    const suffix = ` (${n})`;
-    candidate = base.slice(0, 31 - suffix.length) + suffix;
-  }
-  used.add(candidate.toLowerCase());
-  return candidate;
-}
-
 /**
  * Libro con una hoja "Resumen" (especialidad y cantidad de consultas -- para
  * cotejar que no falte nada) y una hoja por especialidad con consultas.
@@ -211,39 +186,13 @@ export async function generateEncountersExportXlsx(
   tables: ExportTable[],
   options: { generatedOn: string }
 ): Promise<Buffer> {
-  const workbook = new ExcelJS.Workbook();
-  const used = new Set<string>(["resumen"]);
-
-  const summary = workbook.addWorksheet("Resumen");
-  summary.addRow(["Especialidad", "Consultas exportadas"]);
-  summary.getRow(1).font = { bold: true };
-  summary.columns = [{ width: 48 }, { width: 22 }];
-  for (const t of tables) summary.addRow([t.name, t.rows.length]);
-  summary.addRow([]);
-  summary.addRow(["Total", tables.reduce((n, t) => n + t.rows.length, 0)]);
-  summary.lastRow!.font = { bold: true };
-  summary.addRow([]);
-  summary.addRow([`Exportado el ${options.generatedOn}. Solo incluye las consultas que el usuario que exporta tiene permiso de ver.`]);
-
-  for (const t of tables) {
-    const sheet = workbook.addWorksheet(safeSheetName(t.name, used));
-    sheet.addRow(t.headers);
-    sheet.getRow(1).font = { bold: true };
-    sheet.views = [{ state: "frozen", ySplit: 1 }];
-    sheet.columns.forEach((c, i) => (c.width = i === 0 ? 38 : 22));
-    for (const row of t.rows) sheet.addRow(row);
-  }
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  return Buffer.from(buffer);
+  return generateTablesXlsx(tables, {
+    generatedOn: options.generatedOn,
+    summaryLabel: "Especialidad",
+    countLabel: "Consultas exportadas",
+    note: "Solo incluye las consultas que el usuario que exporta tiene permiso de ver.",
+  });
 }
 
-/**
- * CSV de UNA especialidad, con BOM UTF-8 (sin él, Excel lee los acentos como
- * Latin-1) y `escapeFormulae`: una celda que empieza por = + - @ (p. ej. un
- * texto clínico "- sin fiebre") se antepone con ' para que Excel nunca la
- * ejecute como fórmula al abrir el archivo (inyección de fórmulas en CSV).
- */
-export function generateEncountersCsv(table: ExportTable): string {
-  return "﻿" + Papa.unparse({ fields: table.headers, data: table.rows }, { escapeFormulae: true });
-}
+/** CSV de UNA especialidad (BOM UTF-8 y escape de fórmulas: ver generateTableCsv). */
+export const generateEncountersCsv = generateTableCsv;

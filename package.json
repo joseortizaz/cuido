@@ -13,6 +13,7 @@
     "test:readonly-guard": "tsx scripts/test-readonly-guard.ts",
     "test:access-banner": "tsx scripts/test-access-banner.ts",
     "test:export-encounters": "tsx scripts/test-export-encounters.ts",
+    "test:export-records": "tsx scripts/test-export-records.ts",
     "provision:clinic": "tsx scripts/provision-clinic.ts",
     "grant:operator": "tsx scripts/grant-platform-operator.ts"
   },
