@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { SpecialtyPicker } from "./specialty-picker";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 /**
  * El picker de especialidad combina dos mecanismos independientes
@@ -37,6 +38,9 @@ export default async function ChooseSpecialtyPage({
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin" && membership.role !== "medico") {
     redirect(`/patients/${id}`);
+  }
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref={`/patients/${id}`} backLabel="Paciente" />;
   }
 
   const { data: patient } = await supabase

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ConsentForm } from "./consent-form";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function NewConsentPage({
   params,
@@ -21,6 +22,9 @@ export default async function NewConsentPage({
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref={`/patients/${id}`} backLabel="Paciente" />;
+  }
 
   const [{ data: patient }, { data: templates }, { data: encounters }] = await Promise.all([
     supabase.from("patients").select("id, first_name, last_name").eq("id", id).maybeSingle(),

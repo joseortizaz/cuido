@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { BillingForm } from "./billing-form";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function NewFiscalDocumentPage({
   searchParams,
@@ -19,6 +20,9 @@ export default async function NewFiscalDocumentPage({
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin" && membership.role !== "recepcion") redirect("/dashboard");
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref="/billing" backLabel="Facturación" />;
+  }
 
   if (!patientId) redirect("/patients");
 

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type PatientFormState = { error?: string } | undefined;
 
@@ -25,6 +26,8 @@ export async function createPatient(
   const supabase = await createClient();
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const { data: patient, error } = await supabase
     .from("patients")

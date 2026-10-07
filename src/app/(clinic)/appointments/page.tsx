@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { AppointmentRowActions } from "./appointment-row-actions";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 const STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
@@ -52,6 +53,7 @@ export default async function AppointmentsPage({
 
   const canManage = membership.role === "admin" || membership.role === "recepcion";
   const canConvert = membership.role === "admin" || membership.role === "medico";
+  const readOnly = await isClinicReadOnly();
 
   const view = viewParam === "week" ? "week" : "day";
   const selectedDate = parseDateParam(dateParam);
@@ -130,7 +132,7 @@ export default async function AppointmentsPage({
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Agenda</h1>
-        {canManage && (
+        {canManage && !readOnly && (
           <Link
             href="/appointments/new"
             className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
@@ -139,6 +141,7 @@ export default async function AppointmentsPage({
           </Link>
         )}
       </div>
+      <ReadOnlyNotice />
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <Link
@@ -202,7 +205,7 @@ export default async function AppointmentsPage({
         <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
           {appointments.map((appt) => {
             const alreadyConverted = linkedAppointmentIds.has(appt.id);
-            const convertible = canConvert && !alreadyConverted && (appt.status === "pendiente" || appt.status === "confirmada");
+            const convertible = canConvert && !readOnly && !alreadyConverted && (appt.status === "pendiente" || appt.status === "confirmada");
             const isSurgical = appt.appointment_type === "procedimiento_quirurgico";
             return (
               <li key={appt.id} className="flex flex-col gap-2 py-4">
@@ -232,7 +235,7 @@ export default async function AppointmentsPage({
                 <AppointmentRowActions
                   appointmentId={appt.id}
                   currentStatus={appt.status}
-                  canManage={canManage}
+                  canManage={canManage && !readOnly}
                   convertHref={
                     convertible
                       ? `/patients/${appt.patient_id}/encounters/new/${appt.specialty_template_id}?appointmentId=${appt.id}`

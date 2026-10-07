@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type SimpleFormState = { error?: string } | undefined;
 
@@ -28,6 +29,8 @@ export async function addAllergy(
   const supabase = await createClient();
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) return { error: "No se pudo determinar tu clínica." };
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const { error } = await supabase.from("allergies").insert({
     clinic_id: membership.clinicId,
@@ -59,6 +62,8 @@ export async function addMedication(
   const supabase = await createClient();
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) return { error: "No se pudo determinar tu clínica." };
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const { error } = await supabase.from("medications").insert({
     clinic_id: membership.clinicId,

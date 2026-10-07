@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type NewAppointmentActionState = { error?: string } | undefined;
 
@@ -29,6 +30,8 @@ export async function createAppointment(
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (membership.role !== "admin" && membership.role !== "recepcion") {
     return { error: "No tienes permiso para agendar citas." };
   }

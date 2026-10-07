@@ -16,6 +16,16 @@ import { getWhatsAppConfig } from "./env";
  *
  * Referencia oficial del payload: Meta Graph API, endpoint
  * POST /{phone-number-id}/messages, mensajes de tipo "template".
+ *
+ * MODO SOLO LECTURA (período de prueba y suscripciones): una clínica en
+ * solo lectura o suspendida NO debe enviar mensajes (decisión de José).
+ * Hoy el único llamador es el envío de prueba del operador, que no
+ * pertenece a ninguna clínica (clinic_id nulo), así que no hay nada que
+ * bloquear todavía. Cuando exista el recordatorio automático de citas, quien
+ * lo dispare DEBE consultar `readOnlyBlock` (src/lib/supabase/clinic-access.ts)
+ * ANTES de llamar a esta función: el trigger de la base de datos también
+ * rechaza el INSERT en whatsapp_messages de una clínica en solo lectura, pero
+ * para entonces el mensaje ya habría salido por Meta.
  */
 
 export type WhatsAppTemplateParam = { type: "text"; text: string };

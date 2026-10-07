@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 
 export type FiscalActionState = { error?: string; success?: string } | undefined;
 
@@ -28,6 +29,8 @@ export async function upsertFiscalProfile(
   formData: FormData
 ): Promise<FiscalActionState> {
   const { supabase, membership } = await requireAdminMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const rnc = String(formData.get("rnc") ?? "").trim();
   const businessName = String(formData.get("business_name") ?? "").trim();
@@ -83,7 +86,9 @@ export async function addFiscalSequence(
   _prevState: FiscalActionState,
   formData: FormData
 ): Promise<FiscalActionState> {
-  const { membership } = await requireAdminMembership();
+  const { supabase, membership } = await requireAdminMembership();
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
 
   const rangeStart = Number(formData.get("range_start"));
   const rangeEnd = Number(formData.get("range_end"));

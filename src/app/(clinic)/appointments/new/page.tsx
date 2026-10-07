@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { NewAppointmentForm } from "./new-appointment-form";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function NewAppointmentPage() {
   const supabase = await createClient();
@@ -16,6 +17,9 @@ export default async function NewAppointmentPage() {
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin" && membership.role !== "recepcion") {
     redirect("/appointments");
+  }
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref="/appointments" backLabel="Agenda" />;
   }
 
   const [{ data: patients }, { data: providerMembers }, { data: templates }] = await Promise.all([

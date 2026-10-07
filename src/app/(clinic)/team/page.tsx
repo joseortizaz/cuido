@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { InviteForm } from "./invite-form";
 import { MemberRoleForm, RemoveMemberForm } from "./member-actions";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
@@ -41,6 +42,7 @@ export default async function TeamPage() {
   );
 
   const isAdmin = membership.role === "admin";
+  const readOnly = await isClinicReadOnly();
 
   // Cupos de médicos: get_my_clinic_access() solo los devuelve al admin.
   let seats: { used: number; included: number } | null = null;
@@ -61,6 +63,8 @@ export default async function TeamPage() {
         <h1 className="mt-1 text-2xl font-semibold">Equipo</h1>
       </div>
 
+      <ReadOnlyNotice />
+
       <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
         {(members ?? []).map((member) => (
           <li key={member.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
@@ -80,8 +84,10 @@ export default async function TeamPage() {
                     Especialidades
                   </Link>
                 )}
-                <MemberRoleForm memberId={member.id} currentRole={member.role} />
-                <RemoveMemberForm memberId={member.id} />
+                <fieldset disabled={readOnly} className="m-0 flex min-w-0 items-center gap-2 border-0 p-0">
+                  <MemberRoleForm memberId={member.id} currentRole={member.role} />
+                  <RemoveMemberForm memberId={member.id} />
+                </fieldset>
               </div>
             ) : (
               <span className="text-zinc-600 dark:text-zinc-400">
@@ -95,7 +101,9 @@ export default async function TeamPage() {
       {isAdmin && (
         <div className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
           <h2 className="text-lg font-medium">Invitar miembro</h2>
-          <InviteForm seats={seats} />
+          <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
+            <InviteForm seats={seats} />
+          </fieldset>
         </div>
       )}
     </div>

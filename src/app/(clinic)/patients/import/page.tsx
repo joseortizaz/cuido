@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 /**
  * Landing de importación masiva -- pacientes (Fase 1) y consultas por
@@ -18,6 +19,9 @@ export default async function ImportLandingPage() {
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin") redirect("/patients");
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref="/patients" backLabel="Pacientes" />;
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">

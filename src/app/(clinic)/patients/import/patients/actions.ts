@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import {
   PATIENT_ROW_LIMIT,
   parsePatientImportFile,
@@ -31,6 +32,8 @@ export async function uploadPatientImport(
 
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
+  const readOnly = await readOnlyBlock(supabase);
+  if (readOnly) return { error: readOnly };
   if (membership.role !== "admin") {
     return { error: "Solo el administrador de la clínica puede importar pacientes." };
   }

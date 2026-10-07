@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { FiscalProfileForm } from "./fiscal-profile-form";
 import { SequenceForm } from "./sequence-form";
+import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function FiscalSettingsPage() {
   const supabase = await createClient();
@@ -15,6 +16,7 @@ export default async function FiscalSettingsPage() {
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin") redirect("/dashboard");
+  const readOnly = await isClinicReadOnly();
 
   const [{ data: profile }, { data: sequence }] = await Promise.all([
     supabase
@@ -42,9 +44,13 @@ export default async function FiscalSettingsPage() {
         </p>
       </div>
 
+      <ReadOnlyNotice />
+
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Emisor</h2>
-        <FiscalProfileForm profile={profile ?? null} />
+        <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
+          <FiscalProfileForm profile={profile ?? null} />
+        </fieldset>
       </section>
 
       <section className="flex flex-col gap-3">
@@ -59,7 +65,9 @@ export default async function FiscalSettingsPage() {
             {sequence.valid_until}
           </p>
         )}
-        <SequenceForm currentRangeStart={sequence?.range_start} />
+        <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
+          <SequenceForm currentRangeStart={sequence?.range_start} />
+        </fieldset>
       </section>
     </div>
   );

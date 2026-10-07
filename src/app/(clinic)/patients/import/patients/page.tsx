@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { UploadPatientImportForm } from "./upload-form";
+import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function UploadPatientImportPage() {
   const supabase = await createClient();
@@ -14,6 +15,9 @@ export default async function UploadPatientImportPage() {
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
   if (membership.role !== "admin") redirect("/patients");
+  if (await isClinicReadOnly()) {
+    return <ReadOnlyPage backHref="/patients" backLabel="Pacientes" />;
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-16">
