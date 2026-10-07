@@ -37,7 +37,7 @@ export const CONTACT_WHATSAPP_URL = "https://wa.me/18293748878";
 
 export const READONLY_MESSAGE =
   "Tu clínica está en modo solo lectura: puedes consultar toda la información y el administrador puede " +
-  `exportar el listado de pacientes, pero no se puede crear ni modificar nada. Contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
+  `exportar los pacientes y las consultas, pero no se puede crear ni modificar nada. Contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
 
 export const SUSPENDED_MESSAGE =
   `Tu clínica está suspendida. Contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
@@ -129,7 +129,7 @@ export function describeAccessBanner(
         tone: "danger",
         title: "Tu clínica está en modo solo lectura",
         detail:
-          "Puedes seguir consultando toda tu información, y el administrador puede exportar el listado de pacientes, " +
+          "Puedes seguir consultando toda tu información, y el administrador puede exportar los pacientes y las consultas, " +
           "pero no se puede crear ni modificar nada. " +
           `Para reactivarla, contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`,
       };

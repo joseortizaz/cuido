@@ -93,6 +93,11 @@ jobs:
       - name: Run access banner test
         run: npm run test:access-banner
 
+      # Exportación de pacientes y consultas con >1000 filas (no debe truncar), control de acceso
+      # de Salud Mental y seguridad del archivo (inyección de formulas en CSV).
+      - name: Run export test
+        run: npm run test:export-encounters
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

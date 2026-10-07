@@ -7,23 +7,13 @@ import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialt
 import { ClaimForm } from "./claims/claim-form";
 import { ClaimStatusForm } from "@/app/(clinic)/claims/claim-status-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { VITAL_LABELS } from "@/lib/domain/vital-signs";
 
 const CLAIM_STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
   enviada: "Enviada",
   aprobada: "Aprobada",
   rechazada: "Rechazada",
-};
-
-const VITAL_LABELS: Record<string, string> = {
-  systolic_bp: "PA sistólica",
-  diastolic_bp: "PA diastólica",
-  heart_rate: "FC (lpm)",
-  respiratory_rate: "FR (rpm)",
-  temperature_celsius: "Temp (°C)",
-  oxygen_saturation: "SatO₂ (%)",
-  weight_kg: "Peso (kg)",
-  height_cm: "Talla (cm)",
 };
 
 export default async function EncounterDetailPage({

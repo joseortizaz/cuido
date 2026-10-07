@@ -76,9 +76,9 @@ check(
 console.log("\nSolo lectura y suspendida:");
 expect("solo lectura => enfático", banner("solo_lectura", -31, 0), "danger", "modo solo lectura");
 check(
-  "solo lectura aclara qué sigue disponible: consulta y exportar el listado de pacientes (sin prometer más)",
+  "solo lectura aclara qué sigue disponible: consulta y exportar pacientes y consultas (sin prometer más)",
   /consultando toda tu información/.test(banner("solo_lectura", -31, 0)?.detail ?? "") &&
-    /exportar el listado de pacientes/.test(banner("solo_lectura", -31, 0)?.detail ?? "") &&
+    /exportar los pacientes y las consultas/.test(banner("solo_lectura", -31, 0)?.detail ?? "") &&
     !/descarg/.test(banner("solo_lectura", -31, 0)?.detail ?? ""),
   JSON.stringify(banner("solo_lectura", -31, 0))
 );

@@ -1,6 +1,8 @@
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { fetchAllPages } from "./fetch-all";
 
 // Deliberadamente SIN `import "server-only"` -- ver la misma nota en
 // src/lib/bulk-import/patients.ts.
@@ -81,9 +83,66 @@ export async function generatePatientsExportXlsx(
   return Buffer.from(buffer);
 }
 
+/**
+ * BOM UTF-8 (sin él, Excel lee los acentos como Latin-1) y `escapeFormulae`: una
+ * celda que empieza por = + - @ se antepone con ' para que Excel nunca la
+ * ejecute como fórmula al abrir el archivo (inyección de fórmulas en CSV).
+ */
 export function generatePatientsExportCsv(patients: Patient[]): string {
-  return Papa.unparse({
-    fields: PATIENT_HEADERS,
-    data: patients.map(patientRow),
-  });
+  return (
+    "﻿" +
+    Papa.unparse(
+      {
+        fields: PATIENT_HEADERS,
+        data: patients.map(patientRow),
+      },
+      { escapeFormulae: true }
+    )
+  );
+}
+
+/**
+ * Lee TODOS los pacientes (y, para el .xlsx, sus alergias y medicamentos) de la
+ * clínica del cliente, sin truncar.
+ *
+ * Dos problemas de la versión anterior de la ruta, corregidos aquí:
+ *  - PostgREST corta cada respuesta en 1000 filas sin dar error: con más de
+ *    1000 pacientes el archivo salía truncado en silencio. Ahora se pagina.
+ *  - Las alergias y medicamentos se pedían con `.in("patient_id", <todos los
+ *    ids>)`; con miles de ids la URL supera el límite y la consulta fallaba en
+ *    silencio, exportando hojas vacías. Ahora se leen paginadas y sin filtro
+ *    por id: el aislamiento por clínica lo da RLS (cliente normal del admin,
+ *    nunca service_role), igual que antes.
+ */
+export async function fetchPatientsExportData(
+  supabase: SupabaseClient<Database>,
+  options: { withDetail: boolean }
+): Promise<{ patients: Patient[]; allergies: Allergy[]; medications: Medication[] }> {
+  const patients = await fetchAllPages<Patient>(async (from, to) =>
+    supabase
+      .from("patients")
+      .select("id, first_name, last_name, national_id, date_of_birth, sex, phone, email")
+      .order("last_name", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to)
+  );
+  if (!options.withDetail) return { patients, allergies: [], medications: [] };
+
+  const [allergies, medications] = await Promise.all([
+    fetchAllPages<Allergy>(async (from, to) =>
+      supabase
+        .from("allergies")
+        .select("id, patient_id, substance, reaction, severity, status")
+        .order("id", { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllPages<Medication>(async (from, to) =>
+      supabase
+        .from("medications")
+        .select("id, patient_id, name, dose, frequency, status, started_at, discontinued_at")
+        .order("id", { ascending: true })
+        .range(from, to)
+    ),
+  ]);
+  return { patients, allergies, medications };
 }
