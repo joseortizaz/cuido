@@ -259,16 +259,31 @@ async function main() {
     checked_by: adminUser.userId,
   });
   if (elErr) throw new Error(`insert elegibilidad: ${elErr.message}`);
-  const { error: clErr } = await admin.from("insurance_claims").insert({
+  const { data: claimRow, error: clErr } = await admin
+    .from("insurance_claims")
+    .insert({
+      clinic_id: cid,
+      encounter_id: enc.id,
+      patient_insurer_id: ins.id,
+      claimed_amount: 1500.5,
+      status: "rechazada",
+      rejection_reason: "Cobertura vencida",
+      fiscal_document_id: doc1,
+      authorization_number: "AUT-9",
+      created_by: adminUser.userId,
+    })
+    .select("id")
+    .single();
+  if (clErr || !claimRow) throw new Error(`insert reclamación: ${clErr?.message}`);
+  const { error: dxErr } = await admin.from("insurance_claim_diagnoses").insert({
     clinic_id: cid,
-    encounter_id: enc.id,
-    patient_insurer_id: ins.id,
-    claimed_amount: 1500.5,
-    status: "rechazada",
-    rejection_reason: "Cobertura vencida",
+    claim_id: claimRow.id,
+    code: "J00",
+    description: "Rinofaringitis aguda",
+    is_primary: true,
     created_by: adminUser.userId,
   });
-  if (clErr) throw new Error(`insert reclamación: ${clErr.message}`);
+  if (dxErr) throw new Error(`insert diagnóstico: ${dxErr.message}`);
 
   // Citas: una quirúrgica (con su lista de verificación, creada por trigger) y más de 1000 en total.
   const baseDate = new Date("2026-04-01T13:00:00Z").getTime();
@@ -408,7 +423,10 @@ async function main() {
       claim[col(claims, "Monto reclamado")] === 1500.5 &&
       claim[col(claims, "Estado")] === "rechazada" &&
       claim[col(claims, "Motivo de rechazo")] === "Cobertura vencida" &&
-      claim[col(claims, "Apellido del paciente")] === "Peña",
+      claim[col(claims, "Apellido del paciente")] === "Peña" &&
+      claim[col(claims, "e-NCF vinculado")] === "E320000000001" &&
+      claim[col(claims, "No. de autorización")] === "AUT-9" &&
+      String(claim[col(claims, "Diagnósticos codificados")]).includes("J00 (CIE-10, principal) Rinofaringitis aguda"),
     JSON.stringify(claim)
   );
 
@@ -431,6 +449,7 @@ async function main() {
   check(
     "seguro y verificación de elegibilidad",
     insurers.rows[0][col(insurers, "Aseguradora")] === "SENASA" &&
+      insurers.rows[0][col(insurers, "En el catálogo de ARS")] === "No" &&
       elig.rows[0][col(elig, "Resultado")] === "elegible" &&
       elig.rows[0][col(elig, "Aseguradora")] === "SENASA" &&
       elig.rows[0][col(elig, "Verificado por")] === adminUser.email,

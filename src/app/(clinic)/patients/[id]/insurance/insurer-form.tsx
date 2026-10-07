@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { registerInsurer, type InsuranceActionState } from "./actions";
 
 const inputClass =
   "rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400";
 
-export function InsurerForm({ patientId }: { patientId: string }) {
+export function InsurerForm({ patientId, catalog }: { patientId: string; catalog: { id: string; name: string }[] }) {
+  const [choice, setChoice] = useState(catalog[0]?.id ?? "otra");
   const registerForPatient = registerInsurer.bind(null, patientId);
   const [state, formAction, pending] = useActionState<InsuranceActionState, FormData>(
     registerForPatient,
@@ -19,8 +20,29 @@ export function InsurerForm({ patientId }: { patientId: string }) {
         <label htmlFor="insurer_name" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
           Aseguradora (ARS)
         </label>
-        <input id="insurer_name" name="insurer_name" type="text" required className={`${inputClass} w-40`} />
+        <select
+          id="insurer_id"
+          name="insurer_id"
+          value={choice}
+          onChange={(e) => setChoice(e.target.value)}
+          className={`${inputClass} w-48`}
+        >
+          {catalog.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.name}
+            </option>
+          ))}
+          <option value="otra">Otra aseguradora (escribir)</option>
+        </select>
       </div>
+      {choice === "otra" && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="insurer_name" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            Nombre de la aseguradora
+          </label>
+          <input id="insurer_name" name="insurer_name" type="text" required className={`${inputClass} w-40`} />
+        </div>
+      )}
       <div className="flex flex-col gap-1">
         <label htmlFor="affiliate_number" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
           Número de afiliado

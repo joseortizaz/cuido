@@ -40,10 +40,38 @@ export async function registerInsurer(
   const readOnly = await readOnlyBlock(supabase);
   if (readOnly) return { error: readOnly };
 
-  const insurerName = String(formData.get("insurer_name") ?? "").trim();
+  // La ARS se elige del catálogo (insurer_id) o, si no está, se escribe como «otra».
+  const insurerChoice = String(formData.get("insurer_id") ?? "");
+  const typedName = String(formData.get("insurer_name") ?? "").trim();
   const affiliateNumber = String(formData.get("affiliate_number") ?? "").trim();
 
-  if (!insurerName) return { error: "El nombre de la aseguradora es requerido." };
+  let insurerId: string | null = null;
+  let insurerName = typedName;
+  if (insurerChoice && insurerChoice !== "otra") {
+    const { data: catalogRow } = await supabase
+      .from("insurers")
+      .select("id, name")
+      .eq("id", insurerChoice)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!catalogRow) return { error: "La aseguradora elegida no está en el catálogo." };
+    insurerId = catalogRow.id;
+    insurerName = catalogRow.name;
+  } else {
+    // Si lo escrito coincide con el catálogo (nombre o alias), se usa el del catálogo.
+    if (typedName) {
+      const { data: matched } = await supabase.rpc("match_insurer", { p_name: typedName });
+      if (matched) {
+        const { data: row } = await supabase.from("insurers").select("id, name").eq("id", matched).eq("is_active", true).maybeSingle();
+        if (row) {
+          insurerId = row.id;
+          insurerName = row.name;
+        }
+      }
+    }
+  }
+
+  if (!insurerName) return { error: "Elige la aseguradora o escribe su nombre." };
   if (!affiliateNumber) return { error: "El número de afiliado es requerido." };
 
   await supabase
@@ -59,6 +87,7 @@ export async function registerInsurer(
   const { error } = await supabase.from("patient_insurers").insert({
     clinic_id: clinicId,
     patient_id: patientId,
+    insurer_id: insurerId,
     insurer_name: insurerName,
     affiliate_number: affiliateNumber,
     is_current: true,

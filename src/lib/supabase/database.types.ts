@@ -1369,15 +1369,74 @@ export type Database = {
           },
         ]
       }
+      insurance_claim_diagnoses: {
+        Row: {
+          claim_id: string
+          clinic_id: string
+          code: string
+          code_system: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          is_primary: boolean
+          position: number
+        }
+        Insert: {
+          claim_id: string
+          clinic_id: string
+          code: string
+          code_system?: string
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          is_primary?: boolean
+          position?: number
+        }
+        Update: {
+          claim_id?: string
+          clinic_id?: string
+          code?: string
+          code_system?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          is_primary?: boolean
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claim_diagnoses_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claim_diagnoses_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_claims: {
         Row: {
+          approved_amount: number | null
+          authorization_number: string | null
           claimed_amount: number | null
           clinic_id: string
           created_at: string
           created_by: string
           encounter_id: string
+          fiscal_document_id: string | null
           id: string
           notes: string | null
+          paid_amount: number | null
+          paid_on: string | null
           patient_insurer_id: string
           rejection_reason: string | null
           status: string
@@ -1386,13 +1445,18 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_amount?: number | null
+          authorization_number?: string | null
           claimed_amount?: number | null
           clinic_id: string
           created_at?: string
           created_by: string
           encounter_id: string
+          fiscal_document_id?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number | null
+          paid_on?: string | null
           patient_insurer_id: string
           rejection_reason?: string | null
           status?: string
@@ -1401,13 +1465,18 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_amount?: number | null
+          authorization_number?: string | null
           claimed_amount?: number | null
           clinic_id?: string
           created_at?: string
           created_by?: string
           encounter_id?: string
+          fiscal_document_id?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number | null
+          paid_on?: string | null
           patient_insurer_id?: string
           rejection_reason?: string | null
           status?: string
@@ -1431,6 +1500,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "insurance_claims_fiscal_document_id_fkey"
+            columns: ["fiscal_document_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_documents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "insurance_claims_patient_insurer_id_fkey"
             columns: ["patient_insurer_id"]
             isOneToOne: false
@@ -1438,6 +1514,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      insurers: {
+        Row: {
+          aliases: string[]
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       medications: {
         Row: {
@@ -1498,6 +1601,7 @@ export type Database = {
           affiliate_number: string
           clinic_id: string
           id: string
+          insurer_id: string | null
           insurer_name: string
           is_current: boolean
           patient_id: string
@@ -1508,6 +1612,7 @@ export type Database = {
           affiliate_number: string
           clinic_id: string
           id?: string
+          insurer_id?: string | null
           insurer_name: string
           is_current?: boolean
           patient_id: string
@@ -1518,6 +1623,7 @@ export type Database = {
           affiliate_number?: string
           clinic_id?: string
           id?: string
+          insurer_id?: string | null
           insurer_name?: string
           is_current?: boolean
           patient_id?: string
@@ -1530,6 +1636,13 @@ export type Database = {
             columns: ["clinic_id"]
             isOneToOne: false
             referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_insurers_insurer_id_fkey"
+            columns: ["insurer_id"]
+            isOneToOne: false
+            referencedRelation: "insurers"
             referencedColumns: ["id"]
           },
           {
@@ -1977,7 +2090,9 @@ export type Database = {
       list_policies_open_when_blocked: { Args: never; Returns: string[] }
       list_unguarded_tables: { Args: never; Returns: string[] }
       log_clinic_export: { Args: { p_kind: string }; Returns: undefined }
+      match_insurer: { Args: { p_name: string }; Returns: string }
       my_admin_clinic_id: { Args: never; Returns: string }
+      normalize_insurer_name: { Args: { p_name: string }; Returns: string }
       operator_clinic_access_overview: {
         Args: never
         Returns: {
@@ -2005,6 +2120,13 @@ export type Database = {
       operator_start_expired_retention_deletion: {
         Args: { target_clinic_id: string }
         Returns: string
+      }
+      operator_unmatched_insurers: {
+        Args: never
+        Returns: {
+          insurer_name: string
+          uses: number
+        }[]
       }
       readonly_guard_exempt_tables: { Args: never; Returns: string[] }
       register_clinic_payment: {
@@ -2087,6 +2209,15 @@ export type Database = {
           target_clinic_id: string
         }
         Returns: undefined
+      }
+      upsert_insurer: {
+        Args: {
+          p_aliases: string[]
+          p_id?: string
+          p_is_active: boolean
+          p_name: string
+        }
+        Returns: string
       }
       void_fiscal_document: {
         Args: { reason: string; target_fiscal_document_id: string }
