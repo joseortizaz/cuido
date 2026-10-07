@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   "/normativa",
   "/forgot-password",
   "/privacidad",
+  "/terminos",
   "/eliminacion-datos",
   // El matcher de src/proxy.ts excluye favicon.ico y extensiones de
   // imagen comunes, pero NO .webmanifest -- sin esta entrada, un
