@@ -89,6 +89,10 @@ jobs:
       - name: Run read-only guard test
         run: npm run test:readonly-guard
 
+      # Lógica pura de qué aviso muestra la barra de la clínica (sin base de datos).
+      - name: Run access banner test
+        run: npm run test:access-banner
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

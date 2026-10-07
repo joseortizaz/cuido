@@ -1,44 +1,14 @@
 import { cache } from "react";
 import { createClient } from "./server";
 
-/**
- * Estado de acceso de la clínica (período de prueba y suscripciones), tal
- * como lo calcula la base de datos -- ver
- * supabase/migrations/20261006100000_subscription_access_state.sql y
- * 20261007100000_subscription_plan_periods_and_payments.sql.
- */
-export type ClinicAccessState =
-  | "prueba"
-  | "activa"
-  | "por_renovar"
-  | "vencida_en_gracia"
-  | "solo_lectura"
-  | "suspendida"
-  | "exenta"
-  | "sin_plan";
+import type { ClinicAccess, ClinicAccessState } from "@/lib/domain/clinic-access";
+import { READONLY_MESSAGE, SUSPENDED_MESSAGE } from "@/lib/domain/clinic-access";
 
-export type ClinicAccess = {
-  clinicId: string;
-  state: ClinicAccessState;
-  /** Negativo una vez vencida. null si la clínica no tiene ninguna fecha. */
-  daysToExpiry: number | null;
-  /** 0 el primer día de solo lectura. */
-  daysToReadonly: number | null;
-  /** Solo para el admin (get_my_clinic_access los devuelve null al resto). */
-  seatsUsed: number | null;
-  seatsIncluded: number | null;
-  /** Una clínica en solo lectura o suspendida no puede escribir. */
-  isReadOnly: boolean;
-};
-
-export const CONTACT_NARNIA = "info@narniats.com / WhatsApp 829-374-8878";
-
-export const READONLY_MESSAGE =
-  "Tu clínica está en modo solo lectura: puedes consultar y descargar toda la información, " +
-  `pero no crear ni modificar nada. Contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
-
-export const SUSPENDED_MESSAGE =
-  `Tu clínica está suspendida. Contacta a Narnia Tech Solution: ${CONTACT_NARNIA}.`;
+// Tipos, textos y la lógica del aviso viven en src/lib/domain/clinic-access.ts
+// (módulo puro, probable con fechas límite). Se re-exportan aquí para que los
+// llamadores existentes sigan importando todo desde un solo lugar.
+export type { ClinicAccess, ClinicAccessState } from "@/lib/domain/clinic-access";
+export { CONTACT_NARNIA, READONLY_MESSAGE, SUSPENDED_MESSAGE } from "@/lib/domain/clinic-access";
 
 type ServerClient = Awaited<ReturnType<typeof createClient>>;
 

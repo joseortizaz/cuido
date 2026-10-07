@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { AppointmentRowActions } from "./appointment-row-actions";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 const STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
@@ -141,8 +141,6 @@ export default async function AppointmentsPage({
           </Link>
         )}
       </div>
-      <ReadOnlyNotice />
-
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <Link
           href={`/appointments?date=${toDateInputValue(prevDate)}&view=${view}${providerParam}`}

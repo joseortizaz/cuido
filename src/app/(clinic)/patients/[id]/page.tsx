@@ -10,7 +10,7 @@ import { InsurerForm } from "./insurance/insurer-form";
 import { EligibilityForm } from "./insurance/eligibility-form";
 import { GrantAccessForm } from "./sensitive-access/grant-access-form";
 import { RevokeAccessForm } from "./sensitive-access/revoke-access-form";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -144,8 +144,6 @@ export default async function PatientDetailPage({
           {patient.national_id ? ` · ${patient.national_id}` : ""}
         </p>
       </div>
-
-      <ReadOnlyNotice />
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ClaimStatusForm } from "./claim-status-form";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 const STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
@@ -69,8 +69,6 @@ export default async function ClaimsPage({
           Seguimiento de reclamaciones ante aseguradoras — envío manual, sin integración en vivo.
         </p>
       </div>
-      <ReadOnlyNotice />
-
       <nav className="flex flex-wrap gap-2 text-sm">
         <Link
           href="/claims"

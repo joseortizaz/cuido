@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
-import { isClinicReadOnly, ReadOnlyNotice } from "@/app/(clinic)/_components/read-only-notice";
+import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 
 export default async function PatientsPage() {
   const supabase = await createClient();
@@ -48,7 +48,6 @@ export default async function PatientsPage() {
           )}
         </div>
       </div>
-      <ReadOnlyNotice />
       {!patients || patients.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Todavía no hay pacientes registrados.
