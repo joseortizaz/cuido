@@ -42,6 +42,16 @@ export default async function TeamPage() {
 
   const isAdmin = membership.role === "admin";
 
+  // Cupos de médicos: get_my_clinic_access() solo los devuelve al admin.
+  let seats: { used: number; included: number } | null = null;
+  if (isAdmin) {
+    const { data: access } = await supabase.rpc("get_my_clinic_access");
+    const row = Array.isArray(access) ? access[0] : access;
+    if (row && row.seats_included !== null && row.seats_used !== null) {
+      seats = { used: row.seats_used, included: row.seats_included };
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
       <div>
@@ -85,7 +95,7 @@ export default async function TeamPage() {
       {isAdmin && (
         <div className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
           <h2 className="text-lg font-medium">Invitar miembro</h2>
-          <InviteForm />
+          <InviteForm seats={seats} />
         </div>
       )}
     </div>

@@ -84,6 +84,11 @@ jobs:
       - name: Run subscription state test
         run: npm run test:subscription-state
 
+      # Cobertura del trigger de solo lectura: falla si una tabla con
+      # clinic_id queda sin guard ni está en la lista explícita de exentas.
+      - name: Run read-only guard test
+        run: npm run test:readonly-guard
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
