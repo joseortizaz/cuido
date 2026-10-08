@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { ClaimHistory } from "./claim-history";
+import { PackageCard } from "./package-card";
+import { listPackageInsurers } from "@/lib/bulk-import/claims-package";
 import { ClaimStatusForm } from "./claim-status-form";
 import { ClaimPaymentForm } from "./claim-payment-form";
 import { CLAIM_STATUS_LABELS, CLAIM_STATUSES, formatMoney, pendingToCollect } from "@/lib/domain/claims";
@@ -25,14 +29,15 @@ export default async function ClaimsPage({
   const membership = await getCurrentClinicMembership(supabase);
   if (!membership) redirect("/onboarding");
   const readOnly = await isClinicReadOnly();
-  const canManageBilling = (membership.role === "admin" || membership.role === "recepcion") && !readOnly;
+  const isBillingRole = membership.role === "admin" || membership.role === "recepcion";
+  const canManageBilling = isBillingRole && !readOnly;
 
   const activeStatus = status && STATUSES.includes(status) ? status : undefined;
 
   let query = supabase
     .from("insurance_claims")
     .select(
-      "id, status, claimed_amount, rejection_reason, encounter_id, patient_insurer_id, created_at, fiscal_document_id, authorization_number, approved_amount, paid_amount, paid_on"
+      "id, status, claimed_amount, rejection_reason, encounter_id, patient_insurer_id, created_at, fiscal_document_id, authorization_number, approved_amount, paid_amount, paid_on, insurance_claim_status_history(from_status, to_status, changed_at, changed_by, rejection_reason, approved_amount)"
     )
     .order("created_at", { ascending: false });
   if (activeStatus) query = query.eq("status", activeStatus);
@@ -76,6 +81,21 @@ export default async function ClaimsPage({
   const encounterById = new Map((encounters ?? []).map((e) => [e.id, e]));
   const patientById = new Map((patients ?? []).map((p) => [p.id, p]));
   const insurerById = new Map((insurers ?? []).map((i) => [i.id, i]));
+
+  // Paquete para presentar a la ARS (personal de facturación) y correos del historial.
+  const packageInsurers = isBillingRole ? await listPackageInsurers(supabase) : [];
+  const historyUserIds = new Set<string>();
+  for (const c of claims ?? []) for (const h of c.insurance_claim_status_history ?? []) if (h.changed_by) historyUserIds.add(h.changed_by);
+  const emailByUserId = new Map<string, string>();
+  if (historyUserIds.size > 0) {
+    const admin = createAdminClient();
+    await Promise.all(
+      Array.from(historyUserIds).map(async (userId) => {
+        const { data } = await admin.auth.admin.getUserById(userId);
+        if (data.user?.email) emailByUserId.set(userId, data.user.email);
+      })
+    );
+  }
   const documentById = new Map((documents ?? []).map((d) => [d.id, d]));
   const diagnosesByClaim = new Map<string, NonNullable<typeof diagnoses>>();
   for (const d of diagnoses ?? []) {
@@ -93,6 +113,16 @@ export default async function ClaimsPage({
           autorización y los diagnósticos codificados se editan desde la consulta.
         </p>
       </div>
+      {isBillingRole && (
+        <>
+          <PackageCard insurers={packageInsurers} />
+          <p className="text-sm">
+            <Link href="/claims/reports" className="text-brand-blue hover:underline">
+              Ver reportes de reclamaciones →
+            </Link>
+          </p>
+        </>
+      )}
       <nav className="flex flex-wrap gap-2 text-sm">
         <Link
           href="/claims"
@@ -175,6 +205,7 @@ export default async function ClaimsPage({
                         .join(", ")}`
                     : "Sin diagnóstico codificado"}
                 </p>
+                <ClaimHistory rows={claim.insurance_claim_status_history ?? []} emailByUserId={emailByUserId} />
                 {canManageBilling && (
                   <>
                     <ClaimStatusForm
