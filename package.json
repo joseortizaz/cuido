@@ -18,6 +18,7 @@
     "test:terms-acceptance": "tsx scripts/test-terms-acceptance.ts",
     "test:claims": "tsx scripts/test-claims.ts",
     "test:claims-reports": "tsx scripts/test-claims-reports.ts",
+    "test:mfa": "tsx scripts/test-mfa.ts",
     "provision:clinic": "tsx scripts/provision-clinic.ts",
     "grant:operator": "tsx scripts/grant-platform-operator.ts"
   },

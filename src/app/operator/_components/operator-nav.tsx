@@ -52,6 +52,18 @@ export function OperatorNav() {
           >
             WhatsApp (prueba)
           </Link>
+          <Link
+            href="/operator/security"
+            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+          >
+            Restablecer 2FA
+          </Link>
+          <Link
+            href="/security"
+            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+          >
+            Mi seguridad
+          </Link>
         </div>
         <SignOutButton className="rounded-full border border-zinc-600 px-3 py-1.5 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/10" />
       </div>

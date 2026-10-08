@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/billing", label: "Facturación" },
   { href: "/claims", label: "Reclamaciones" },
   { href: "/team", label: "Equipo" },
+  { href: "/security", label: "Seguridad" },
 ] as const;
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {

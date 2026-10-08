@@ -1647,6 +1647,36 @@ export type Database = {
           },
         ]
       }
+      mfa_reset_log: {
+        Row: {
+          created_at: string
+          factors_removed: number
+          id: string
+          reason: string
+          reset_by: string | null
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          factors_removed?: number
+          id?: string
+          reason: string
+          reset_by?: string | null
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          factors_removed?: number
+          id?: string
+          reason?: string
+          reset_by?: string | null
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       patient_insurers: {
         Row: {
           affiliate_number: string
@@ -2142,6 +2172,7 @@ export type Database = {
       list_unguarded_tables: { Args: never; Returns: string[] }
       log_clinic_export: { Args: { p_kind: string }; Returns: undefined }
       match_insurer: { Args: { p_name: string }; Returns: string }
+      mfa_satisfied: { Args: never; Returns: boolean }
       my_admin_clinic_id: { Args: never; Returns: string }
       normalize_insurer_name: { Args: { p_name: string }; Returns: string }
       operator_clinic_access_overview: {
