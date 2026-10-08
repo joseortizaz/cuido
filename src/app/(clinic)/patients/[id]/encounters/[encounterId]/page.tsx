@@ -6,15 +6,12 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { ClaimForm } from "./claims/claim-form";
 import { ClaimStatusForm } from "@/app/(clinic)/claims/claim-status-form";
+import { ClaimPaymentForm } from "@/app/(clinic)/claims/claim-payment-form";
+import { ClaimDetailsForm, type DocumentOption } from "@/app/(clinic)/claims/claim-details-form";
+import { ClaimDiagnoses, type DiagnosisRow } from "@/app/(clinic)/claims/claim-diagnoses";
+import { CLAIM_STATUS_LABELS, formatMoney, pendingToCollect, type ClaimStatus } from "@/lib/domain/claims";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { VITAL_LABELS } from "@/lib/domain/vital-signs";
-
-const CLAIM_STATUS_LABELS: Record<string, string> = {
-  pendiente: "Pendiente",
-  enviada: "Enviada",
-  aprobada: "Aprobada",
-  rechazada: "Rechazada",
-};
 
 export default async function EncounterDetailPage({
   params,
@@ -47,7 +44,8 @@ export default async function EncounterDetailPage({
     .maybeSingle();
   if (!encounter) notFound();
 
-  const [{ data: template }, { data: vitals }, { data: insurers }, { data: claims }] = await Promise.all([
+  const [{ data: template }, { data: vitals }, { data: insurers }, { data: claims }, { data: documents }] =
+    await Promise.all([
     supabase
       .from("specialty_templates")
       .select("name, schema")
@@ -61,10 +59,40 @@ export default async function EncounterDetailPage({
       .order("recorded_at", { ascending: false }),
     supabase
       .from("insurance_claims")
-      .select("id, status, claimed_amount, rejection_reason, notes, created_by, created_at, patient_insurer_id")
+      .select(
+        "id, status, claimed_amount, rejection_reason, notes, created_by, created_at, patient_insurer_id, fiscal_document_id, authorization_number, approved_amount, paid_amount, paid_on"
+      )
       .eq("encounter_id", encounterId)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("fiscal_documents")
+      .select("id, e_ncf, monto_total, status")
+      .eq("patient_id", id)
+      .order("created_at", { ascending: false }),
   ]);
+
+  const claimIds = (claims ?? []).map((c) => c.id);
+  const { data: diagnosesRaw } =
+    claimIds.length > 0
+      ? await supabase
+          .from("insurance_claim_diagnoses")
+          .select("id, claim_id, code_system, code, description, is_primary, position")
+          .in("claim_id", claimIds)
+          .order("position", { ascending: true })
+      : { data: [] as (DiagnosisRow & { claim_id: string; position: number })[] };
+  const diagnosesByClaim = new Map<string, DiagnosisRow[]>();
+  for (const d of diagnosesRaw ?? []) {
+    const list = diagnosesByClaim.get(d.claim_id) ?? [];
+    list.push(d);
+    diagnosesByClaim.set(d.claim_id, list);
+  }
+
+  const documentById = new Map((documents ?? []).map((d) => [d.id, d]));
+  // Se pueden vincular los comprobantes ya emitidos: no los borradores ni los anulados o rechazados por la DGII.
+  const selectableDocuments: DocumentOption[] = (documents ?? []).filter(
+    (d) => !["borrador", "anulado", "rechazado"].includes(d.status)
+  );
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santo_Domingo" });
 
   const insurerNameById = new Map((insurers ?? []).map((i) => [i.id, i.insurer_name]));
 
@@ -81,6 +109,13 @@ export default async function EncounterDetailPage({
 
   const fields = template ? parseTemplateSchema(template.schema).fields : [];
   const specialtyData = (encounter.specialty_data ?? {}) as Record<string, unknown>;
+  // Diagnóstico escrito por el médico (texto libre; las claves cambian por plantilla): se muestra
+  // como referencia al codificarlo en la reclamación.
+  const referenceDiagnoses = fields
+    .filter((f) => f.key.startsWith("diagnostico"))
+    .map((f) => specialtyData[f.key])
+    .filter((v): v is string => typeof v === "string" && v.trim() !== "")
+    .map((v) => v.trim());
 
   const vitalEntries = vitals
     ? Object.entries(VITAL_LABELS)
@@ -166,31 +201,82 @@ export default async function EncounterDetailPage({
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin reclamaciones registradas.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
-            {claims.map((claim) => (
-              <li key={claim.id} className="flex flex-col gap-1 py-3 text-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span>
-                    {insurerNameById.get(claim.patient_insurer_id) ?? "Aseguradora"}
-                    {claim.claimed_amount != null
-                      ? ` — RD$ ${claim.claimed_amount.toLocaleString("es-DO", { minimumFractionDigits: 2 })}`
+            {claims.map((claim) => {
+              const doc = documentById.get(claim.fiscal_document_id ?? "");
+              const claimDiagnoses = diagnosesByClaim.get(claim.id) ?? [];
+              const pending = pendingToCollect(claim);
+              return (
+                <li key={claim.id} className="flex flex-col gap-2 py-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span>
+                      {insurerNameById.get(claim.patient_insurer_id) ?? "Aseguradora"}
+                      {claim.claimed_amount != null ? ` — ${formatMoney(claim.claimed_amount)}` : ""}
+                    </span>
+                    <span className="text-xs font-medium">
+                      {CLAIM_STATUS_LABELS[claim.status as ClaimStatus] ?? claim.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    {new Date(claim.created_at).toLocaleString("es-DO")} · registrado por{" "}
+                    {claimCreatorEmailByUserId.get(claim.created_by) ?? claim.created_by}
+                    {claim.notes ? ` — ${claim.notes}` : ""}
+                    {claim.status === "rechazada" && claim.rejection_reason
+                      ? ` · motivo: ${claim.rejection_reason}`
                       : ""}
-                  </span>
-                  <span className="text-xs font-medium">{CLAIM_STATUS_LABELS[claim.status] ?? claim.status}</span>
-                </div>
-                <p className="text-xs text-zinc-500">
-                  {new Date(claim.created_at).toLocaleString("es-DO")} · registrado por{" "}
-                  {claimCreatorEmailByUserId.get(claim.created_by) ?? claim.created_by}
-                  {claim.notes ? ` — ${claim.notes}` : ""}
-                  {claim.status === "rechazada" && claim.rejection_reason
-                    ? ` · motivo: ${claim.rejection_reason}`
-                    : ""}
-                </p>
-                {canManageBilling && <ClaimStatusForm claimId={claim.id} currentStatus={claim.status} />}
-              </li>
-            ))}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    {doc ? `e-CF ${doc.e_ncf ?? "sin e-NCF"}` : "Sin comprobante vinculado"}
+                    {claim.authorization_number ? ` · autorización ${claim.authorization_number}` : ""}
+                    {claim.approved_amount != null ? ` · aprobado ${formatMoney(claim.approved_amount)}` : ""}
+                    {claim.paid_amount != null
+                      ? ` · cobrado ${formatMoney(claim.paid_amount)}${claim.paid_on ? ` (${claim.paid_on})` : ""}`
+                      : ""}
+                    {pending != null && pending > 0 ? ` · por cobrar ${formatMoney(pending)}` : ""}
+                  </p>
+                  <ClaimDiagnoses
+                    claimId={claim.id}
+                    diagnoses={claimDiagnoses}
+                    reference={referenceDiagnoses}
+                    editable={canManageBilling}
+                  />
+                  {canManageBilling && (
+                    <>
+                      <ClaimDetailsForm
+                        claimId={claim.id}
+                        documents={selectableDocuments}
+                        currentDocumentId={claim.fiscal_document_id}
+                        currentAuthorization={claim.authorization_number}
+                      />
+                      <ClaimStatusForm
+                        key={`${claim.id}-${claim.status}-${claim.approved_amount ?? ""}`}
+                        claimId={claim.id}
+                        currentStatus={claim.status}
+                        currentApproved={claim.approved_amount}
+                      />
+                      {claim.status === "aprobada" && (
+                        <ClaimPaymentForm
+                          claimId={claim.id}
+                          currentPaid={claim.paid_amount}
+                          currentPaidOn={claim.paid_on}
+                          today={today}
+                        />
+                      )}
+                    </>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
-        {canManageBilling && <ClaimForm patientId={id} encounterId={encounterId} insurers={insurers ?? []} />}
+        {canManageBilling && (
+          <ClaimForm
+            patientId={id}
+            encounterId={encounterId}
+            insurers={insurers ?? []}
+            documents={selectableDocuments}
+            referenceDiagnoses={referenceDiagnoses}
+          />
+        )}
       </div>
     </div>
   );

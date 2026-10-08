@@ -41,6 +41,12 @@ export function OperatorNav() {
             Clínicas
           </Link>
           <Link
+            href="/operator/insurers"
+            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+          >
+            Catálogo de ARS
+          </Link>
+          <Link
             href="/operator/whatsapp-test"
             className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
           >

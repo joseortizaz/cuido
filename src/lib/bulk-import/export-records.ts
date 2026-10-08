@@ -50,6 +50,7 @@ export type RecordsData = {
   fiscalDocs: Tables["fiscal_documents"]["Row"][];
   fiscalItems: Tables["fiscal_document_items"]["Row"][];
   claims: Tables["insurance_claims"]["Row"][];
+  claimDiagnoses: Tables["insurance_claim_diagnoses"]["Row"][];
   appointments: Tables["appointments"]["Row"][];
   checklists: Tables["appointment_surgical_checklist"]["Row"][];
   insurers: Tables["patient_insurers"]["Row"][];
@@ -69,12 +70,24 @@ export async function fetchRecordsData(
   const want = new Set(datasets);
   const needsPatients = datasets.some((d) => d !== "fiscal_lines");
   const needsInsurers = want.has("insurers") || want.has("claims") || want.has("eligibility");
-  const needsFiscalDocs = want.has("fiscal") || want.has("fiscal_lines");
+  // Las reclamaciones muestran el e-NCF del comprobante vinculado.
+  const needsFiscalDocs = want.has("fiscal") || want.has("fiscal_lines") || want.has("claims");
 
   const empty = <T>() => Promise.resolve([] as T[]);
 
-  const [patients, consents, fiscalDocs, fiscalItems, claims, appointments, checklists, insurers, eligibility, templates] =
-    await Promise.all([
+  const [
+    patients,
+    consents,
+    fiscalDocs,
+    fiscalItems,
+    claims,
+    claimDiagnoses,
+    appointments,
+    checklists,
+    insurers,
+    eligibility,
+    templates,
+  ] = await Promise.all([
       preloaded.patients ??
         (needsPatients
           ? fetchAllPages<PatientLite>(async (from, to) =>
@@ -120,6 +133,11 @@ export async function fetchRecordsData(
               .range(from, to)
           )
         : empty<Tables["insurance_claims"]["Row"]>(),
+      want.has("claims")
+        ? fetchAllPages(async (from, to) =>
+            supabase.from("insurance_claim_diagnoses").select("*").order("id", { ascending: true }).range(from, to)
+          )
+        : empty<Tables["insurance_claim_diagnoses"]["Row"]>(),
       want.has("appointments")
         ? fetchAllPages(async (from, to) =>
             supabase
@@ -166,7 +184,19 @@ export async function fetchRecordsData(
         : empty<{ id: string; name: string }>(),
     ]);
 
-  return { patients, consents, fiscalDocs, fiscalItems, claims, appointments, checklists, insurers, eligibility, templates };
+  return {
+    patients,
+    consents,
+    fiscalDocs,
+    fiscalItems,
+    claims,
+    claimDiagnoses,
+    appointments,
+    checklists,
+    insurers,
+    eligibility,
+    templates,
+  };
 }
 
 /** Ids de usuario que aparecen en los datos (para traducirlos a correo). */
@@ -336,6 +366,13 @@ function fiscalLinesTable(data: RecordsData): ExportTable {
 
 function claimsTable(data: RecordsData, r: Resolver): ExportTable {
   const insurerById = new Map(data.insurers.map((i) => [i.id, i]));
+  const docById = new Map(data.fiscalDocs.map((d) => [d.id, d]));
+  const diagnosesByClaim = new Map<string, Tables["insurance_claim_diagnoses"]["Row"][]>();
+  for (const d of data.claimDiagnoses) {
+    const list = diagnosesByClaim.get(d.claim_id) ?? [];
+    list.push(d);
+    diagnosesByClaim.set(d.claim_id, list);
+  }
   return {
     name: RECORD_DATASET_TITLES.claims,
     headers: [
@@ -346,6 +383,13 @@ function claimsTable(data: RecordsData, r: Resolver): ExportTable {
       "Número de afiliado",
       "ID de consulta",
       "Monto reclamado",
+      "e-NCF vinculado",
+      "No. de autorización",
+      "Monto aprobado",
+      "Monto cobrado",
+      "Fecha de cobro",
+      "Por cobrar",
+      "Diagnósticos codificados",
       "Estado",
       "Motivo de rechazo",
       "Notas",
@@ -364,6 +408,16 @@ function claimsTable(data: RecordsData, r: Resolver): ExportTable {
         ins?.affiliate_number ?? "",
         c.encounter_id,
         cell(c.claimed_amount),
+        cell(c.fiscal_document_id ? docById.get(c.fiscal_document_id)?.e_ncf : ""),
+        cell(c.authorization_number),
+        cell(c.approved_amount),
+        cell(c.paid_amount),
+        cell(c.paid_on),
+        c.status === "aprobada" && c.approved_amount !== null ? Math.max(c.approved_amount - (c.paid_amount ?? 0), 0) : "",
+        (diagnosesByClaim.get(c.id) ?? [])
+          .sort((a, b) => a.position - b.position)
+          .map((d) => `${d.code} (${d.code_system}${d.is_primary ? ", principal" : ""}) ${d.description}`)
+          .join("; "),
         c.status,
         cell(c.rejection_reason),
         cell(c.notes),
@@ -417,10 +471,20 @@ function appointmentsTable(data: RecordsData, r: Resolver): ExportTable {
 function insurersTable(data: RecordsData, r: Resolver): ExportTable {
   return {
     name: RECORD_DATASET_TITLES.insurers,
-    headers: [...PATIENT_HEADERS, "Aseguradora", "Número de afiliado", "Vigente", "Registrado el", "Registrado por", "ID"],
+    headers: [
+      ...PATIENT_HEADERS,
+      "Aseguradora",
+      "En el catálogo de ARS",
+      "Número de afiliado",
+      "Vigente",
+      "Registrado el",
+      "Registrado por",
+      "ID",
+    ],
     rows: data.insurers.map((i) => [
       ...r.patient(i.patient_id),
       i.insurer_name,
+      i.insurer_id ? "Sí" : "No",
       i.affiliate_number,
       cell(i.is_current),
       dt(i.recorded_at),

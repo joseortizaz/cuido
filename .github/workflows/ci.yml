@@ -112,6 +112,10 @@ jobs:
       - name: Run terms acceptance test
         run: npm run test:terms-acceptance
 
+      # Reclamaciones a ARS (A.1 a A.3): catálogo, integridad paciente/comprobante, diagnósticos CIE, RLS.
+      - name: Run claims test
+        run: npm run test:claims
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

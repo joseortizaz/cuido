@@ -49,6 +49,7 @@ export default async function PatientDetailPage({
     { data: eligibilityChecks },
     { data: sensitiveGrants },
     { data: clinicMembersRaw },
+    { data: insurerCatalog },
   ] = await Promise.all([
       supabase
         .from("allergies")
@@ -94,6 +95,7 @@ export default async function PatientDetailPage({
         .eq("patient_id", id)
         .order("granted_at", { ascending: false }),
       supabase.from("clinic_members").select("user_id, role").eq("clinic_id", membership.clinicId),
+      supabase.from("insurers").select("id, name").eq("is_active", true).order("name"),
     ]);
 
   const templateNameById = new Map((templates ?? []).map((t) => [t.id, t.name]));
@@ -292,7 +294,7 @@ export default async function PatientDetailPage({
             </ul>
           </details>
         )}
-        {canManageBilling && <InsurerForm patientId={id} />}
+        {canManageBilling && <InsurerForm patientId={id} catalog={insurerCatalog ?? []} />}
 
         {currentInsurer && (
           <>
