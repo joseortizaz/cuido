@@ -9,6 +9,7 @@ import { ClaimStatusForm } from "@/app/(clinic)/claims/claim-status-form";
 import { ClaimPaymentForm } from "@/app/(clinic)/claims/claim-payment-form";
 import { ClaimDetailsForm, type DocumentOption } from "@/app/(clinic)/claims/claim-details-form";
 import { ClaimDiagnoses, type DiagnosisRow } from "@/app/(clinic)/claims/claim-diagnoses";
+import { ClaimHistory, type HistoryRow } from "@/app/(clinic)/claims/claim-history";
 import { CLAIM_STATUS_LABELS, formatMoney, pendingToCollect, type ClaimStatus } from "@/lib/domain/claims";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { VITAL_LABELS } from "@/lib/domain/vital-signs";
@@ -87,6 +88,21 @@ export default async function EncounterDetailPage({
     diagnosesByClaim.set(d.claim_id, list);
   }
 
+  const { data: historyRaw } =
+    claimIds.length > 0
+      ? await supabase
+          .from("insurance_claim_status_history")
+          .select("claim_id, from_status, to_status, changed_at, changed_by, rejection_reason, approved_amount")
+          .in("claim_id", claimIds)
+          .order("changed_at", { ascending: true })
+      : { data: [] as (HistoryRow & { claim_id: string })[] };
+  const historyByClaim = new Map<string, HistoryRow[]>();
+  for (const h of historyRaw ?? []) {
+    const list = historyByClaim.get(h.claim_id) ?? [];
+    list.push(h);
+    historyByClaim.set(h.claim_id, list);
+  }
+
   const documentById = new Map((documents ?? []).map((d) => [d.id, d]));
   // Se pueden vincular los comprobantes ya emitidos: no los borradores ni los anulados o rechazados por la DGII.
   const selectableDocuments: DocumentOption[] = (documents ?? []).filter(
@@ -101,7 +117,12 @@ export default async function EncounterDetailPage({
   const admin = createAdminClient();
   const claimCreatorEmailByUserId = new Map<string, string>();
   await Promise.all(
-    Array.from(new Set((claims ?? []).map((c) => c.created_by))).map(async (userId) => {
+    Array.from(
+      new Set([
+        ...(claims ?? []).map((c) => c.created_by),
+        ...(historyRaw ?? []).map((h) => h.changed_by).filter((v): v is string => !!v),
+      ])
+    ).map(async (userId) => {
       const { data } = await admin.auth.admin.getUserById(userId);
       if (data.user?.email) claimCreatorEmailByUserId.set(userId, data.user.email);
     })
@@ -233,6 +254,7 @@ export default async function EncounterDetailPage({
                       : ""}
                     {pending != null && pending > 0 ? ` · por cobrar ${formatMoney(pending)}` : ""}
                   </p>
+                  <ClaimHistory rows={historyByClaim.get(claim.id) ?? []} emailByUserId={claimCreatorEmailByUserId} />
                   <ClaimDiagnoses
                     claimId={claim.id}
                     diagnoses={claimDiagnoses}

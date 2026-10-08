@@ -116,6 +116,10 @@ jobs:
       - name: Run claims test
         run: npm run test:claims
 
+      # Reclamaciones a ARS (A.5 y A.6): paquete en Excel, reportes e historial de estados.
+      - name: Run claims reports test
+        run: npm run test:claims-reports
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

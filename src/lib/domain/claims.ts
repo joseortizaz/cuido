@@ -122,3 +122,24 @@ export function pendingToCollect(claim: {
 export function formatMoney(amount: number): string {
   return `RD$ ${amount.toLocaleString("es-DO", { minimumFractionDigits: 2 })}`;
 }
+
+/**
+ * Nombre de aseguradora normalizado, equivalente a normalize_insurer_name() de la base de
+ * datos (minúsculas, sin acentos ni puntuación, espacios colapsados y sin el prefijo «ARS»).
+ * Sirve de clave para agrupar aseguradoras escritas a mano que no están en el catálogo.
+ */
+export function normalizeInsurerName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^ars\s+/, "");
+}
+
+/** Clave de agrupación de una aseguradora: el id del catálogo o, si no hay, el nombre normalizado. */
+export function insurerKey(insurer: { insurer_id: string | null; insurer_name: string }): string {
+  return insurer.insurer_id ?? `name:${normalizeInsurerName(insurer.insurer_name)}`;
+}

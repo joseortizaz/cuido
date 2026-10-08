@@ -1423,6 +1423,57 @@ export type Database = {
           },
         ]
       }
+      insurance_claim_status_history: {
+        Row: {
+          approved_amount: number | null
+          changed_at: string
+          changed_by: string | null
+          claim_id: string
+          clinic_id: string
+          from_status: string | null
+          id: string
+          rejection_reason: string | null
+          to_status: string
+        }
+        Insert: {
+          approved_amount?: number | null
+          changed_at?: string
+          changed_by?: string | null
+          claim_id: string
+          clinic_id: string
+          from_status?: string | null
+          id?: string
+          rejection_reason?: string | null
+          to_status: string
+        }
+        Update: {
+          approved_amount?: number | null
+          changed_at?: string
+          changed_by?: string | null
+          claim_id?: string
+          clinic_id?: string
+          from_status?: string | null
+          id?: string
+          rejection_reason?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_claim_status_history_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_claim_status_history_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insurance_claims: {
         Row: {
           approved_amount: number | null
