@@ -65,7 +65,7 @@ export async function findOrInviteUserByEmail(
   return { userId: invite.data.user.id, invited: true };
 }
 
-async function findUserByEmail(admin: SupabaseClient<Database>, email: string) {
+export async function findUserByEmail(admin: SupabaseClient<Database>, email: string) {
   const normalized = email.toLowerCase();
   for (let page = 1; page <= 20; page++) {
     const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 200 });

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { MFA_CHALLENGE_PATH, needsMfaChallenge } from "@/lib/domain/mfa";
 import type { Database } from "./database.types";
 import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
 
@@ -74,6 +75,26 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/login";
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
+  }
+
+  // Segundo paso (2FA): quien activó la app de autenticación y entró solo con la
+  // contraseña (aal1) no pasa de aquí a rutas no públicas hasta introducir el código. La
+  // base de datos aplica la misma regla (mfa_satisfied()), esto es la experiencia de usuario.
+  // `factors` viene de getUser() (servidor), no de la cookie: un factor activado en otro
+  // dispositivo cuenta de inmediato.
+  // "/" es público (landing) pero también el despachador de usuarios con sesión: se incluye.
+  if (user && (!isPublicPath(pathname) || pathname === "/")) {
+    const hasVerifiedFactor = (user.factors ?? []).some((f) => f.status === "verified");
+    if (hasVerifiedFactor) {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (needsMfaChallenge(aal?.currentLevel, hasVerifiedFactor)) {
+        const url = request.nextUrl.clone();
+        url.pathname = MFA_CHALLENGE_PATH;
+        url.search = "";
+        url.searchParams.set("next", pathname + request.nextUrl.search);
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return supabaseResponse;

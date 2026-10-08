@@ -120,6 +120,11 @@ jobs:
       - name: Run claims reports test
         run: npm run test:claims-reports
 
+      # Autenticación de dos pasos (TOTP): la regla en la base de datos (aal1 sin acceso, aal2 con
+      # acceso), operador, restablecimiento y auditoría.
+      - name: Run MFA test
+        run: npm run test:mfa
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
