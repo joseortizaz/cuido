@@ -40,7 +40,7 @@ export default async function WhatsAppTemplatesPage() {
     .order("name");
 
   const formatDateTime = (value: string) =>
-    new Date(value).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short" });
+    new Date(value).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santo_Domingo" });
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-6 py-16">

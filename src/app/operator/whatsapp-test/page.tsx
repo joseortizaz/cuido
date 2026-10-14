@@ -33,7 +33,7 @@ export default async function WhatsAppTestPage() {
   );
 
   const formatDateTime = (value: string) =>
-    new Date(value).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short" });
+    new Date(value).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santo_Domingo" });
 
   const environment = getWhatsAppEnvironment();
 
