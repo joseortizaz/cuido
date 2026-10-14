@@ -71,12 +71,12 @@ export default async function WhatsAppTestPage() {
               <p>
                 <span
                   className={
-                    m.status === "sent"
-                      ? "text-green-700 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
+                    m.status === "failed"
+                      ? "text-red-600 dark:text-red-400"
+                      : "text-green-700 dark:text-green-400"
                   }
                 >
-                  {m.status === "sent" ? "Enviado" : "Falló"}
+                  {{ sent: "Enviado", delivered: "Entregado", read: "Leído", failed: "Falló" }[m.status] ?? m.status}
                 </span>{" "}
                 — {m.to_phone_number} · {m.template_name} ·{" "}
                 <span className="uppercase">{m.environment}</span>

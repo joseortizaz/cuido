@@ -15,6 +15,9 @@ const PUBLIC_PATHS = [
   "/privacidad",
   "/terminos",
   "/eliminacion-datos",
+  // Webhook de WhatsApp (Meta): no tiene sesión de usuario; su autenticidad es la firma
+  // X-Hub-Signature-256 que verifica la propia ruta (src/app/api/whatsapp/webhook/route.ts).
+  "/api/whatsapp/webhook",
   // El matcher de src/proxy.ts excluye favicon.ico y extensiones de
   // imagen comunes, pero NO .webmanifest -- sin esta entrada, un
   // fetch sin sesión (el navegador/SO pidiendo el manifest para

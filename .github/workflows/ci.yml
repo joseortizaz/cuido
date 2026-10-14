@@ -125,6 +125,10 @@ jobs:
       - name: Run MFA test
         run: npm run test:mfa
 
+      # WhatsApp: firma del webhook, estados de entrega, catálogo de plantillas y permisos.
+      - name: Run WhatsApp webhook test
+        run: npm run test:whatsapp-webhook
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

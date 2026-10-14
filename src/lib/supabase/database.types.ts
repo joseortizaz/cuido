@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   graphql_public: {
     Tables: {
@@ -1964,14 +1964,18 @@ export type Database = {
         Row: {
           clinic_id: string | null
           created_at: string
+          delivered_at: string | null
           environment: string
           error_message: string | null
           id: string
           meta_app_id: string
+          meta_error_code: string | null
           meta_message_id: string | null
           patient_id: string | null
+          read_at: string | null
           sent_by: string
           status: string
+          status_updated_at: string | null
           template_language: string
           template_name: string
           template_variables: Json
@@ -1980,14 +1984,18 @@ export type Database = {
         Insert: {
           clinic_id?: string | null
           created_at?: string
+          delivered_at?: string | null
           environment: string
           error_message?: string | null
           id?: string
           meta_app_id: string
+          meta_error_code?: string | null
           meta_message_id?: string | null
           patient_id?: string | null
+          read_at?: string | null
           sent_by: string
           status: string
+          status_updated_at?: string | null
           template_language: string
           template_name: string
           template_variables?: Json
@@ -1996,14 +2004,18 @@ export type Database = {
         Update: {
           clinic_id?: string | null
           created_at?: string
+          delivered_at?: string | null
           environment?: string
           error_message?: string | null
           id?: string
           meta_app_id?: string
+          meta_error_code?: string | null
           meta_message_id?: string | null
           patient_id?: string | null
+          read_at?: string | null
           sent_by?: string
           status?: string
+          status_updated_at?: string | null
           template_language?: string
           template_name?: string
           template_variables?: Json
@@ -2025,6 +2037,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_templates: {
+        Row: {
+          category: string
+          components: Json
+          created_at: string
+          id: string
+          language: string
+          meta_template_id: string
+          name: string
+          quality_score: string | null
+          rejected_reason: string | null
+          status: string
+          synced_at: string
+          waba_id: string
+        }
+        Insert: {
+          category: string
+          components?: Json
+          created_at?: string
+          id?: string
+          language: string
+          meta_template_id: string
+          name: string
+          quality_score?: string | null
+          rejected_reason?: string | null
+          status: string
+          synced_at?: string
+          waba_id: string
+        }
+        Update: {
+          category?: string
+          components?: Json
+          created_at?: string
+          id?: string
+          language?: string
+          meta_template_id?: string
+          name?: string
+          quality_score?: string | null
+          rejected_reason?: string | null
+          status?: string
+          synced_at?: string
+          waba_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          event_key: string
+          field: string
+          id: string
+          received_at: string
+        }
+        Insert: {
+          event_key: string
+          field: string
+          id?: string
+          received_at?: string
+        }
+        Update: {
+          event_key?: string
+          field?: string
+          id?: string
+          received_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -2211,6 +2289,16 @@ export type Database = {
         }[]
       }
       readonly_guard_exempt_tables: { Args: never; Returns: string[] }
+      record_whatsapp_message_status: {
+        Args: {
+          p_error_code?: string
+          p_error_message?: string
+          p_meta_message_id: string
+          p_occurred_at: string
+          p_status: string
+        }
+        Returns: boolean
+      }
       register_clinic_payment: {
         Args: {
           p_amount: number
