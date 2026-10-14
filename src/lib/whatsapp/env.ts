@@ -62,6 +62,27 @@ export function getWhatsAppConfig(): WhatsAppConfig {
 }
 
 /**
+ * Cuenta de WhatsApp Business (WABA) y credenciales de la app para gestionar plantillas y para
+ * el webhook. A diferencia de getWhatsAppConfig() (que separa prueba y producción para ENVIAR),
+ * esto siempre apunta a la cuenta real de Narnia: las plantillas viven en una sola cuenta
+ * compartida por todas las clínicas (opción A de docs/plan-whatsapp-plantillas.md).
+ *
+ * - WHATSAPP_WABA_ID: ID de la cuenta de WhatsApp Business (no es secreto).
+ * - WHATSAPP_ACCESS_TOKEN: el token permanente del usuario del sistema (el mismo de producción).
+ * - WHATSAPP_APP_SECRET y WHATSAPP_WEBHOOK_VERIFY_TOKEN los lee directamente la ruta del webhook
+ *   (src/app/api/whatsapp/webhook/route.ts), que debe poder responder 503 sin lanzar.
+ */
+export type WhatsAppWabaConfig = { wabaId: string; accessToken: string; apiVersion: string };
+
+export function getWhatsAppWabaConfig(): WhatsAppWabaConfig {
+  return {
+    wabaId: requireEnv("WHATSAPP_WABA_ID"),
+    accessToken: requireEnv("WHATSAPP_ACCESS_TOKEN"),
+    apiVersion: process.env.WHATSAPP_API_VERSION?.trim() || "v21.0",
+  };
+}
+
+/**
  * App ID de Meta correspondiente al entorno actual -- se guarda en cada
  * fila de whatsapp_messages para trazabilidad (más granular que
  * `environment` solo: distingue exactamente qué App de Meta originó el

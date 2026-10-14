@@ -20,8 +20,8 @@ import { SignOutButton } from "../../_nav/sign-out-button";
 export function OperatorNav() {
   return (
     <header className="sticky top-0 z-10 border-b border-brand-navy/60 bg-brand-navy">
-      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
-        <div className="flex items-center gap-4">
+      <div className="mx-auto flex min-h-14 w-full max-w-5xl items-center justify-between gap-4 px-4 py-2 sm:px-6">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <Link href="/operator" className="flex items-center" aria-label="Cuido">
             <Image
               src={CUIDO_LOGO_SRC}
@@ -36,31 +36,37 @@ export function OperatorNav() {
           </span>
           <Link
             href="/operator"
-            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+            className="text-sm font-medium whitespace-nowrap text-zinc-200 transition-colors hover:text-white"
           >
             Clínicas
           </Link>
           <Link
             href="/operator/insurers"
-            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+            className="text-sm font-medium whitespace-nowrap text-zinc-200 transition-colors hover:text-white"
           >
             Catálogo de ARS
           </Link>
           <Link
             href="/operator/whatsapp-test"
-            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+            className="text-sm font-medium whitespace-nowrap text-zinc-200 transition-colors hover:text-white"
           >
             WhatsApp (prueba)
           </Link>
           <Link
+            href="/operator/whatsapp-templates"
+            className="text-sm font-medium whitespace-nowrap text-zinc-200 transition-colors hover:text-white"
+          >
+            Plantillas WhatsApp
+          </Link>
+          <Link
             href="/operator/security"
-            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+            className="text-sm font-medium whitespace-nowrap text-zinc-200 transition-colors hover:text-white"
           >
             Restablecer 2FA
           </Link>
           <Link
             href="/security"
-            className="text-sm font-medium text-zinc-200 transition-colors hover:text-white"
+            className="text-sm font-medium whitespace-nowrap text-zinc-200 transition-colors hover:text-white"
           >
             Mi seguridad
           </Link>
