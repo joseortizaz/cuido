@@ -41,6 +41,7 @@ import {
   SeatsForm,
   WithdrawRequestForm,
 } from "./operator-forms";
+import { formatDrDateTime } from "@/lib/domain/dr-time";
 
 function days(n: number): string {
   return `${n} ${n === 1 ? "día" : "días"}`;
@@ -136,7 +137,7 @@ export default async function OperatorClinicDetailPage({
   );
 
   const formatDateTime = (value: string) =>
-    new Date(value).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short" });
+    formatDrDateTime(value, { dateStyle: "medium", timeStyle: "short" });
 
   const today = todayInSantoDomingo();
   const hasOpenDeletion = (deletionRequests ?? []).some((r) => r.status === "solicitada");

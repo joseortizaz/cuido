@@ -12,6 +12,7 @@ import {
   formatTimestampDate,
   formatPrice,
 } from "./labels";
+import { formatDrDateTime } from "@/lib/domain/dr-time";
 
 /** "en 5 días" / "hoy" / "hace 3 días" -- días hasta el vencimiento (negativo = ya venció). */
 function relativeDays(n: number | null): string {
@@ -234,7 +235,7 @@ export default async function OperatorPage({
                   <strong>{d.clinic_name}</strong> · pidió {d.requested_by_email} · ejecutó {d.executed_by_email}
                 </p>
                 <p className="text-xs text-zinc-500">
-                  {d.executed_at ? new Date(d.executed_at).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short" }) : ""}{" "}
+                  {d.executed_at ? formatDrDateTime(d.executed_at, { dateStyle: "medium", timeStyle: "short" }) : ""}{" "}
                   · {JSON.stringify((d.deletion_summary as { deleted_rows?: unknown } | null)?.deleted_rows ?? {})}
                 </p>
               </li>

@@ -1,4 +1,5 @@
 import { CLAIM_STATUS_LABELS, formatMoney, type ClaimStatus } from "@/lib/domain/claims";
+import { formatDrDateTime } from "@/lib/domain/dr-time";
 
 export type HistoryRow = {
   from_status: string | null;
@@ -30,7 +31,7 @@ export function ClaimHistory({
       <ul className="mt-1 flex flex-col gap-0.5 pl-3">
         {sorted.map((r, i) => (
           <li key={`${r.changed_at}-${i}`}>
-            {new Date(r.changed_at).toLocaleString("es-DO")} ·{" "}
+            {formatDrDateTime(r.changed_at)} ·{" "}
             {r.from_status ? `${label(r.from_status)} → ${label(r.to_status)}` : `Registrada (${label(r.to_status)})`}
             {r.to_status === "aprobada" && r.approved_amount != null ? ` · ${formatMoney(r.approved_amount)}` : ""}
             {r.to_status === "rechazada" && r.rejection_reason ? ` · motivo: ${r.rejection_reason}` : ""}

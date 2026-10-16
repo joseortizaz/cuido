@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ConsentForm } from "./consent-form";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
+import { formatDrDate } from "@/lib/domain/dr-time";
 
 export default async function NewConsentPage({
   params,
@@ -43,7 +44,7 @@ export default async function NewConsentPage({
 
   const encounterOptions = (encounters ?? []).map((e) => ({
     id: e.id,
-    label: `${new Date(e.encounter_date).toLocaleDateString("es-DO")}${e.chief_complaint ? ` — ${e.chief_complaint}` : ""}`,
+    label: `${formatDrDate(e.encounter_date)}${e.chief_complaint ? ` — ${e.chief_complaint}` : ""}`,
   }));
 
   return (

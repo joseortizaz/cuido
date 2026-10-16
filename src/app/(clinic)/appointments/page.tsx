@@ -5,6 +5,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { AppointmentRowActions } from "./appointment-row-actions";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import {
+  addDays,
+  drDayRange,
+  drToday,
+  drWeekRange,
+  formatDateString,
+  formatDrDateTime,
+  isValidDateString,
+  startOfWeekDate,
+} from "@/lib/domain/dr-time";
 
 const STATUS_LABELS: Record<string, string> = {
   pendiente: "Pendiente",
@@ -13,28 +23,6 @@ const STATUS_LABELS: Record<string, string> = {
   cancelada: "Cancelada",
   no_show: "No-show",
 };
-
-function parseDateParam(value: string | undefined): Date {
-  if (value) {
-    const parsed = new Date(`${value}T00:00:00`);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-function toDateInputValue(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-/** Lunes de la semana que contiene `date` (semana lunes→domingo). */
-function startOfWeek(date: Date): Date {
-  const day = date.getDay(); // 0 = domingo
-  const diff = day === 0 ? -6 : 1 - day;
-  const monday = new Date(date);
-  monday.setDate(date.getDate() + diff);
-  return monday;
-}
 
 export default async function AppointmentsPage({
   searchParams,
@@ -56,10 +44,10 @@ export default async function AppointmentsPage({
   const readOnly = await isClinicReadOnly();
 
   const view = viewParam === "week" ? "week" : "day";
-  const selectedDate = parseDateParam(dateParam);
-  const rangeStart = view === "week" ? startOfWeek(selectedDate) : selectedDate;
-  const rangeEnd = new Date(rangeStart);
-  rangeEnd.setDate(rangeStart.getDate() + (view === "week" ? 7 : 1));
+  // Fechas de la Agenda en hora de República Dominicana (el servidor corre en UTC): ver
+  // src/lib/domain/dr-time.ts. `selectedDate` es un texto «YYYY-MM-DD», no un instante.
+  const selectedDate = dateParam && isValidDateString(dateParam) ? dateParam : drToday();
+  const { start: rangeStart, end: rangeEnd } = view === "week" ? drWeekRange(selectedDate) : drDayRange(selectedDate);
 
   let query = supabase
     .from("appointments")
@@ -119,12 +107,12 @@ export default async function AppointmentsPage({
   const linkedAppointmentIds = new Set((linkedEncounters ?? []).map((e) => e.appointment_id).filter(Boolean));
 
   const formatTime = (value: string) =>
-    new Date(value).toLocaleString("es-DO", { dateStyle: view === "week" ? "medium" : undefined, timeStyle: "short" });
+    formatDrDateTime(value, { dateStyle: view === "week" ? "medium" : undefined, timeStyle: "short" });
 
-  const prevDate = new Date(rangeStart);
-  prevDate.setDate(rangeStart.getDate() - (view === "week" ? 7 : 1));
-  const nextDate = new Date(rangeStart);
-  nextDate.setDate(rangeStart.getDate() + (view === "week" ? 7 : 1));
+  const step = view === "week" ? 7 : 1;
+  const anchorDate = view === "week" ? startOfWeekDate(selectedDate) : selectedDate;
+  const prevDate = addDays(anchorDate, -step);
+  const nextDate = addDays(anchorDate, step);
 
   const providerParam = providerIdParam ? `&providerId=${providerIdParam}` : "";
 
@@ -143,31 +131,31 @@ export default async function AppointmentsPage({
       </div>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <Link
-          href={`/appointments?date=${toDateInputValue(prevDate)}&view=${view}${providerParam}`}
+          href={`/appointments?date=${prevDate}&view=${view}${providerParam}`}
           className="text-zinc-500 hover:underline"
         >
           ← Anterior
         </Link>
         <span className="font-medium">
           {view === "day"
-            ? selectedDate.toLocaleDateString("es-DO", { dateStyle: "full" })
-            : `Semana del ${startOfWeek(selectedDate).toLocaleDateString("es-DO", { dateStyle: "medium" })}`}
+            ? formatDateString(selectedDate, { dateStyle: "full" })
+            : `Semana del ${formatDateString(startOfWeekDate(selectedDate), { dateStyle: "medium" })}`}
         </span>
         <Link
-          href={`/appointments?date=${toDateInputValue(nextDate)}&view=${view}${providerParam}`}
+          href={`/appointments?date=${nextDate}&view=${view}${providerParam}`}
           className="text-zinc-500 hover:underline"
         >
           Siguiente →
         </Link>
         <span className="ml-auto flex gap-2">
           <Link
-            href={`/appointments?date=${toDateInputValue(selectedDate)}&view=day${providerParam}`}
+            href={`/appointments?date=${selectedDate}&view=day${providerParam}`}
             className={view === "day" ? "font-medium text-brand-blue" : "text-zinc-500 hover:underline"}
           >
             Día
           </Link>
           <Link
-            href={`/appointments?date=${toDateInputValue(selectedDate)}&view=week${providerParam}`}
+            href={`/appointments?date=${selectedDate}&view=week${providerParam}`}
             className={view === "week" ? "font-medium text-brand-blue" : "text-zinc-500 hover:underline"}
           >
             Semana
@@ -178,7 +166,7 @@ export default async function AppointmentsPage({
       {canManage && (clinicMembers ?? []).length > 0 && (
         <div className="flex flex-wrap gap-2 text-xs">
           <Link
-            href={`/appointments?date=${toDateInputValue(selectedDate)}&view=${view}`}
+            href={`/appointments?date=${selectedDate}&view=${view}`}
             className={!providerIdParam ? "font-medium text-brand-blue" : "text-zinc-500 hover:underline"}
           >
             Toda la clínica
@@ -186,7 +174,7 @@ export default async function AppointmentsPage({
           {(clinicMembers ?? []).map((m) => (
             <Link
               key={m.user_id}
-              href={`/appointments?date=${toDateInputValue(selectedDate)}&view=${view}&providerId=${m.user_id}`}
+              href={`/appointments?date=${selectedDate}&view=${view}&providerId=${m.user_id}`}
               className={
                 providerIdParam === m.user_id ? "font-medium text-brand-blue" : "text-zinc-500 hover:underline"
               }

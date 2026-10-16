@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { RetrySignForm, VoidForm } from "./void-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { formatDrDateTime } from "@/lib/domain/dr-time";
 
 const STATUS_LABELS: Record<string, string> = {
   borrador: "Borrador",
@@ -123,7 +124,7 @@ export default async function FiscalDocumentDetailPage({
 
       {document.voided_reason && (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Anulado el {new Date(document.voided_at!).toLocaleString("es-DO")} — {document.voided_reason}
+          Anulado el {formatDrDateTime(document.voided_at!)} — {document.voided_reason}
         </p>
       )}
 

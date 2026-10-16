@@ -10,6 +10,7 @@ import {
   type DeletionStatus,
 } from "@/lib/domain/data-deletion";
 import { ConfirmExportForm, RequestForm, WithdrawForm } from "./deletion-forms";
+import { drToday, formatDrDate } from "@/lib/domain/dr-time";
 
 function formatDate(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString("es-DO", { dateStyle: "long" });
@@ -42,7 +43,7 @@ export default async function DataDeletionPage() {
           scheduledFor: open.scheduled_for,
         }
       : null,
-    (today as string | null) ?? new Date().toISOString().slice(0, 10)
+    (today as string | null) ?? drToday()
   );
 
   return (
@@ -86,7 +87,7 @@ export default async function DataDeletionPage() {
         <section className="flex flex-col gap-4">
           <h2 className="text-lg font-medium">2. Descarga y confirma</h2>
           <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            Solicitud registrada el {new Date(open.requested_at).toLocaleDateString("es-DO", { dateStyle: "long" })}. Descarga
+            Solicitud registrada el {formatDrDate(open.requested_at, { dateStyle: "long" })}. Descarga
             el libro completo (todas las hojas) y ábrelo para verificarlo. La descarga debe hacerse después de la
             solicitud.
           </p>

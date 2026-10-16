@@ -10,6 +10,7 @@ import { ClaimStatusForm } from "./claim-status-form";
 import { ClaimPaymentForm } from "./claim-payment-form";
 import { CLAIM_STATUS_LABELS, CLAIM_STATUSES, formatMoney, pendingToCollect } from "@/lib/domain/claims";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { formatDrDate } from "@/lib/domain/dr-time";
 
 const STATUS_LABELS: Record<string, string> = CLAIM_STATUS_LABELS;
 const STATUSES: string[] = [...CLAIM_STATUSES];
@@ -180,7 +181,7 @@ export default async function ClaimsPage({
                       href={`/patients/${encounter.patient_id}/encounters/${encounter.id}`}
                       className="hover:underline"
                     >
-                      Ver consulta ({new Date(encounter.encounter_date).toLocaleDateString("es-DO")}) →
+                      Ver consulta ({formatDrDate(encounter.encounter_date)}) →
                     </Link>
                   )}
                   {claim.status === "rechazada" && claim.rejection_reason

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PlanCard } from "./plan-card";
+import { drDayRange, drToday } from "@/lib/domain/dr-time";
 
 /**
  * Dashboard de admin/recepción -- comparten la misma vista (confirmado
@@ -41,10 +42,6 @@ const ROLE_LABELS: Record<string, string> = {
 // esa columna en null.
 const CLAIM_OVERDUE_DAYS = 7;
 
-function toDateInputValue(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
 function daysAgo(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -66,11 +63,9 @@ export async function AdminDashboard({
   const canSeePlan = role === "admin";
   const supabase = await createClient();
 
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfToday.getDate() + 1);
-  const todayParam = toDateInputValue(startOfToday);
+  // «Hoy» = el día en hora de República Dominicana (el servidor corre en UTC).
+  const todayParam = drToday();
+  const { start: startOfToday, end: startOfTomorrow } = drDayRange(todayParam);
 
   const [
     { data: todayAppointments },

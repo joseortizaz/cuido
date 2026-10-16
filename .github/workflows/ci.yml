@@ -129,6 +129,10 @@ jobs:
       - name: Run WhatsApp webhook test
         run: npm run test:whatsapp-webhook
 
+      # Hora de República Dominicana: citas, «hoy», rangos del día y la semana (lógica pura).
+      - name: Run DR time test
+        run: npm run test:dr-time
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
