@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createAppointment, type NewAppointmentActionState } from "./actions";
+import { drToday } from "@/lib/domain/dr-time";
 
 const inputClass =
   "rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400";
@@ -21,7 +22,8 @@ export function NewAppointmentForm({
     undefined
   );
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Hoy en hora de República Dominicana (toISOString() daría el día UTC: «mañana» desde las 8 p. m.).
+  const today = drToday();
 
   return (
     <form action={formAction} className="flex flex-col gap-4">

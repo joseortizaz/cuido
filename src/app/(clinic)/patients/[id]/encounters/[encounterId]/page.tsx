@@ -13,6 +13,7 @@ import { ClaimHistory, type HistoryRow } from "@/app/(clinic)/claims/claim-histo
 import { CLAIM_STATUS_LABELS, formatMoney, pendingToCollect, type ClaimStatus } from "@/lib/domain/claims";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { VITAL_LABELS } from "@/lib/domain/vital-signs";
+import { formatDrDateTime } from "@/lib/domain/dr-time";
 
 export default async function EncounterDetailPage({
   params,
@@ -152,7 +153,7 @@ export default async function EncounterDetailPage({
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">{template?.name ?? "Consulta"}</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {new Date(encounter.encounter_date).toLocaleString("es-DO")}
+          {formatDrDateTime(encounter.encounter_date)}
         </p>
         <div className="mt-2 flex flex-col gap-1">
           {!readOnly && (
@@ -238,7 +239,7 @@ export default async function EncounterDetailPage({
                     </span>
                   </div>
                   <p className="text-xs text-zinc-500">
-                    {new Date(claim.created_at).toLocaleString("es-DO")} · registrado por{" "}
+                    {formatDrDateTime(claim.created_at)} · registrado por{" "}
                     {claimCreatorEmailByUserId.get(claim.created_by) ?? claim.created_by}
                     {claim.notes ? ` — ${claim.notes}` : ""}
                     {claim.status === "rechazada" && claim.rejection_reason

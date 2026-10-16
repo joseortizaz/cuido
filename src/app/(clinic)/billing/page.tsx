@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
+import { formatDrDate } from "@/lib/domain/dr-time";
 
 const STATUS_LABELS: Record<string, string> = {
   borrador: "Borrador",
@@ -78,7 +79,7 @@ export default async function BillingPage() {
                   <td className="py-3 pr-4">{doc.comprador_nombre}</td>
                   <td className="py-3 pr-4">{formatAmount(doc.monto_total)}</td>
                   <td className="py-3 pr-4">{STATUS_LABELS[doc.status] ?? doc.status}</td>
-                  <td className="py-3 pr-4">{new Date(doc.created_at).toLocaleDateString("es-DO")}</td>
+                  <td className="py-3 pr-4">{formatDrDate(doc.created_at)}</td>
                 </tr>
               ))}
             </tbody>

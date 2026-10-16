@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { readOnlyBlock } from "@/lib/supabase/clinic-access";
+import { parseDrDateTime } from "@/lib/domain/dr-time";
 
 export type NewAppointmentActionState = { error?: string } | undefined;
 
@@ -52,8 +53,10 @@ export async function createAppointment(
     return { error: "Tipo de evento inválido." };
   }
 
-  const scheduledAt = new Date(`${date}T${time}`);
-  if (Number.isNaN(scheduledAt.getTime())) {
+  // La fecha y la hora que teclea el personal son hora de República Dominicana; el servidor
+  // corre en UTC, así que NO se puede usar `new Date(`${date}T${time}`)` (quedaría 4 h corrida).
+  const scheduledAt = parseDrDateTime(date, time);
+  if (!scheduledAt) {
     return { error: "Fecha u hora inválida." };
   }
 

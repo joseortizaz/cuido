@@ -11,6 +11,7 @@ import { EligibilityForm } from "./insurance/eligibility-form";
 import { GrantAccessForm } from "./sensitive-access/grant-access-form";
 import { RevokeAccessForm } from "./sensitive-access/revoke-access-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -174,7 +175,7 @@ export default async function PatientDetailPage({
                     {encounter.chief_complaint ? ` — ${encounter.chief_complaint}` : ""}
                   </span>
                   <span className="text-zinc-500">
-                    {new Date(encounter.encounter_date).toLocaleDateString("es-DO")}
+                    {formatDrDate(encounter.encounter_date)}
                   </span>
                 </Link>
               </li>
@@ -257,7 +258,7 @@ export default async function PatientDetailPage({
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500">
-                  {new Date(consent.signed_at).toLocaleString("es-DO")} · registrado por{" "}
+                  {formatDrDateTime(consent.signed_at)} · registrado por{" "}
                   {recorderEmailByUserId.get(consent.recorded_by) ?? consent.recorded_by}
                 </p>
                 {canWriteClinical && consent.status === "firmado" && (
@@ -288,7 +289,7 @@ export default async function PatientDetailPage({
                 .map((i) => (
                   <li key={i.id}>
                     {i.insurer_name} — afiliado {i.affiliate_number} (hasta{" "}
-                    {new Date(i.recorded_at).toLocaleDateString("es-DO")})
+                    {formatDrDate(i.recorded_at)})
                   </li>
                 ))}
             </ul>
@@ -320,7 +321,7 @@ export default async function PatientDetailPage({
                           ? "No elegible"
                           : "Pendiente"}
                     </span>{" "}
-                    · {new Date(check.checked_at).toLocaleString("es-DO")} · verificado por{" "}
+                    · {formatDrDateTime(check.checked_at)} · verificado por{" "}
                     {recorderEmailByUserId.get(check.checked_by) ?? check.checked_by}
                     {check.notes ? ` — ${check.notes}` : ""}
                   </li>
@@ -399,11 +400,11 @@ export default async function PatientDetailPage({
                   <p className="text-xs text-zinc-500">
                     Motivo: {grant.reason} · otorgado por{" "}
                     {recorderEmailByUserId.get(grant.granted_by_user_id) ?? grant.granted_by_user_id} el{" "}
-                    {new Date(grant.granted_at).toLocaleString("es-DO")}
+                    {formatDrDateTime(grant.granted_at)}
                   </p>
                   {grant.revoked_at && (
                     <p className="text-xs text-zinc-500">
-                      Revocado el {new Date(grant.revoked_at).toLocaleString("es-DO")}
+                      Revocado el {formatDrDateTime(grant.revoked_at)}
                       {grant.revoked_reason ? ` — ${grant.revoked_reason}` : ""}
                     </p>
                   )}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DisableForm, EnrollPanel } from "./two-factor-forms";
+import { formatDrDate } from "@/lib/domain/dr-time";
 
 export const metadata = { title: "Seguridad de la cuenta" };
 
@@ -63,7 +64,7 @@ export default async function SecurityPage({
         {active ? (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              App de autenticación registrada el {new Date(active.created_at).toLocaleDateString("es-DO")}.
+              App de autenticación registrada el {formatDrDate(active.created_at)}.
             </p>
             <DisableForm />
           </div>

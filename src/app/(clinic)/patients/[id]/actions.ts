@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { readOnlyBlock } from "@/lib/supabase/clinic-access";
+import { drToday } from "@/lib/domain/dr-time";
 
 export type SimpleFormState = { error?: string } | undefined;
 
@@ -71,7 +72,7 @@ export async function addMedication(
     name,
     dose: dose || null,
     frequency: frequency || null,
-    started_at: new Date().toISOString().slice(0, 10),
+    started_at: drToday(),
   });
 
   if (error) {

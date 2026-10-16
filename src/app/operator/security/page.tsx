@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOperatorPage } from "@/lib/supabase/operator-context";
 import { ResetMfaForm } from "./reset-form";
+import { formatDrDateTime } from "@/lib/domain/dr-time";
 
 /**
  * Restablecer el 2FA de un usuario que perdió su teléfono (recuperación asistida por el
@@ -51,7 +52,7 @@ export default async function OperatorSecurityPage() {
                 <span className="font-medium">
                   {r.user_email ?? "(sin correo)"}{" "}
                   <span className="font-normal text-zinc-500">
-                    · {new Date(r.created_at).toLocaleString("es-DO")} · {r.factors_removed} factor
+                    · {formatDrDateTime(r.created_at)} · {r.factors_removed} factor
                     {r.factors_removed === 1 ? "" : "es"}
                   </span>
                 </span>

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ChecklistForm } from "./checklist-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 
 /**
  * Checklist prequirúrgico de una cita con appointment_type =
@@ -105,10 +106,7 @@ export default async function SurgicalChecklistPage({
         <h1 className="mt-2 text-2xl font-semibold">Checklist prequirúrgico</h1>
         <p className="text-sm text-zinc-500">
           {patient ? `${patient.first_name} ${patient.last_name}` : appointment.patient_id} ·{" "}
-          {new Date(appointment.scheduled_at).toLocaleString("es-DO", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })}
+          {formatDrDateTime(appointment.scheduled_at, { dateStyle: "medium", timeStyle: "short" })}
         </p>
       </div>
 
@@ -117,7 +115,7 @@ export default async function SurgicalChecklistPage({
         {consent ? (
           <p className="mt-1 text-sm text-green-700 dark:text-green-400">
             Firmado el{" "}
-            {new Date(consent.signed_at).toLocaleDateString("es-DO", { dateStyle: "medium" })}
+            {formatDrDate(consent.signed_at, { dateStyle: "medium" })}
             {isSurgicalConsent
               ? " (consentimiento quirúrgico específico)."
               : " (consentimiento general del paciente)."}

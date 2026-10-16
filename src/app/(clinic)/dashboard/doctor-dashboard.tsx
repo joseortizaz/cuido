@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { drDayRange, drToday, formatDrTime } from "@/lib/domain/dr-time";
 
 /**
  * Dashboard de médico -- deliberadamente simple: solo su propia agenda
@@ -17,10 +18,8 @@ const APPOINTMENT_STATUS_LABELS: Record<string, string> = {
 export async function DoctorDashboard({ userId }: { userId: string }) {
   const supabase = await createClient();
 
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfToday.getDate() + 1);
+  // «Hoy» = el día en hora de República Dominicana (el servidor corre en UTC).
+  const { start: startOfToday, end: startOfTomorrow } = drDayRange(drToday());
 
   const [{ data: appointments }, { data: attendedEncounters }] = await Promise.all([
     supabase
@@ -53,7 +52,7 @@ export async function DoctorDashboard({ userId }: { userId: string }) {
   // JS sobre un solo campo es barato.
   const attendedPatientCount = new Set((attendedEncounters ?? []).map((e) => e.patient_id)).size;
 
-  const formatTime = (value: string) => new Date(value).toLocaleTimeString("es-DO", { timeStyle: "short" });
+  const formatTime = (value: string) => formatDrTime(value, { timeStyle: "short" });
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-12">
