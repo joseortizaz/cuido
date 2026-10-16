@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseWebhook, verifyHandshake, verifySignature } from "@/lib/whatsapp/webhook";
 import { applyWebhookEvents } from "@/lib/whatsapp/webhook-apply";
+import { sendWhatsAppTextMessage } from "@/lib/whatsapp/client";
+import { OPT_OUT_CONFIRMATION_TEXT } from "@/lib/whatsapp/reminders";
 
 /**
  * Webhook de WhatsApp (Meta): avisos de plantillas (aprobada, rechazada, pausada, calidad) y
@@ -11,8 +13,9 @@ import { applyWebhookEvents } from "@/lib/whatsapp/webhook-apply";
  * autenticidad es únicamente la firma `X-Hub-Signature-256` con la clave secreta de la app. Sin
  * firma válida no se procesa nada. Nunca se registran cuerpos ni teléfonos en los logs.
  *
- * Los mensajes ENTRANTES de pacientes no se guardan en esta fase (ver
- * docs/plan-whatsapp-plantillas.md): se aceptan con 200 y se ignoran.
+ * Los mensajes ENTRANTES de pacientes NO se guardan: solo se reconocen las respuestas a un recordatorio
+ * (botones Confirmar / Cancelar) y la palabra BAJA, y de ellas se conserva únicamente la acción.
+ * Todo lo demás se acepta con 200 y se ignora.
  */
 
 export const runtime = "nodejs";
@@ -58,6 +61,16 @@ export async function POST(request: NextRequest) {
     // 500: Meta reintentará (las claves de los eventos fallidos ya se liberaron).
     console.error(`WhatsApp webhook: ${result.failed} evento(s) sin aplicar`);
     return new NextResponse("Error", { status: 500 });
+  }
+
+  // Confirma la baja a quien acaba de pedirla (dentro de la ventana de 24 h que abrió al escribir).
+  // Un fallo aquí no debe hacer que Meta reintente el evento (la baja ya quedó aplicada).
+  for (const phone of result.optOutPhones) {
+    try {
+      await sendWhatsAppTextMessage({ to: phone, body: OPT_OUT_CONFIRMATION_TEXT });
+    } catch {
+      console.error("WhatsApp webhook: no se pudo confirmar una baja");
+    }
   }
 
   return new NextResponse("EVENT_RECEIVED", { status: 200 });

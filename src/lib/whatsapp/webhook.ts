@@ -1,4 +1,5 @@
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { isOptOutText, parseReminderPayload } from "./reminders";
 
 /**
  * Lógica pura del webhook de WhatsApp (Meta): verificación de la firma y del saludo,
@@ -91,7 +92,19 @@ export type WebhookEvent =
       reason: string | null;
     }
   | { kind: "template_quality"; key: string; field: string; metaTemplateId: string; quality: string }
-  | { kind: "template_category"; key: string; field: string; metaTemplateId: string; category: string };
+  | { kind: "template_category"; key: string; field: string; metaTemplateId: string; category: string }
+  | {
+      // Respuesta de un paciente a un recordatorio (botón) o BAJA escrita. NO lleva el texto del mensaje.
+      kind: "inbound_reply";
+      key: string;
+      field: string;
+      wamid: string;
+      /** Teléfono de quien escribe, solo dígitos (formato de Meta, sin «+»). */
+      from: string;
+      action: "confirmar" | "cancelar" | "baja";
+      /** Recordatorio al que responde (solo en los botones); null en la baja. */
+      reminderId: string | null;
+    };
 
 export type ParsedWebhook = { events: WebhookEvent[]; ignored: number };
 
@@ -103,6 +116,36 @@ function asObject(v: unknown): Record<string, unknown> | null {
 function asString(v: unknown): string | null {
   if (typeof v === "string" && v.trim() !== "") return v.trim();
   if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return null;
+}
+
+/** Reconoce la respuesta de un paciente: botón de un recordatorio, botón interactivo o BAJA. null = ignorar. */
+function parseInboundReply(raw: unknown): Pick<
+  Extract<WebhookEvent, { kind: "inbound_reply" }>,
+  "wamid" | "from" | "action" | "reminderId"
+> | null {
+  const m = asObject(raw);
+  if (!m) return null;
+  const wamid = asString(m.id);
+  const from = asString(m.from);
+  const type = asString(m.type);
+  if (!wamid || !from || !type || !/^\d{8,15}$/.test(from)) return null;
+
+  if (type === "button") {
+    const button = asObject(m.button);
+    const parsed = parseReminderPayload(button ? button.payload : null);
+    return parsed ? { wamid, from, action: parsed.action, reminderId: parsed.reminderId } : null;
+  }
+  if (type === "interactive") {
+    const interactive = asObject(m.interactive);
+    const reply = interactive ? asObject(interactive.button_reply) : null;
+    const parsed = parseReminderPayload(reply ? reply.id : null);
+    return parsed ? { wamid, from, action: parsed.action, reminderId: parsed.reminderId } : null;
+  }
+  if (type === "text") {
+    const text = asObject(m.text);
+    return text && isOptOutText(text.body) ? { wamid, from, action: "baja", reminderId: null } : null;
+  }
   return null;
 }
 
@@ -151,8 +194,17 @@ export function parseWebhook(payload: unknown): ParsedWebhook {
 
       if (field === "messages") {
         const statuses = Array.isArray(value.statuses) ? value.statuses : [];
-        // Los mensajes entrantes (`value.messages`) no se guardan en esta fase.
-        if (Array.isArray(value.messages) && value.messages.length > 0) ignored += value.messages.length;
+        // Mensajes entrantes: solo se reconocen las respuestas a un recordatorio (botones) y la BAJA. Del
+        // resto no se guarda nada. Tampoco se guarda el texto de lo reconocido: solo la acción.
+        const inbound = Array.isArray(value.messages) ? value.messages : [];
+        for (const rawMessage of inbound) {
+          const reply = parseInboundReply(rawMessage);
+          if (reply) {
+            events.push({ kind: "inbound_reply", key: eventKey("inbound_reply", reply.wamid), field, ...reply });
+          } else {
+            ignored += 1;
+          }
+        }
         for (const rawStatus of statuses) {
           const s = asObject(rawStatus);
           const id = s ? asString(s.id) : null;

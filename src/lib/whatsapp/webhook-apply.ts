@@ -12,11 +12,21 @@ import type { WebhookEvent } from "./webhook";
  * también la prueba de CI, que corre fuera de Next.
  */
 
-export type ApplyResult = { applied: number; duplicates: number; failed: number };
+export type ApplyResult = {
+  applied: number;
+  duplicates: number;
+  failed: number;
+  /**
+   * Teléfonos (E.164) de pacientes que acaban de darse de baja y a quienes hay que confirmarlo con un
+   * mensaje de texto. El envío lo hace la ruta del webhook (este módulo no manda nada a Meta, para
+   * poder probarlo sin Next).
+   */
+  optOutPhones: string[];
+};
 
 const UNIQUE_VIOLATION = "23505";
 
-async function applyEvent(admin: SupabaseClient<Database>, event: WebhookEvent): Promise<void> {
+async function applyEvent(admin: SupabaseClient<Database>, event: WebhookEvent, effects: { optOutPhones: string[] }): Promise<void> {
   switch (event.kind) {
     case "message_status": {
       const { error } = await admin.rpc("record_whatsapp_message_status", {
@@ -47,6 +57,27 @@ async function applyEvent(admin: SupabaseClient<Database>, event: WebhookEvent):
       if (error) throw new Error(error.message);
       return;
     }
+    case "inbound_reply": {
+      const phone = `+${event.from}`;
+      if (event.action === "baja") {
+        const { data, error } = await admin.rpc("revoke_whatsapp_consent_by_phone", {
+          p_phone: phone,
+          p_source: "baja_paciente",
+        });
+        if (error) throw new Error(error.message);
+        // Solo se confirma la baja a quien realmente tenía recordatorios (no se conversa con cualquiera).
+        if (typeof data === "number" && data > 0) effects.optOutPhones.push(phone);
+        return;
+      }
+      if (!event.reminderId) return;
+      const { error } = await admin.rpc("apply_reminder_response", {
+        p_reminder_id: event.reminderId,
+        p_response: event.action,
+        p_from_phone: phone,
+      });
+      if (error) throw new Error(error.message);
+      return;
+    }
     case "template_category": {
       const { error } = await admin
         .from("whatsapp_templates")
@@ -62,7 +93,7 @@ export async function applyWebhookEvents(
   admin: SupabaseClient<Database>,
   events: WebhookEvent[]
 ): Promise<ApplyResult> {
-  const result: ApplyResult = { applied: 0, duplicates: 0, failed: 0 };
+  const result: ApplyResult = { applied: 0, duplicates: 0, failed: 0, optOutPhones: [] };
 
   for (const event of events) {
     // 1. ¿Ya se procesó? (Meta reintenta durante 7 días.)
@@ -85,7 +116,7 @@ export async function applyWebhookEvents(
     //    solo avanza y las plantillas se actualizan al mismo valor) en vez de perderlo. Dos
     //    entregas simultáneas del mismo evento aplican lo mismo dos veces, sin efecto distinto.
     try {
-      await applyEvent(admin, event);
+      await applyEvent(admin, event, result);
     } catch {
       result.failed += 1;
       continue;

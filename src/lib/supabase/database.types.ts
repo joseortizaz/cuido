@@ -2292,6 +2292,14 @@ export type Database = {
         Args: { note: string; target_clinic_id: string }
         Returns: undefined
       }
+      apply_reminder_response: {
+        Args: {
+          p_from_phone?: string
+          p_reminder_id: string
+          p_response: string
+        }
+        Returns: string
+      }
       attach_readonly_guard: { Args: { p_table: unknown }; Returns: undefined }
       can_access_sensitive_encounter: {
         Args: {
@@ -2367,6 +2375,10 @@ export type Database = {
       execute_clinic_data_deletion: {
         Args: { p_confirm_name: string; p_request_id: string }
         Returns: string[]
+      }
+      expire_stuck_appointment_reminders: {
+        Args: { p_older_than?: string }
+        Returns: number
       }
       extend_clinic_trial: {
         Args: { p_days: number; p_reason: string; target_clinic_id: string }
@@ -2480,6 +2492,21 @@ export type Database = {
         }[]
       }
       readonly_guard_exempt_tables: { Args: never; Returns: string[] }
+      record_reminder_send: {
+        Args: {
+          p_environment: string
+          p_error: string
+          p_meta_app_id: string
+          p_meta_message_id: string
+          p_ok: boolean
+          p_reminder_id: string
+          p_template_language: string
+          p_template_name: string
+          p_to_phone: string
+          p_variables: Json
+        }
+        Returns: string
+      }
       record_whatsapp_message_status: {
         Args: {
           p_error_code?: string
@@ -2510,6 +2537,10 @@ export type Database = {
       revoke_sensitive_specialty_access: {
         Args: { p_reason: string; target_grant_id: string }
         Returns: undefined
+      }
+      revoke_whatsapp_consent_by_phone: {
+        Args: { p_phone: string; p_source?: string }
+        Returns: number
       }
       set_clinic_access_exempt: {
         Args: { p_exempt: boolean; p_reason: string; target_clinic_id: string }
