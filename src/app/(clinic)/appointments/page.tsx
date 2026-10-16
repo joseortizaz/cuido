@@ -73,7 +73,7 @@ export default async function AppointmentsPage({
   const templateIds = Array.from(new Set((appointments ?? []).map((a) => a.specialty_template_id)));
   const appointmentIds = (appointments ?? []).map((a) => a.id);
 
-  const [{ data: patients }, { data: templates }, { data: linkedEncounters }, { data: clinicMembers }] =
+  const [{ data: patients }, { data: templates }, { data: linkedEncounters }, { data: clinicMembers }, { data: reminders }] =
     await Promise.all([
       patientIds.length
         ? supabase.from("patients").select("id, first_name, last_name").in("id", patientIds)
@@ -87,7 +87,11 @@ export default async function AppointmentsPage({
       canManage
         ? supabase.from("clinic_members").select("user_id, role").in("role", ["admin", "medico"])
         : Promise.resolve({ data: [] as { user_id: string; role: string }[] }),
+      appointmentIds.length
+        ? supabase.from("appointment_reminders").select("appointment_id, status, response").in("appointment_id", appointmentIds)
+        : Promise.resolve({ data: [] as { appointment_id: string; status: string; response: string | null }[] }),
     ]);
+  const reminderByAppointment = new Map((reminders ?? []).map((r) => [r.appointment_id, r]));
 
   // El email no vive en clinic_members/appointments (auth.users no está
   // expuesto vía la Data API) -- se resuelve server-side con el cliente
@@ -119,7 +123,14 @@ export default async function AppointmentsPage({
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Agenda</h1>
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-semibold">Agenda</h1>
+          {membership.role === "admin" && (
+            <Link href="/settings/whatsapp" className="text-xs text-zinc-500 hover:underline">
+              Recordatorios por WhatsApp →
+            </Link>
+          )}
+        </div>
         {canManage && !readOnly && (
           <Link
             href="/appointments/new"
@@ -213,6 +224,25 @@ export default async function AppointmentsPage({
                         Quirúrgico
                       </span>
                     )}
+                    {(() => {
+                      const reminder = reminderByAppointment.get(appt.id);
+                      if (!reminder) return null;
+                      const label =
+                        reminder.response === "confirmar"
+                          ? "WhatsApp: confirmó"
+                          : reminder.response === "cancelar"
+                            ? "WhatsApp: canceló"
+                            : reminder.status === "enviado"
+                              ? "WhatsApp: recordatorio enviado"
+                              : reminder.status === "fallido"
+                                ? "WhatsApp: no se pudo enviar"
+                                : null;
+                      return label ? (
+                        <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">
+                          {label}
+                        </span>
+                      ) : null;
+                    })()}
                     <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
                       {STATUS_LABELS[appt.status] ?? appt.status}
                     </span>

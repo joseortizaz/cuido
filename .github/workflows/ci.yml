@@ -133,6 +133,10 @@ jobs:
       - name: Run DR time test
         run: npm run test:dr-time
 
+      # WhatsApp recordatorios (2A): consentimientos, interruptor y selección de destinatarios.
+      - name: Run WhatsApp reminders test
+        run: npm run test:whatsapp-reminders
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

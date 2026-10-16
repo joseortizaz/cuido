@@ -26,7 +26,7 @@ export default async function NewPatientPage() {
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">Nuevo paciente</h1>
       </div>
-      <PatientForm />
+      <PatientForm canRecordConsent={membership.role === "admin" || membership.role === "recepcion"} />
     </div>
   );
 }

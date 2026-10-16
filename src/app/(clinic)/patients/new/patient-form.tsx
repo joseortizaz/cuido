@@ -6,7 +6,7 @@ import { createPatient, type PatientFormState } from "./actions";
 const inputClass =
   "rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:focus:border-zinc-400";
 
-export function PatientForm() {
+export function PatientForm({ canRecordConsent = false }: { canRecordConsent?: boolean }) {
   const [state, formAction, pending] = useActionState<PatientFormState, FormData>(
     createPatient,
     undefined
@@ -74,6 +74,23 @@ export function PatientForm() {
           <input id="email" name="email" type="email" className={inputClass} />
         </div>
       </div>
+      {canRecordConsent && (
+        <fieldset className="flex flex-col gap-2 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+          <legend className="px-1 text-sm font-medium">Recordatorios por WhatsApp (opcional)</legend>
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="whatsapp_consent" className="mt-1" />
+            <span>
+              El paciente aceptó recibir recordatorios de sus citas por WhatsApp al teléfono indicado arriba, y sabe que
+              puede dejar de recibirlos respondiendo BAJA.
+            </span>
+          </label>
+          <select name="whatsapp_source" defaultValue="verbal" className={inputClass} aria-label="Cómo aceptó">
+            <option value="verbal">Aceptó verbalmente</option>
+            <option value="escrito">Aceptó por escrito</option>
+            <option value="otro">Otro</option>
+          </select>
+        </fieldset>
+      )}
       {state?.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
       <button
         type="submit"

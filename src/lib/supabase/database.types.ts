@@ -87,6 +87,80 @@ export type Database = {
           },
         ]
       }
+      appointment_reminders: {
+        Row: {
+          appointment_id: string
+          claimed_at: string
+          clinic_id: string
+          consent_id: string | null
+          created_at: string
+          id: string
+          responded_at: string | null
+          response: string | null
+          sent_at: string | null
+          skip_reason: string | null
+          status: string
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          appointment_id: string
+          claimed_at?: string
+          clinic_id: string
+          consent_id?: string | null
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          response?: string | null
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          claimed_at?: string
+          clinic_id?: string
+          consent_id?: string | null
+          created_at?: string
+          id?: string
+          responded_at?: string | null
+          response?: string | null
+          sent_at?: string | null
+          skip_reason?: string | null
+          status?: string
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: true
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_reminders_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_reminders_consent_id_fkey"
+            columns: ["consent_id"]
+            isOneToOne: false
+            referencedRelation: "patient_messaging_consents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_reminders_whatsapp_message_id_fkey"
+            columns: ["whatsapp_message_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_surgical_checklist: {
         Row: {
           analiticas_sangre: string
@@ -941,6 +1015,35 @@ export type Database = {
           },
         ]
       }
+      clinic_whatsapp_settings: {
+        Row: {
+          clinic_id: string
+          reminders_enabled: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          clinic_id: string
+          reminders_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          reminders_enabled?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_whatsapp_settings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinics: {
         Row: {
           business_model: Database["public"]["Enums"]["clinic_business_model"]
@@ -1735,6 +1838,69 @@ export type Database = {
           },
         ]
       }
+      patient_messaging_consents: {
+        Row: {
+          category: string
+          channel: string
+          clinic_id: string
+          created_at: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          patient_id: string
+          phone_e164: string
+          revoke_source: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          source: string
+        }
+        Insert: {
+          category?: string
+          channel?: string
+          clinic_id: string
+          created_at?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          patient_id: string
+          phone_e164: string
+          revoke_source?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source: string
+        }
+        Update: {
+          category?: string
+          channel?: string
+          clinic_id?: string
+          created_at?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          patient_id?: string
+          phone_e164?: string
+          revoke_source?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_messaging_consents_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_messaging_consents_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           clinic_id: string
@@ -1962,6 +2128,7 @@ export type Database = {
       }
       whatsapp_messages: {
         Row: {
+          appointment_id: string | null
           clinic_id: string | null
           created_at: string
           delivered_at: string | null
@@ -1972,8 +2139,9 @@ export type Database = {
           meta_error_code: string | null
           meta_message_id: string | null
           patient_id: string | null
+          purpose: string
           read_at: string | null
-          sent_by: string
+          sent_by: string | null
           status: string
           status_updated_at: string | null
           template_language: string
@@ -1982,6 +2150,7 @@ export type Database = {
           to_phone_number: string
         }
         Insert: {
+          appointment_id?: string | null
           clinic_id?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -1992,8 +2161,9 @@ export type Database = {
           meta_error_code?: string | null
           meta_message_id?: string | null
           patient_id?: string | null
+          purpose?: string
           read_at?: string | null
-          sent_by: string
+          sent_by?: string | null
           status: string
           status_updated_at?: string | null
           template_language: string
@@ -2002,6 +2172,7 @@ export type Database = {
           to_phone_number: string
         }
         Update: {
+          appointment_id?: string | null
           clinic_id?: string | null
           created_at?: string
           delivered_at?: string | null
@@ -2012,8 +2183,9 @@ export type Database = {
           meta_error_code?: string | null
           meta_message_id?: string | null
           patient_id?: string | null
+          purpose?: string
           read_at?: string | null
-          sent_by?: string
+          sent_by?: string | null
           status?: string
           status_updated_at?: string | null
           template_language?: string
@@ -2022,6 +2194,13 @@ export type Database = {
           to_phone_number?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "whatsapp_messages_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "whatsapp_messages_clinic_id_fkey"
             columns: ["clinic_id"]
@@ -2122,6 +2301,18 @@ export type Database = {
           target_specialty_template_id: string
         }
         Returns: boolean
+      }
+      claim_due_appointment_reminders: {
+        Args: { p_limit?: number; p_now?: string }
+        Returns: {
+          out_appointment_id: string
+          out_clinic_id: string
+          out_clinic_name: string
+          out_consent_id: string
+          out_phone_e164: string
+          out_reminder_id: string
+          out_scheduled_at: string
+        }[]
       }
       clinic_access_due_on: { Args: { p_clinic_id: string }; Returns: string }
       clinic_access_state: {

@@ -26,7 +26,7 @@ export default async function WhatsAppTestPage() {
   const admin = createAdminClient();
   const emailByUserId = new Map<string, string>();
   await Promise.all(
-    Array.from(new Set((messages ?? []).map((m) => m.sent_by))).map(async (userId) => {
+    Array.from(new Set((messages ?? []).map((m) => m.sent_by).filter((id): id is string => id !== null))).map(async (userId) => {
       const { data } = await admin.auth.admin.getUserById(userId);
       if (data.user?.email) emailByUserId.set(userId, data.user.email);
     })
@@ -88,7 +88,7 @@ export default async function WhatsAppTestPage() {
                 <p className="text-xs text-red-600 dark:text-red-400">{m.error_message}</p>
               )}
               <p className="text-xs text-zinc-500">
-                {emailByUserId.get(m.sent_by) ?? m.sent_by} · {formatDateTime(m.created_at)}
+                {m.sent_by ? (emailByUserId.get(m.sent_by) ?? m.sent_by) : "Envío automático"} · {formatDateTime(m.created_at)}
               </p>
             </li>
           ))}
