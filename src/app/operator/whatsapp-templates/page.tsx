@@ -34,10 +34,15 @@ export default async function WhatsAppTemplatesPage() {
   if (!user) redirect("/login");
   await requireOperatorPage(supabase);
 
-  const { data: templates } = await supabase
+  // Solo las plantillas de la cuenta de WhatsApp activa (WHATSAPP_WABA_ID): las plantillas son por
+  // cuenta, y el catálogo puede conservar filas de una cuenta anterior (p. ej. la de pruebas).
+  const activeWabaId = process.env.WHATSAPP_WABA_ID?.trim();
+  let query = supabase
     .from("whatsapp_templates")
     .select("id, name, language, category, status, quality_score, rejected_reason, synced_at")
     .order("name");
+  if (activeWabaId) query = query.eq("waba_id", activeWabaId);
+  const { data: templates } = await query;
 
   const formatDateTime = (value: string) =>
     new Date(value).toLocaleString("es-DO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Santo_Domingo" });
