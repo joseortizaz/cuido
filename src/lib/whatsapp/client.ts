@@ -36,28 +36,21 @@ export type SendWhatsAppTemplateMessageInput = {
   languageCode: string;
   /** Parámetros posicionales del componente "body" de la plantilla, si tiene. */
   bodyParameters?: string[];
+  /**
+   * `payload` de cada botón de respuesta rápida, en orden (índice 0, 1…). Meta lo devuelve en el
+   * mensaje entrante cuando el paciente pulsa el botón; así se sabe a qué recordatorio responde sin
+   * guardar nada personal. Máximo 256 caracteres cada uno.
+   */
+  buttonPayloads?: string[];
 };
 
 export type SendWhatsAppTemplateMessageResult =
   | { ok: true; metaMessageId: string }
   | { ok: false; error: string };
 
-export async function sendWhatsAppTemplateMessage(
-  input: SendWhatsAppTemplateMessageInput
-): Promise<SendWhatsAppTemplateMessageResult> {
+/** POST /{phone-number-id}/messages con el cuerpo dado; devuelve el id del mensaje o el error de Meta. */
+async function postMessage(payload: Record<string, unknown>): Promise<SendWhatsAppTemplateMessageResult> {
   const { phoneNumberId, accessToken, apiVersion } = getWhatsAppConfig();
-
-  const components = input.bodyParameters?.length
-    ? [
-        {
-          type: "body",
-          parameters: input.bodyParameters.map(
-            (text): WhatsAppTemplateParam => ({ type: "text", text })
-          ),
-        },
-      ]
-    : undefined;
-
   const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
 
   let response: Response;
@@ -68,16 +61,7 @@ export async function sendWhatsAppTemplateMessage(
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: input.to,
-        type: "template",
-        template: {
-          name: input.templateName,
-          language: { code: input.languageCode },
-          ...(components ? { components } : {}),
-        },
-      }),
+      body: JSON.stringify({ messaging_product: "whatsapp", ...payload }),
     });
   } catch (err) {
     return { ok: false, error: `No se pudo contactar la Graph API de Meta: ${(err as Error).message}` };
@@ -103,4 +87,43 @@ export async function sendWhatsAppTemplateMessage(
   }
 
   return { ok: true, metaMessageId: messageId };
+}
+
+export async function sendWhatsAppTemplateMessage(
+  input: SendWhatsAppTemplateMessageInput
+): Promise<SendWhatsAppTemplateMessageResult> {
+  const components: Record<string, unknown>[] = [];
+  if (input.bodyParameters?.length) {
+    components.push({
+      type: "body",
+      parameters: input.bodyParameters.map((text): WhatsAppTemplateParam => ({ type: "text", text })),
+    });
+  }
+  (input.buttonPayloads ?? []).forEach((payload, index) => {
+    components.push({
+      type: "button",
+      sub_type: "quick_reply",
+      index: String(index),
+      parameters: [{ type: "payload", payload }],
+    });
+  });
+
+  return postMessage({
+    to: input.to,
+    type: "template",
+    template: {
+      name: input.templateName,
+      language: { code: input.languageCode },
+      ...(components.length > 0 ? { components } : {}),
+    },
+  });
+}
+
+/**
+ * Mensaje de texto libre. Solo funciona dentro de las 24 horas siguientes al último mensaje DEL
+ * PACIENTE (ventana de atención al cliente): se usa únicamente para confirmar una baja que el
+ * paciente acaba de pedir. Fuera de la ventana Meta lo rechaza y se devuelve el error.
+ */
+export async function sendWhatsAppTextMessage(input: { to: string; body: string }): Promise<SendWhatsAppTemplateMessageResult> {
+  return postMessage({ to: input.to, type: "text", text: { body: input.body, preview_url: false } });
 }

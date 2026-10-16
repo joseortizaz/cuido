@@ -137,6 +137,10 @@ jobs:
       - name: Run WhatsApp reminders test
         run: npm run test:whatsapp-reminders
 
+      # WhatsApp recordatorios (2B): registro del envío, Confirmar/Cancelar, BAJA y recordatorios atascados.
+      - name: Run WhatsApp replies test
+        run: npm run test:whatsapp-replies
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

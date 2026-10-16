@@ -18,6 +18,9 @@ const PUBLIC_PATHS = [
   // Webhook de WhatsApp (Meta): no tiene sesión de usuario; su autenticidad es la firma
   // X-Hub-Signature-256 que verifica la propia ruta (src/app/api/whatsapp/webhook/route.ts).
   "/api/whatsapp/webhook",
+  // Planificador de recordatorios (Vercel Cron): sin sesión de usuario; se autentica con
+  // `Authorization: Bearer CRON_SECRET` en la propia ruta (src/app/api/cron/whatsapp-reminders/route.ts).
+  "/api/cron/whatsapp-reminders",
   // El matcher de src/proxy.ts excluye favicon.ico y extensiones de
   // imagen comunes, pero NO .webmanifest -- sin esta entrada, un
   // fetch sin sesión (el navegador/SO pidiendo el manifest para
