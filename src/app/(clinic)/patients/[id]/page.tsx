@@ -12,6 +12,8 @@ import { GrantAccessForm } from "./sensitive-access/grant-access-form";
 import { RevokeAccessForm } from "./sensitive-access/revoke-access-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
+import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/whatsapp-card";
+import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -51,6 +53,8 @@ export default async function PatientDetailPage({
     { data: sensitiveGrants },
     { data: clinicMembersRaw },
     { data: insurerCatalog },
+    { data: messagingConsents },
+    { data: whatsappSettings },
   ] = await Promise.all([
       supabase
         .from("allergies")
@@ -97,6 +101,17 @@ export default async function PatientDetailPage({
         .order("granted_at", { ascending: false }),
       supabase.from("clinic_members").select("user_id, role").eq("clinic_id", membership.clinicId),
       supabase.from("insurers").select("id, name").eq("is_active", true).order("name"),
+      supabase
+        .from("patient_messaging_consents")
+        .select("id, phone_e164, granted_at, granted_by, source, revoked_at, revoke_source")
+        .eq("patient_id", id)
+        .order("granted_at", { ascending: false })
+        .limit(5),
+      supabase
+        .from("clinic_whatsapp_settings")
+        .select("reminders_enabled")
+        .eq("clinic_id", membership.clinicId)
+        .maybeSingle(),
     ]);
 
   const templateNameById = new Map((templates ?? []).map((t) => [t.id, t.name]));
@@ -109,6 +124,10 @@ export default async function PatientDetailPage({
   const canWriteClinical = (membership.role === "admin" || membership.role === "medico") && !readOnly;
   const canManageBilling = (membership.role === "admin" || membership.role === "recepcion") && !readOnly;
   const currentInsurer = (insurers ?? []).find((i) => i.is_current) ?? null;
+  const activeMessagingConsent = (messagingConsents ?? []).find((c) => c.revoked_at === null) ?? null;
+  const lastRevokedConsent = (messagingConsents ?? []).find((c) => c.revoked_at !== null) ?? null;
+  const patientPhoneE164 = normalizeDominicanPhone(patient.phone);
+  const remindersEnabled = whatsappSettings?.reminders_enabled === true;
 
   // El email no vive en `consents` (auth.users no está expuesto vía la Data
   // API) -- se resuelve server-side, mismo patrón que src/app/team/page.tsx.
@@ -116,6 +135,7 @@ export default async function PatientDetailPage({
   const recorderEmailByUserId = new Map<string, string>();
   const insuranceUserIds = new Set([
     ...(consents ?? []).map((c) => c.recorded_by),
+    ...(messagingConsents ?? []).map((c) => c.granted_by).filter((u): u is string => u !== null),
     ...(eligibilityChecks ?? []).map((c) => c.checked_by),
     ...(sensitiveGrants ?? []).flatMap((g) => [g.granted_to_user_id, g.granted_by_user_id]),
   ]);
@@ -220,6 +240,69 @@ export default async function PatientDetailPage({
           </ul>
         )}
         {canWriteClinical && <MedicationForm patientId={id} />}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">Recordatorios por WhatsApp</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Si el paciente lo acepta, Cuido le recuerda sus citas la víspera por WhatsApp (desde el número «Cuido»), con la
+          clínica, la fecha y la hora, y botones para confirmar o cancelar. No se envían recordatorios de Salud Mental.
+        </p>
+        {!remindersEnabled && (
+          <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            Los recordatorios por WhatsApp no están activados en tu clínica
+            {membershipIsAdmin ? (
+              <>
+                {" "}
+                (<Link href="/settings/whatsapp" className="underline">activarlos</Link>).
+              </>
+            ) : (
+              "; el administrador puede activarlos."
+            )}
+          </p>
+        )}
+        {canManageBilling ? (
+          <ContactForm patientId={id} phone={patient.phone ?? ""} email={patient.email ?? ""} />
+        ) : (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Teléfono: {patient.phone ? formatDominicanPhone(patientPhoneE164) || patient.phone : "sin registrar"}
+          </p>
+        )}
+        {activeMessagingConsent ? (
+          <div className="flex flex-col gap-2 rounded-md border border-green-200 p-3 text-sm dark:border-green-900">
+            <p>
+              <strong className="text-green-700 dark:text-green-400">Acepta recordatorios por WhatsApp</strong> al{" "}
+              {formatDominicanPhone(activeMessagingConsent.phone_e164)} · {activeMessagingConsent.source} ·{" "}
+              {formatDrDate(activeMessagingConsent.granted_at)}
+              {activeMessagingConsent.granted_by
+                ? ` · registrado por ${recorderEmailByUserId.get(activeMessagingConsent.granted_by) ?? "—"}`
+                : ""}
+            </p>
+            {patientPhoneE164 !== activeMessagingConsent.phone_e164 && (
+              <p className="text-amber-700 dark:text-amber-400">
+                El teléfono de la ficha ya no coincide con el del consentimiento: revócalo y registra uno nuevo.
+              </p>
+            )}
+            {canManageBilling && <RevokeConsentButton patientId={id} consentId={activeMessagingConsent.id} />}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {lastRevokedConsent
+                ? lastRevokedConsent.revoke_source === "baja_paciente"
+                  ? "El paciente se dio de baja respondiendo BAJA: no recibe recordatorios."
+                  : "El consentimiento fue revocado: no recibe recordatorios."
+                : "Todavía no ha aceptado recibir recordatorios por WhatsApp."}
+            </p>
+            {canManageBilling && patientPhoneE164 ? (
+              <GrantConsentForm patientId={id} />
+            ) : canManageBilling ? (
+              <p className="text-sm text-zinc-500">
+                Para registrar el consentimiento, el paciente debe tener un teléfono dominicano válido (809, 829 o 849).
+              </p>
+            ) : null}
+          </div>
+        )}
       </section>
 
       <section className="flex flex-col gap-3">
