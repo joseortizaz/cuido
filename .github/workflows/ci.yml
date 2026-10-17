@@ -141,6 +141,10 @@ jobs:
       - name: Run WhatsApp replies test
         run: npm run test:whatsapp-replies
 
+      # GA4: ID válido y rutas permitidas (nunca el área autenticada).
+      - name: Run GA4 test
+        run: npm run test:ga4
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop

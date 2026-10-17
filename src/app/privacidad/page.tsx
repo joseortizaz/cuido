@@ -34,7 +34,7 @@ export default function PrivacidadPage() {
       <main className="flex-1 px-4 pb-20 pt-32 sm:pt-40">
         <div className="mx-auto max-w-3xl">
           <h1 className="text-3xl font-bold text-brand-navy sm:text-4xl">Política de Privacidad</h1>
-          <p className="mt-3 text-sm text-zinc-500">Última actualización: 7 de octubre de 2026.</p>
+          <p className="mt-3 text-sm text-zinc-500">Última actualización: 16 de octubre de 2026.</p>
 
           <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-zinc-700 sm:text-base">
             <section>
@@ -143,6 +143,10 @@ export default function PrivacidadPage() {
                   clínicas que activen la función de recordatorios (ver sección 2 -- aún no
                   disponible).
                 </li>
+                <li>
+                  <strong className="text-brand-navy">Google Analytics</strong> — solo la visita a las
+                  páginas públicas del sitio, como se explica en la sección 8.
+                </li>
               </ul>
               <p className="mt-3">No vendemos datos personales a terceros ni los usamos con fines publicitarios.</p>
             </section>
@@ -157,6 +161,46 @@ export default function PrivacidadPage() {
                 pago, se explica en detalle en nuestra{" "}
                 <a href="/eliminacion-datos" className="font-medium text-brand-blue hover:underline">
                   Política de Eliminación de Datos
+                </a>
+                .
+              </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-brand-navy">
+                8. Sitio público y medición de visitas (Google Analytics)
+              </h2>
+              <p className="mt-2">
+                Las páginas públicas de Cuido (la página de inicio, esta política, los términos, la
+                política de eliminación de datos, el blog y la sección de normativa) usan{" "}
+                <strong>Google Analytics 4</strong> para contar cuántas personas visitan el sitio y qué
+                páginas consultan.
+              </p>
+              <ul className="mt-3 flex flex-col gap-2">
+                <li>
+                  <strong className="text-brand-navy">Qué se recoge:</strong> la página visitada, la
+                  dirección IP y datos técnicos del navegador (tipo de navegador y dispositivo, país), y
+                  cookies de Google Analytics que permiten reconocer que se trata del mismo navegador.
+                </li>
+                <li>
+                  <strong className="text-brand-navy">Qué NO se envía:</strong> no se envía información
+                  de pacientes ni datos clínicos, ni correos o teléfonos. Google Analytics no se carga en
+                  la aplicación a la que acceden las clínicas (agenda, pacientes, expedientes,
+                  facturación ni ninguna pantalla con sesión iniciada) ni en las pantallas de inicio de
+                  sesión y registro.
+                </li>
+                <li>
+                  <strong className="text-brand-navy">Cómo desactivarlo:</strong> con un bloqueador de
+                  contenido o de rastreadores, o con el complemento de inhabilitación de Google Analytics
+                  para el navegador. Si lo haces, el sitio funciona igual.
+                </li>
+              </ul>
+              <p className="mt-3">
+                Google trata estos datos según su propia política de privacidad. En Cuido tratamos la
+                información de las visitas conforme a la Ley No. 172-13; para cualquier consulta, escribe
+                a{" "}
+                <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-brand-blue hover:underline">
+                  {CONTACT_EMAIL}
                 </a>
                 .
               </p>
