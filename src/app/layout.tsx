@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
+import { Ga4 } from "./_components/ga4";
+import { parseGaId } from "@/lib/ga4";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,11 +50,11 @@ export const metadata: Metadata = {
   },
 };
 
-// GA4 -- condicionado a que la env var exista, así dev/local (donde
-// NEXT_PUBLIC_GA_ID no está definida) nunca manda pageviews falsos a la
-// propiedad real. Configurar NEXT_PUBLIC_GA_ID en Vercel → Production
+// GA4 -- solo page_view y solo en el sitio público (src/lib/ga4.ts: lista permitida de rutas). Sin la
+// variable (o con un valor que no sea un ID de medición G-…) no se renderiza nada, así dev/local nunca
+// manda pageviews falsos a la propiedad real. Configurar NEXT_PUBLIC_GA_ID en Vercel → Production
 // (Preview es opcional, solo si se quiere medir tráfico de PRs).
-const gaId = process.env.NEXT_PUBLIC_GA_ID;
+const gaId = parseGaId(process.env.NEXT_PUBLIC_GA_ID);
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -63,19 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         {children}
-        {gaId && (
-          <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaId}');
-              `}
-            </Script>
-          </>
-        )}
+        {gaId && <Ga4 gaId={gaId} />}
       </body>
     </html>
   );
