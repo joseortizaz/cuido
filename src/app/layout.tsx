@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MetaPixel } from "./_components/meta-pixel";
+import { parseMetaPixelId } from "@/lib/meta-pixel";
 import { Ga4 } from "./_components/ga4";
 import { parseGaId } from "@/lib/ga4";
 import "./globals.css";
@@ -56,6 +58,10 @@ export const metadata: Metadata = {
 // (Preview es opcional, solo si se quiere medir tráfico de PRs).
 const gaId = parseGaId(process.env.NEXT_PUBLIC_GA_ID);
 
+// Meta Pixel -- solo PageView y solo en el sitio público (src/lib/meta-pixel.ts). Sin la variable (o con
+// un valor que no sea un ID numérico) no se renderiza nada: ni script ni noscript.
+const metaPixelId = parseMetaPixelId(process.env.NEXT_PUBLIC_META_PIXEL_ID);
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -64,6 +70,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         {children}
+        {metaPixelId && <MetaPixel pixelId={metaPixelId} />}
         {gaId && <Ga4 gaId={gaId} />}
       </body>
     </html>
