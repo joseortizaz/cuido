@@ -141,6 +141,10 @@ jobs:
       - name: Run WhatsApp replies test
         run: npm run test:whatsapp-replies
 
+      # Meta Pixel: ID válido y rutas permitidas (nunca el área autenticada).
+      - name: Run Meta Pixel test
+        run: npm run test:meta-pixel
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
