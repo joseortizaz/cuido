@@ -145,6 +145,10 @@ jobs:
       - name: Run Meta Pixel test
         run: npm run test:meta-pixel
 
+      # GA4: ID válido y rutas permitidas (nunca el área autenticada).
+      - name: Run GA4 test
+        run: npm run test:ga4
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
