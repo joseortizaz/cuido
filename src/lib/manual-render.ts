@@ -78,8 +78,9 @@ export function renderManual(markdown: string): RenderedManual {
         if (depth === 1) {
           toc.push({ id, title, sections: [] });
         } else if (depth === 2) {
-          if (toc.length === 0) toc.push({ id: `${id}-capitulo`, title: "", sections: [] });
-          toc[toc.length - 1].sections.push({ id, title });
+          // Una sección antes del primer capítulo (p. ej. «Cómo usar este manual») entra al índice como entrada propia.
+          if (toc.length === 0) toc.push({ id, title, sections: [] });
+          else toc[toc.length - 1].sections.push({ id, title });
         }
         const anchor = `<a href="#${id}" class="manual-anchor" aria-label="Enlace a esta sección">#</a>`;
         return `<h${depth} id="${id}" class="scroll-mt-20">${inner}${anchor}</h${depth}>\n`;
@@ -90,7 +91,9 @@ export function renderManual(markdown: string): RenderedManual {
         if (!match) return `<blockquote>\n${body}</blockquote>\n`;
         const kind = calloutKindOf(match[1]);
         // El rótulo («Importante:») pasa al encabezado del cuadro: se quita del primer párrafo.
-        const stripped = body.replace(/^\s*<p>\s*<strong>[^<]*<\/strong>\s*:?\s*/i, "<p>");
+        const withoutLabel = body.replace(/^\s*<p>\s*<strong>[^<]*<\/strong>\s*:?\s*/i, "<p>");
+        // Sin el rótulo, el texto queda como primera frase del cuadro: empieza con mayúscula.
+        const stripped = withoutLabel.replace(/^<p>(\s*)([a-záéíóúñ])/, (_m, sp: string, c: string) => `<p>${sp}${c.toUpperCase()}`);
         return (
           `<aside class="manual-callout manual-callout-${kind}" role="note">` +
           `<p class="manual-callout-title">${escapeHtml(CALLOUT_LABELS[kind])}</p>` +
@@ -113,6 +116,5 @@ export function renderManual(markdown: string): RenderedManual {
   let html = marked.parser(tokens);
   html = html.replace(/<table>/g, '<div class="manual-table-scroll"><table>').replace(/<\/table>/g, "</table></div>");
 
-  // Un `##` previo al primer `#` crearía un capítulo vacío (título ""): se descarta del índice si quedó así.
-  return { html, toc: toc.filter((c) => c.title !== "" || c.sections.length > 0) };
+  return { html, toc };
 }

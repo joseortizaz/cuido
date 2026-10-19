@@ -66,7 +66,7 @@ console.log("\nCuadros destacados:");
 for (const [kind, label] of [["importante", "Importante"], ["nota", "Nota"], ["consejo", "Consejo"], ["costo", "Costo adicional"]] as const) {
   check(`${label}`, html.includes(`class="manual-callout manual-callout-${kind}"`) && html.includes(`<p class="manual-callout-title">${label}</p>`), "");
 }
-check("el rótulo pasa al encabezado (no se repite en el texto)", !/<strong>Importante:?<\/strong>/.test(html) && html.includes("<p>guarda tu contraseña.</p>"), html.match(/manual-callout-importante[\s\S]*?<\/aside>/)?.[0] ?? "");
+check("el rótulo pasa al encabezado (no se repite) y el texto empieza con mayúscula", !/<strong>Importante:?<\/strong>/.test(html) && html.includes("<p>Guarda tu contraseña.</p>"), html.match(/manual-callout-importante[\s\S]*?<\/aside>/)?.[0] ?? "");
 check("una cita sin rótulo sigue siendo <blockquote>", html.includes("<blockquote>") && html.includes("Una cita normal"), "");
 check("exactamente 4 cuadros", (html.match(/<aside /g) ?? []).length === 4, String((html.match(/<aside /g) ?? []).length));
 
@@ -77,6 +77,8 @@ check("negrita y enlaces se conservan", html.includes("<strong>negrita</strong>"
 console.log("\nSin H1 inicial / con otro título:");
 const other = renderManual("# Otro título\n\nTexto");
 check("un primer H1 distinto SÍ se conserva como capítulo", other.html.includes("Otro título") && other.toc.length === 1, JSON.stringify(other.toc));
+const intro = renderManual("# Manual del Usuario\n\n## Cómo usar este manual\n\nTexto\n\n# 1. Uno\n\n## 1.1 Sub");
+check("una sección previa al primer capítulo entra al índice como entrada propia", intro.toc.length === 2 && intro.toc[0].title === "Cómo usar este manual" && intro.toc[0].sections.length === 0 && intro.toc[1].sections.length === 1, JSON.stringify(intro.toc));
 const empty = renderManual("");
 check("documento vacío no falla", empty.html.trim() === "" && empty.toc.length === 0, "");
 
