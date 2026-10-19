@@ -37,7 +37,7 @@ export default async function DashboardPage() {
         {/* Manual del usuario: lo ven los tres roles (este encabezado es común a ambos paneles). */}
         <Link
           href="/manual"
-          className="inline-flex items-center gap-2 rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-900"
+          className="inline-flex items-center gap-2 rounded-md bg-brand-blue px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
