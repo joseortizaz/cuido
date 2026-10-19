@@ -5,7 +5,7 @@ import type { MetadataRoute } from "next";
  * manifest.ts/sitemap.ts) -- se sirve automáticamente en /robots.txt.
  *
  * `disallow` cubre toda ruta que vive detrás de auth (src/app/(clinic)/*
- * -- appointments, billing, claims, dashboard, patients, profile,
+ * -- appointments, billing, claims, dashboard, patients, profile, manual,
  * settings, team -- más operator/onboarding y las páginas del flujo de
  * autenticación) -- deja abierto solo landing/blog/normativa/privacidad/
  * términos/eliminación de datos, que es exactamente lo que expone sitemap.ts.
@@ -25,6 +25,7 @@ export default function robots(): MetadataRoute.Robots {
           "/team",
           "/settings",
           "/profile",
+          "/manual",
           "/operator",
           "/onboarding",
           "/login",

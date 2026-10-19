@@ -145,6 +145,10 @@ jobs:
       - name: Run Meta Pixel test
         run: npm run test:meta-pixel
 
+      # Manual del Usuario: render (cuadros destacados, índice, anclas, tablas) y que /manual no se indexe ni se mida.
+      - name: Run manual test
+        run: npm run test:manual
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4

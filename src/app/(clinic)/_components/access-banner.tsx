@@ -30,7 +30,7 @@ export async function AccessBanner({ isAdmin }: { isAdmin: boolean }) {
   if (!banner) return null;
 
   return (
-    <div role="status" className={`border-b px-4 py-3 text-sm sm:px-6 ${TONE_CLASSES[banner.tone]}`}>
+    <div role="status" className={`border-b px-4 py-3 print:hidden text-sm sm:px-6 ${TONE_CLASSES[banner.tone]}`}>
       <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div>
           <p className="font-semibold">{banner.title}</p>
