@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* El modo oscuro (según el sistema) aplica solo en pantalla: al imprimir siempre se usa la versión clara. */
+@custom-variant dark (@media screen and (prefers-color-scheme: dark));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -25,7 +28,7 @@
   --color-brand-bg: #fafafa;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
@@ -36,4 +39,142 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Manual del Usuario (src/lib/manual-render.ts, src/app/(clinic)/manual/)
+   --------------------------------------------------------------------------- */
+
+.manual-callout {
+  --callout-border: #f59e0b;
+  --callout-bg: #fffbeb;
+  --callout-title: #b45309;
+  --callout-text: #451a03;
+  margin: 1.5rem 0;
+  border: 1px solid var(--callout-border);
+  border-left-width: 6px;
+  border-radius: 0.5rem;
+  background: var(--callout-bg);
+  padding: 0.75rem 1rem;
+  color: var(--callout-text);
+  break-inside: avoid;
+}
+.manual-callout > p,
+.manual-callout li,
+.manual-callout strong {
+  color: inherit;
+}
+.manual-callout > :last-child {
+  margin-bottom: 0;
+}
+.manual-callout-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--callout-title) !important;
+}
+.manual-callout-nota {
+  --callout-border: #3b82f6;
+  --callout-bg: #eff6ff;
+  --callout-title: #1d4ed8;
+  --callout-text: #172554;
+}
+.manual-callout-consejo {
+  --callout-border: #14b8a6;
+  --callout-bg: #f0fdfa;
+  --callout-title: #0f766e;
+  --callout-text: #042f2e;
+}
+/* «Costo adicional»: debe verse claramente (borde más grueso y fondo más saturado). */
+.manual-callout-costo {
+  --callout-border: #dc2626;
+  --callout-bg: #fee2e2;
+  --callout-title: #b91c1c;
+  --callout-text: #450a0a;
+  border-width: 2px;
+  border-left-width: 8px;
+}
+.manual-callout-costo .manual-callout-title {
+  font-size: 0.8125rem;
+}
+@media screen and (prefers-color-scheme: dark) {
+  .manual-callout {
+    --callout-bg: rgb(245 158 11 / 0.12);
+    --callout-title: #fbbf24;
+    --callout-text: #fef3c7;
+  }
+  .manual-callout-nota {
+    --callout-bg: rgb(59 130 246 / 0.14);
+    --callout-title: #93c5fd;
+    --callout-text: #dbeafe;
+  }
+  .manual-callout-consejo {
+    --callout-bg: rgb(20 184 166 / 0.14);
+    --callout-title: #5eead4;
+    --callout-text: #ccfbf1;
+  }
+  .manual-callout-costo {
+    --callout-border: #ef4444;
+    --callout-bg: rgb(239 68 68 / 0.2);
+    --callout-title: #fca5a5;
+    --callout-text: #fee2e2;
+  }
+}
+
+.manual-table-scroll {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+.manual-table-scroll table {
+  margin: 0;
+  min-width: 32rem;
+}
+.manual-table-scroll th,
+.manual-table-scroll td {
+  vertical-align: top;
+}
+
+/* Enlace «#» junto a cada título: solo se ve al pasar el cursor. */
+.manual-anchor {
+  margin-left: 0.5rem;
+  font-weight: 400;
+  text-decoration: none;
+  opacity: 0;
+  color: #94a3b8;
+}
+h1:hover > .manual-anchor,
+h2:hover > .manual-anchor,
+h3:hover > .manual-anchor,
+.manual-anchor:focus {
+  opacity: 1;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #171717;
+  }
+  .manual-anchor {
+    display: none;
+  }
+  .manual-article h1 {
+    break-before: page;
+  }
+  .manual-article h1:first-child {
+    break-before: auto;
+  }
+  .manual-article h1,
+  .manual-article h2,
+  .manual-article h3 {
+    break-after: avoid;
+  }
+  .manual-article table,
+  .manual-article img {
+    break-inside: avoid;
+  }
+  .manual-table-scroll {
+    overflow: visible;
+  }
 }

@@ -27,7 +27,7 @@ check("landing y páginas públicas informativas", publicPaths.every(isMetaPixel
 
 const privatePaths = [
   "/dashboard", "/patients", "/patients/abc", "/patients/new", "/patients/abc/whatsapp", "/appointments", "/agenda", "/encounters/1",
-  "/settings", "/settings/whatsapp", "/team", "/billing", "/operator", "/operator/whatsapp-templates", "/security", "/onboarding",
+  "/settings", "/settings/whatsapp", "/team", "/billing", "/operator", "/operator/whatsapp-templates", "/security", "/onboarding", "/manual", "/manual/pdf",
   "/login", "/login/mfa", "/signup", "/forgot-password", "/reset-password", "/auth/callback", "/api/whatsapp/webhook", "/api/cron/whatsapp-reminders",
 ];
 check("NO en el área autenticada, el acceso ni las APIs", privatePaths.every((p) => !isMetaPixelPath(p)), privatePaths.filter(isMetaPixelPath).join(", "));

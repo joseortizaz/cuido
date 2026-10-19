@@ -43,7 +43,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
  */
 export function ClinicNav({ clinicName }: { clinicName: string | null }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+    <header className="sticky top-0 z-10 border-b print:hidden border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="flex items-center" aria-label="Cuido">
