@@ -20,9 +20,9 @@ Este manual es para las clínicas, los médicos y el personal de recepción que 
 
 ## 1.1 Crear la cuenta de la clínica
 
-1. Entre a **cuido.net** y pulse **Crear cuenta** (o abra directamente la página de registro).
+1. Entre a **cuido.net**, pulse **Iniciar sesión** y, en esa pantalla, pulse **Regístrate** (o abra directamente la página de registro, titulada **Crear cuenta**).
 2. Escriba su **correo electrónico** y una **contraseña de al menos 8 caracteres**.
-3. Marque la casilla **"He leído y acepto los Términos y Condiciones"** (el enlace abre el texto completo en `cuido.net/terminos`). Sin aceptarlos no se puede crear la cuenta.
+3. Marque la casilla **"He leído y acepto los Términos y Condiciones"** (el enlace abre el texto completo en `cuido.net/terminos`). Sin aceptarlos no se puede crear la cuenta. Luego pulse **Crear cuenta**.
 4. Revise su correo. Recibirá un mensaje para **confirmar su cuenta**; pulse el enlace del mensaje.
 5. Al confirmar, Cuido le pedirá los **datos de la clínica**: nombre, provincia y el plan o modelo que corresponde a su contrato con Narnia Tech.
 6. Al terminar, entra al **panel** de su clínica, con un **período de prueba de 14 días**. Quien crea la cuenta queda como **administrador/a**.
@@ -31,13 +31,13 @@ Este manual es para las clínicas, los médicos y el personal de recepción que 
 
 ## 1.2 Iniciar y cerrar sesión
 
-- Para entrar, use **Iniciar sesión** con su correo y contraseña.
+- Para entrar, en la pantalla **Iniciar sesión** escriba su correo y contraseña y pulse **Ingresar**.
 - Si activó la **verificación en dos pasos** (sección 15.2), Cuido le pedirá a continuación el **código de 6 dígitos** de su app de autenticación.
 - Para salir, pulse **Cerrar sesión**, arriba a la derecha. Hágalo siempre en computadoras compartidas o de uso público.
 
 ## 1.3 Si olvidó su contraseña
 
-1. En la pantalla de inicio de sesión pulse **¿Olvidó su contraseña?**
+1. En la pantalla de inicio de sesión pulse **¿Olvidaste tu contraseña?**
 2. Escriba su correo. Le llegará un mensaje con un enlace.
 3. Abra el enlace, escriba la nueva contraseña (mínimo 8 caracteres) y guarde.
 
@@ -173,7 +173,7 @@ Cuido incluye **14 especialidades con 21 plantillas**, alineadas a la normativa 
 
 ## 5.3 Especialidades de cada médico
 
-- El **administrador** puede **deshabilitar** especialidades para un médico (Equipo → Especialidades del médico). Una especialidad deshabilitada no aparece nunca para ese médico.
+- El **administrador** puede **deshabilitar** especialidades para un médico (Equipo → botón **Especialidades** junto al nombre del médico, que abre la pantalla **Especialidades habilitadas**). Una especialidad deshabilitada no aparece nunca para ese médico.
 - Cada **médico** puede marcar sus **especialidades preferidas** para que aparezcan resaltadas al crear una consulta. Es solo una comodidad: no cambia lo que tiene permitido.
 
 ## 5.4 Convertir una cita en consulta
@@ -614,7 +614,7 @@ Revise que el nombre esté bien escrito. Si aún no se registró, créelo desde 
 Recepción y administración pueden cambiar el estado en la agenda en cualquier momento.
 
 **Un médico no ve una especialidad en la lista.**
-El administrador la deshabilitó para ese médico. Puede volver a habilitarla en Equipo → Especialidades del médico.
+El administrador la deshabilitó para ese médico. Puede volver a habilitarla en Equipo → botón **Especialidades** junto al nombre del médico (pantalla **Especialidades habilitadas**).
 
 **No puedo ver las notas de Salud Mental de un paciente.**
 Esas notas requieren que el administrador le otorgue acceso (capítulo 8).
@@ -669,7 +669,7 @@ Cuido incluye **14 especialidades con 21 plantillas clínicas**, alineadas a la 
 | Neumología | Incluye plantilla de Enfermedad Pulmonar Intersticial |
 | Otorrinolaringología | |
 | Salud Mental / Psicología | Acceso restringido (capítulo 8) |
-| Ortopedia y Traumatología | Incluye la Orden de Terapia Física / Rehabilitación |
+| Ortopedia y Traumatología | Nota Operatoria · Orden de Terapia Física/Rehabilitación |
 | Nutriología Clínica | |
 
 > **Nota:** las especialidades y plantillas se amplían con el tiempo. Si su clínica necesita una que no aparece aquí, escriba a Narnia Tech.
