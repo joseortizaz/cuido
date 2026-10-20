@@ -36,6 +36,13 @@ export const metadata: Metadata = {
     locale: "es_DO",
     type: "website",
   },
+  // La miniatura (og:image / twitter:image) sale de la convención de archivos:
+  // src/app/opengraph-image.png (1200x630) + opengraph-image.alt.txt. "og:url" no se fija aquí: lo
+  // heredarían TODAS las páginas y /privacidad o un artículo del blog dirían ser la página de inicio;
+  // se declara solo en la home (src/app/page.tsx).
+  twitter: {
+    card: "summary_large_image",
+  },
   icons: {
     // src/app/favicon.ico (el default de create-next-app) se eliminó a
     // propósito -- esa convención de archivo especial le gana en

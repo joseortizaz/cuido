@@ -3,6 +3,19 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { isPlatformOperator } from "@/lib/supabase/operator-context";
 import { LandingPage } from "./_landing/landing-page";
+import type { Metadata } from "next";
+
+// Next.js NO hace deep-merge de `openGraph` entre layout y página (la de la página reemplaza a la del
+// layout), así que se repite lo del layout y se añade la URL canónica de la home. Título y descripción
+// vienen del layout; la imagen, de src/app/opengraph-image.png.
+export const metadata: Metadata = {
+  openGraph: {
+    siteName: "Cuido",
+    locale: "es_DO",
+    type: "website",
+    url: "https://cuido.net",
+  },
+};
 
 /**
  * "/" — landing pública para visitantes SIN sesión (src/app/_landing/).
