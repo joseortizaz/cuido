@@ -167,7 +167,7 @@ Solo **médicos y administradores** registran consultas.
 
 ## 5.2 Plantillas por especialidad
 
-Cuido incluye **14 especialidades con 21 plantillas**, alineadas a la normativa del Ministerio de Salud Pública. La lista completa está en el **Anexo A**.
+Cuido incluye **15 especialidades con 22 plantillas**, alineadas a la normativa del Ministerio de Salud Pública. La lista completa está en el **Anexo A**.
 
 > **Nota:** la especialidad es una plantilla de la historia clínica, no un sistema aparte. Si un médico atiende más de una especialidad, usa la plantilla que corresponda en cada consulta.
 
@@ -653,10 +653,11 @@ Para atenderle más rápido, indique: el **nombre de su clínica**, su **correo 
 
 # Anexo A. Especialidades y plantillas disponibles
 
-Cuido incluye **14 especialidades con 21 plantillas clínicas**, alineadas a la normativa del Ministerio de Salud Pública:
+Cuido incluye **15 especialidades con 22 plantillas clínicas**, alineadas a la normativa del Ministerio de Salud Pública:
 
 | Especialidad | Notas |
 |---|---|
+| Medicina Familiar y General | |
 | Medicina Interna | |
 | Pediatría | |
 | Ginecología y Obstetricia | Consulta prenatal · Admisión por parto · Puerperio |
