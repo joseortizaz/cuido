@@ -149,6 +149,10 @@ jobs:
       - name: Run manual test
         run: npm run test:manual
 
+      # Código automático de paciente: consecutivo, sin falsificar ni reutilizar, reinicio anual, permisos por rol y solo lectura.
+      - name: Run patient code test
+        run: npm run test:patient-code
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4

@@ -9,7 +9,7 @@ import { fetchAllPages } from "./fetch-all";
 
 type Patient = Pick<
   Database["public"]["Tables"]["patients"]["Row"],
-  "id" | "first_name" | "last_name" | "national_id" | "date_of_birth" | "sex" | "phone" | "email"
+  "id" | "record_number" | "first_name" | "last_name" | "national_id" | "date_of_birth" | "sex" | "phone" | "email"
 >;
 type Allergy = Pick<
   Database["public"]["Tables"]["allergies"]["Row"],
@@ -34,10 +34,10 @@ type Medication = Pick<
  * chequear pertenencia de clínica.
  */
 
-const PATIENT_HEADERS = ["Nombre", "Apellido", "Cédula o pasaporte", "Fecha de nacimiento", "Sexo", "Teléfono", "Correo"];
+const PATIENT_HEADERS = ["Código", "Nombre", "Apellido", "Cédula o pasaporte", "Fecha de nacimiento", "Sexo", "Teléfono", "Correo"];
 
 function patientRow(p: Patient): (string | null)[] {
-  return [p.first_name, p.last_name, p.national_id, p.date_of_birth, p.sex, p.phone, p.email];
+  return [p.record_number, p.first_name, p.last_name, p.national_id, p.date_of_birth, p.sex, p.phone, p.email];
 }
 
 export async function generatePatientsExportXlsx(
@@ -121,7 +121,7 @@ export async function fetchPatientsExportData(
   const patients = await fetchAllPages<Patient>(async (from, to) =>
     supabase
       .from("patients")
-      .select("id, first_name, last_name, national_id, date_of_birth, sex, phone, email")
+      .select("id, record_number, first_name, last_name, national_id, date_of_birth, sex, phone, email")
       .order("last_name", { ascending: true })
       .order("id", { ascending: true })
       .range(from, to)
