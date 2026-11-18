@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
@@ -38,22 +39,41 @@ export default async function EncounterDetailPage({
     .maybeSingle();
   if (!patient) notFound();
 
-  const { data: encounter } = await supabase
-    .from("encounters")
-    .select("id, encounter_date, chief_complaint, specialty_data, specialty_template_id")
-    .eq("id", encounterId)
-    .eq("patient_id", id)
-    .maybeSingle();
+  // Recepción factura y prepara reclamaciones pero no lee datos clínicos: para ella la consulta es solo su
+  // fecha (encounter_stubs); no se carga el motivo, la nota, los signos vitales ni la especialidad.
+  const isReception = membership?.role === "recepcion";
+  type EncounterView = {
+    id: string;
+    encounter_date: string;
+    chief_complaint: string | null;
+    specialty_data: unknown;
+    specialty_template_id: string | null;
+  };
+  let encounter: EncounterView | null = null;
+  if (isReception) {
+    const [stub] = await fetchEncounterStubs(supabase, { encounterIds: [encounterId] });
+    if (stub && stub.patient_id === id) {
+      encounter = { id: stub.id, encounter_date: stub.encounter_date, chief_complaint: null, specialty_data: {}, specialty_template_id: null };
+    }
+  } else {
+    const { data } = await supabase
+      .from("encounters")
+      .select("id, encounter_date, chief_complaint, specialty_data, specialty_template_id")
+      .eq("id", encounterId)
+      .eq("patient_id", id)
+      .maybeSingle();
+    encounter = data;
+  }
   if (!encounter) notFound();
 
   const [{ data: template }, { data: vitals }, { data: insurers }, { data: claims }, { data: documents }] =
     await Promise.all([
-    supabase
-      .from("specialty_templates")
-      .select("name, schema")
-      .eq("id", encounter.specialty_template_id)
-      .single(),
-    supabase.from("vital_signs").select("*").eq("encounter_id", encounterId).maybeSingle(),
+    isReception || !encounter.specialty_template_id
+      ? Promise.resolve({ data: null })
+      : supabase.from("specialty_templates").select("name, schema").eq("id", encounter.specialty_template_id).single(),
+    isReception
+      ? Promise.resolve({ data: null })
+      : supabase.from("vital_signs").select("*").eq("encounter_id", encounterId).maybeSingle(),
     supabase
       .from("patient_insurers")
       .select("id, insurer_name, affiliate_number")

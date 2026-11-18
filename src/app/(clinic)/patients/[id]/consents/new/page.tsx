@@ -1,3 +1,4 @@
+import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
@@ -34,11 +35,18 @@ export default async function NewConsentPage({
       .select("id, title, body")
       .eq("is_active", true)
       .order("title"),
-    supabase
-      .from("encounters")
-      .select("id, encounter_date, chief_complaint")
-      .eq("patient_id", id)
-      .order("encounter_date", { ascending: false }),
+    // Recepción no lee las consultas: solo ve la fecha de cada una (id, fecha y paciente), sin el motivo.
+    membership.role === "recepcion"
+      ? fetchEncounterStubs(supabase, { patientId: id }).then((rows) => ({
+          data: rows
+            .map((r) => ({ id: r.id, encounter_date: r.encounter_date, chief_complaint: null as string | null }))
+            .sort((a, b) => b.encounter_date.localeCompare(a.encounter_date)),
+        }))
+      : supabase
+          .from("encounters")
+          .select("id, encounter_date, chief_complaint")
+          .eq("patient_id", id)
+          .order("encounter_date", { ascending: false }),
   ]);
   if (!patient) notFound();
 

@@ -1,3 +1,4 @@
+import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -55,7 +56,9 @@ export default async function ClaimsPage({
 
   const [{ data: encounters }, { data: insurers }, { data: documents }, { data: diagnoses }] = await Promise.all([
     encounterIds.length > 0
-      ? supabase.from("encounters").select("id, patient_id, encounter_date").in("id", encounterIds)
+      ? fetchEncounterStubs(supabase, { encounterIds }).then((rows) => ({
+          data: rows.map((r) => ({ id: r.id, patient_id: r.patient_id, encounter_date: r.encounter_date })),
+        }))
       : Promise.resolve({ data: [] as { id: string; patient_id: string; encounter_date: string }[] }),
     insurerIds.length > 0
       ? supabase.from("patient_insurers").select("id, insurer_name, affiliate_number").in("id", insurerIds)

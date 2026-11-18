@@ -165,6 +165,10 @@ jobs:
       - name: Run patient record test
         run: npm run test:patient-record
 
+      # Recepción sin datos clínicos: lectura restringida, encounter_stubs y que siga reclamando, facturando y agendando.
+      - name: Run reception isolation test
+        run: npm run test:reception-isolation
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4

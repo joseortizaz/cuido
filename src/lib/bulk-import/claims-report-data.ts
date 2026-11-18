@@ -37,7 +37,7 @@ export async function loadClaimsReport(
     let query = supabase
       .from("insurance_claims")
       .select(
-        "id, status, claimed_amount, approved_amount, paid_amount, rejection_reason, created_at, patient_insurers(insurer_id, insurer_name), encounters(patients(is_test))"
+        "id, status, claimed_amount, approved_amount, paid_amount, rejection_reason, created_at, patient_insurers(insurer_id, insurer_name, patients(is_test))"
       );
     if (sinceTimestamp) query = query.gte("created_at", sinceTimestamp);
     return query.order("created_at", { ascending: true }).order("id", { ascending: true }).range(from, to);
@@ -46,24 +46,24 @@ export async function loadClaimsReport(
   const historyRows = await fetchAllPages(async (from, to) => {
     let query = supabase
       .from("insurance_claim_status_history")
-      .select("id, claim_id, to_status, changed_at, insurance_claims(encounters(patients(is_test)))");
+      .select("id, claim_id, to_status, changed_at, insurance_claims(patient_insurers(patients(is_test)))");
     if (sinceTimestamp) query = query.gte("changed_at", sinceTimestamp);
     return query.order("changed_at", { ascending: true }).order("id", { ascending: true }).range(from, to);
   });
 
   // Las reclamaciones de pacientes de prueba (datos ficticios) no entran en los reportes.
+  // El paciente sale de la aseguradora de la reclamación (recepción ya no lee las consultas).
   type TestFlag = Obj<{ patients: Obj<{ is_test: boolean }> }>;
-  const isTestClaim = (encounters: TestFlag): boolean => {
-    const e = Array.isArray(encounters) ? encounters[0] : encounters;
+  const isTestClaim = (insurer: TestFlag): boolean => {
+    const e = Array.isArray(insurer) ? insurer[0] : insurer;
     const p = e ? (Array.isArray(e.patients) ? e.patients[0] : e.patients) : null;
     return p?.is_test === true;
   };
 
   const claims: ReportClaim[] = (
     (claimRows as unknown as (Omit<ReportClaim, "insurer_key" | "insurer_label"> & {
-      patient_insurers: Obj<{ insurer_id: string | null; insurer_name: string }>;
-      encounters: TestFlag;
-    })[]).filter((r) => !isTestClaim(r.encounters))
+      patient_insurers: Obj<{ insurer_id: string | null; insurer_name: string; patients: Obj<{ is_test: boolean }> }>;
+    })[]).filter((r) => !isTestClaim(r.patient_insurers as unknown as TestFlag))
   ).map((r) => {
     const ins = Array.isArray(r.patient_insurers) ? r.patient_insurers[0] : r.patient_insurers;
     return {
@@ -80,10 +80,10 @@ export async function loadClaimsReport(
   });
 
   const transitions = (
-    historyRows as unknown as (ReportTransition & { insurance_claims: Obj<{ encounters: TestFlag }> })[]
+    historyRows as unknown as (ReportTransition & { insurance_claims: Obj<{ patient_insurers: TestFlag }> })[]
   ).filter((h) => {
     const c = Array.isArray(h.insurance_claims) ? h.insurance_claims[0] : h.insurance_claims;
-    return !(c && isTestClaim(c.encounters));
+    return !(c && isTestClaim(c.patient_insurers));
   }) as ReportTransition[];
   return { report: buildClaimsReport(claims, transitions, today), today, since };
 }

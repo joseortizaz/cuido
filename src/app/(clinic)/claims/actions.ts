@@ -1,4 +1,5 @@
 "use server";
+import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import "server-only";
 
 import { redirect } from "next/navigation";
@@ -64,11 +65,7 @@ async function claimContext(claimId: string) {
     .eq("id", claimId)
     .maybeSingle();
   if (!claim) return null;
-  const { data: encounter } = await supabase
-    .from("encounters")
-    .select("patient_id")
-    .eq("id", claim.encounter_id)
-    .maybeSingle();
+  const [encounter] = await fetchEncounterStubs(supabase, { encounterIds: [claim.encounter_id] });
   return { supabase, userId, claim, patientId: encounter?.patient_id ?? null };
 }
 

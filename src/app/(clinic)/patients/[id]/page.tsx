@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { AllergyForm } from "./allergy-form";
@@ -221,6 +222,13 @@ export default async function PatientDetailPage({
     : [{ data: null }, { data: null }, { data: [] as RevisionRow[] }];
 
   const recordOpen = !!record;
+
+  // Recepción no lee las consultas: para facturar, reclamar a la ARS o firmar consentimientos solo ve la fecha
+  // de cada una (encounter_stubs), sin motivo, notas, diagnóstico ni especialidad.
+  const receptionEncounters =
+    membership.role === "recepcion" && tab === "administrativo"
+      ? (await fetchEncounterStubs(supabase, { patientId: id })).sort((a, b) => b.encounter_date.localeCompare(a.encounter_date))
+      : [];
 
   // Qué se puede hacer con el paciente (eliminar / anular): solo el administrador.
   const { data: deletionStatusRaw } = membershipIsAdmin
@@ -589,6 +597,30 @@ export default async function PatientDetailPage({
 
       {tab === "administrativo" && (
         <>
+          {membership.role === "recepcion" && (
+            <section className="flex flex-col gap-3">
+              <h2 className="text-lg font-medium">Consultas</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                Solo la fecha de cada consulta: desde aquí se factura, se reclama a la ARS o se firma un consentimiento. El
+                contenido clínico lo ven los médicos.
+              </p>
+              {receptionEncounters.length === 0 ? (
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin consultas registradas.</p>
+              ) : (
+                <ul className="flex flex-col divide-y divide-panel-border">
+                  {receptionEncounters.map((e) => (
+                    <li key={e.id}>
+                      <Link href={`/patients/${id}/encounters/${e.id}`} className="flex items-center justify-between py-3 text-sm hover:underline">
+                        <span>Consulta del {formatDrDate(e.encounter_date)}</span>
+                        <span className="text-zinc-500">Facturación y reclamaciones →</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
           <section className="flex flex-col gap-3">
             <h2 className="text-lg font-medium">Recordatorios por WhatsApp</h2>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
