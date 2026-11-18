@@ -55,13 +55,13 @@ export async function DoctorDashboard({ userId }: { userId: string }) {
   const formatTime = (value: string) => formatDrTime(value, { timeStyle: "short" });
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-12">
+    <div className="flex w-full flex-1 flex-col gap-8 px-4 py-6 text-panel-row lg:px-8 print:px-0">
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Mis citas de hoy</h2>
         {!appointments || appointments.length === 0 ? (
           <p className="text-sm text-zinc-500">Sin citas agendadas para hoy.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="flex flex-col divide-y divide-panel-border">
             {appointments.map((a) => (
               <li key={a.id} className="flex flex-col gap-0.5 py-3 text-sm">
                 <div className="flex items-center justify-between">

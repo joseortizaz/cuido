@@ -33,7 +33,7 @@ Este manual es para las clínicas, los médicos y el personal de recepción que 
 
 - Para entrar, en la pantalla **Iniciar sesión** escriba su correo y contraseña y pulse **Ingresar**.
 - Si activó la **verificación en dos pasos** (sección 15.2), Cuido le pedirá a continuación el **código de 6 dígitos** de su app de autenticación.
-- Para salir, pulse **Cerrar sesión**, arriba a la derecha. Hágalo siempre en computadoras compartidas o de uso público.
+- Para salir, pulse **Cerrar sesión**, al pie del menú lateral izquierdo. Hágalo siempre en computadoras compartidas o de uso público.
 
 ## 1.3 Si olvidó su contraseña
 
@@ -47,7 +47,7 @@ Cuando el administrador de su clínica lo agrega al equipo, usted recibe un **co
 
 ## 1.5 Conozca la pantalla
 
-En la parte superior verá la barra de navegación con estas secciones:
+En el menú lateral izquierdo verá estas secciones (en teléfonos y pantallas pequeñas, el menú se abre con el botón de la barra superior):
 
 | Sección | Para qué sirve |
 |---|---|
@@ -59,9 +59,9 @@ En la parte superior verá la barra de navegación con estas secciones:
 | **Equipo** | Personas de la clínica, roles y permisos |
 | **Seguridad** | Verificación en dos pasos de su cuenta (todos los roles) |
 
-A la derecha aparece el nombre de su clínica y el botón **Cerrar sesión**. El botón **Manual del usuario** del panel lo lleva siempre a esta guía.
+Debajo del logo aparece el nombre de su clínica y, al pie del menú, el botón **Cerrar sesión**. El botón **Manual del usuario** del panel lo lleva siempre a esta guía.
 
-Debajo de la barra puede aparecer un **aviso de estado de la cuenta** (por ejemplo, días restantes de la prueba o de la suscripción). Lo ve todo el equipo; vea el capítulo 14.
+En la parte superior de la pantalla puede aparecer un **aviso de estado de la cuenta** (por ejemplo, días restantes de la prueba o de la suscripción). Lo ve todo el equipo; vea el capítulo 14.
 
 ---
 
@@ -474,7 +474,7 @@ Al crear su cuenta, su clínica comienza con un **período de prueba gratuito de
 
 ## 14.2 Qué ve cada persona
 
-- **Todo el equipo** ve una **barra de aviso** bajo la navegación cuando hay algo que avisar: los días que quedan de la prueba, los días de gracia o el modo solo lectura. Nunca muestra montos.
+- **Todo el equipo** ve un **aviso** en la parte superior de la pantalla cuando hay algo que avisar: los días que quedan de la prueba, los días de gracia o el modo solo lectura. Nunca muestra montos.
 - **El administrador** ve además la **tarjeta de plan** en el dashboard: estado, fecha de vencimiento o fin de la prueba, período, **monto**, **historial de pagos** y **médicos incluidos** (por ejemplo, "1 de 1"). También es el único que recibe el **aviso de renovación** cuando el plan está por vencer.
 
 ## 14.3 Qué pasa si la suscripción vence
@@ -525,7 +525,7 @@ Cualquier app que genere códigos de verificación (TOTP). Todas son gratuitas: 
 
 ### Cómo activarla
 
-1. Inicie sesión y pulse **Seguridad** en la barra de navegación.
+1. Inicie sesión y pulse **Seguridad** en el menú lateral izquierdo.
 2. En **Verificación en dos pasos**, pulse **Activar verificación en dos pasos**.
 3. Cuido muestra un **código QR**. Abra su app de autenticación, agregue una cuenta nueva y **escanee el QR**. Si no puede escanear, escriba a mano la **clave manual** que aparece debajo.
 4. La app comenzará a mostrar un código de 6 dígitos. Escríbalo en **Código de verificación** y pulse **Confirmar y activar**.

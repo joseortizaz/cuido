@@ -7,6 +7,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Panel de clínica (menú lateral, encabezado de página, tarjetas): src/app/(clinic)/_components/. */
+  --panel-menu: #cde7fe;
+  --panel-blue: #0a4f8a;
+  --panel-border: #cbe0f5;
+  --panel-row: #08155d;
+  --panel-surface: #ffffff;
+  --panel-page: #f4f8fd;
 }
 
 @theme inline {
@@ -17,7 +25,7 @@
 
   /* Paleta de marca — nació en la landing pública (src/app/_landing/) y
      ahora también la usan las barras de navegación autenticadas
-     (src/app/(clinic)/_components/clinic-nav.tsx,
+     (src/app/(clinic)/_components/clinic-sidebar.tsx,
      src/app/operator/_components/operator-nav.tsx) para sentirse parte
      de la misma marca. El resto de cada pantalla sigue con la paleta
      neutra zinc existente. */
@@ -26,12 +34,57 @@
   --color-brand-teal-light: #2dd4bf;
   --color-brand-navy: #1e293b;
   --color-brand-bg: #fafafa;
+
+  /* Panel de clínica: bg-panel-menu, bg-panel-blue, border-panel-border, text-panel-row… (con variante oscura). */
+  --color-panel-menu: var(--panel-menu);
+  --color-panel-blue: var(--panel-blue);
+  --color-panel-border: var(--panel-border);
+  --color-panel-row: var(--panel-row);
+  --color-panel-surface: var(--panel-surface);
+  --color-panel-page: var(--panel-page);
 }
 
 @media screen and (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --panel-menu: #0f2742;
+    --panel-blue: #0a4f8a;
+    --panel-border: #1d3a5e;
+    --panel-row: #dbe7ff;
+    --panel-surface: #0e1624;
+    --panel-page: #0a0a0a;
+  }
+}
+
+/* Escala de texto del panel: +1 pt (≈ 0,0833 rem) en toda la gama de Tailwind. Solo dentro de .panel-shell
+   (src/app/(clinic)/_components/panel-shell.tsx): landing, blog, login y consola de operador no cambian.
+   Al imprimir se restablece. */
+.panel-shell {
+  --text-xs: calc(0.75rem + 0.0833rem);
+  --text-sm: calc(0.875rem + 0.0833rem);
+  --text-base: calc(1rem + 0.0833rem);
+  --text-lg: calc(1.125rem + 0.0833rem);
+  --text-xl: calc(1.25rem + 0.0833rem);
+  --text-2xl: calc(1.5rem + 0.0833rem);
+  --text-3xl: calc(1.875rem + 0.0833rem);
+}
+.panel-shell .prose {
+  font-size: calc(1rem + 0.0833rem);
+}
+@media print {
+  .panel-shell {
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+  }
+  .panel-shell .prose {
+    font-size: 1rem;
   }
 }
 

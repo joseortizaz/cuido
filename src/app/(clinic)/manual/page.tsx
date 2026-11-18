@@ -95,7 +95,7 @@ export default async function ManualPage() {
 
           {/* Escritorio: índice lateral fijo. */}
           <aside className="hidden lg:block print:hidden">
-            <nav aria-label="Índice del manual" className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2">
+            <nav aria-label="Índice del manual" className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto pr-2">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Índice</p>
               <Toc toc={manual.toc} />
             </nav>

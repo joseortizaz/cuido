@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { HeaderLink, HeaderPrimaryAction, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function PatientsPage() {
   const supabase = await createClient();
@@ -22,53 +23,42 @@ export default async function PatientsPage() {
     .order("last_name", { ascending: true });
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Pacientes</h1>
-        <div className="flex items-center gap-3">
-          {membership.role === "admin" && (
-            <>
-              {!readOnly && (
-                <Link href="/patients/import" className="text-sm text-zinc-500 hover:underline">
-                  Importar
+    <>
+      <PageHeader
+        title="Pacientes"
+        actions={
+          <>
+            {membership.role === "admin" && (
+              <>
+                {!readOnly && <HeaderLink href="/patients/import">Importar</HeaderLink>}
+                <HeaderLink href="/patients/export">Exportar</HeaderLink>
+              </>
+            )}
+            {!readOnly && <HeaderPrimaryAction href="/patients/new">Nuevo paciente</HeaderPrimaryAction>}
+          </>
+        }
+      />
+      <PageBody>
+        {!patients || patients.length === 0 ? (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Todavía no hay pacientes registrados.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-panel-border">
+            {patients.map((patient) => (
+              <li key={patient.id}>
+                <Link
+                  href={`/patients/${patient.id}`}
+                  className="flex items-center justify-between py-3 text-sm hover:underline"
+                >
+                  <span>
+                    {patient.last_name}, {patient.first_name}
+                  </span>
+                  <span className="text-zinc-500">{patient.date_of_birth}</span>
                 </Link>
-              )}
-              <Link href="/patients/export" className="text-sm text-zinc-500 hover:underline">
-                Exportar
-              </Link>
-            </>
-          )}
-          {!readOnly && (
-            <Link
-              href="/patients/new"
-              className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-            >
-              Nuevo paciente
-            </Link>
-          )}
-        </div>
-      </div>
-      {!patients || patients.length === 0 ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Todavía no hay pacientes registrados.
-        </p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
-          {patients.map((patient) => (
-            <li key={patient.id}>
-              <Link
-                href={`/patients/${patient.id}`}
-                className="flex items-center justify-between py-3 text-sm hover:underline"
-              >
-                <span>
-                  {patient.last_name}, {patient.first_name}
-                </span>
-                <span className="text-zinc-500">{patient.date_of_birth}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </PageBody>
+    </>
   );
 }

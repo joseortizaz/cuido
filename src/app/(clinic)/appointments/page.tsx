@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { AppointmentRowActions } from "./appointment-row-actions";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { HeaderLink, HeaderPrimaryAction, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 import {
   addDays,
   drDayRange,
@@ -121,25 +122,17 @@ export default async function AppointmentsPage({
   const providerParam = providerIdParam ? `&providerId=${providerIdParam}` : "";
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-semibold">Agenda</h1>
-          {membership.role === "admin" && (
-            <Link href="/settings/whatsapp" className="text-xs text-zinc-500 hover:underline">
-              Recordatorios por WhatsApp →
-            </Link>
-          )}
-        </div>
-        {canManage && !readOnly && (
-          <Link
-            href="/appointments/new"
-            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-          >
-            Nueva cita
-          </Link>
-        )}
-      </div>
+    <>
+      <PageHeader
+        title="Agenda"
+        actions={
+          <>
+            {membership.role === "admin" && <HeaderLink href="/settings/whatsapp">Recordatorios por WhatsApp →</HeaderLink>}
+            {canManage && !readOnly && <HeaderPrimaryAction href="/appointments/new">Nueva cita</HeaderPrimaryAction>}
+          </>
+        }
+      />
+      <PageBody>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <Link
           href={`/appointments?date=${prevDate}&view=${view}${providerParam}`}
@@ -199,7 +192,7 @@ export default async function AppointmentsPage({
       {!appointments || appointments.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin citas en este rango.</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+        <ul className="flex flex-col divide-y divide-panel-border">
           {appointments.map((appt) => {
             const alreadyConverted = linkedAppointmentIds.has(appt.id);
             const convertible = canConvert && !readOnly && !alreadyConverted && (appt.status === "pendiente" || appt.status === "confirmada");
@@ -264,6 +257,7 @@ export default async function AppointmentsPage({
           })}
         </ul>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

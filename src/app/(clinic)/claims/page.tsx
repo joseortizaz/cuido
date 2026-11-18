@@ -11,6 +11,7 @@ import { ClaimPaymentForm } from "./claim-payment-form";
 import { CLAIM_STATUS_LABELS, CLAIM_STATUSES, formatMoney, pendingToCollect } from "@/lib/domain/claims";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDate } from "@/lib/domain/dr-time";
+import { HeaderLink, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 const STATUS_LABELS: Record<string, string> = CLAIM_STATUS_LABELS;
 const STATUSES: string[] = [...CLAIM_STATUSES];
@@ -106,24 +107,14 @@ export default async function ClaimsPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <h1 className="text-2xl font-semibold">Reclamaciones</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Seguimiento de reclamaciones ante aseguradoras — envío manual, sin integración en vivo. El comprobante, la
-          autorización y los diagnósticos codificados se editan desde la consulta.
-        </p>
-      </div>
-      {isBillingRole && (
-        <>
-          <PackageCard insurers={packageInsurers} />
-          <p className="text-sm">
-            <Link href="/claims/reports" className="text-brand-blue hover:underline">
-              Ver reportes de reclamaciones →
-            </Link>
-          </p>
-        </>
-      )}
+    <>
+      <PageHeader
+        title="Reclamaciones"
+        subtitle="Seguimiento de reclamaciones ante aseguradoras — envío manual, sin integración en vivo. El comprobante, la autorización y los diagnósticos codificados se editan desde la consulta."
+        actions={isBillingRole ? <HeaderLink href="/claims/reports">Ver reportes de reclamaciones →</HeaderLink> : undefined}
+      />
+      <PageBody>
+      {isBillingRole && <PackageCard insurers={packageInsurers} />}
       <nav className="flex flex-wrap gap-2 text-sm">
         <Link
           href="/claims"
@@ -153,7 +144,7 @@ export default async function ClaimsPage({
       {!claims || claims.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin reclamaciones en este filtro.</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+        <ul className="flex flex-col divide-y divide-panel-border">
           {claims.map((claim) => {
             const encounter = encounterById.get(claim.encounter_id);
             const patient = encounter ? patientById.get(encounter.patient_id) : undefined;
@@ -230,6 +221,7 @@ export default async function ClaimsPage({
           })}
         </ul>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

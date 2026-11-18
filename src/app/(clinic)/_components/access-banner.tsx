@@ -14,9 +14,9 @@ const TONE_CLASSES: Record<BannerTone, string> = {
 };
 
 /**
- * Barra de estado de la suscripción, visible para TODOS los miembros de la
- * clínica en todas las pantallas (el layout de (clinic) la renderiza bajo la
- * navegación). Solo muestra estado y días -- nunca montos: eso es de la
+ * Aviso de estado de la suscripción (tarjeta redondeada arriba de la columna principal), visible
+ * para TODOS los miembros de la clínica en todas las pantallas (el layout de (clinic) lo
+ * renderiza arriba de la columna principal). Solo muestra estado y días -- nunca montos: eso es de la
  * tarjeta de plan del admin. El recordatorio de renovación (por_renovar) llega
  * únicamente al admin (la base de datos se lo devuelve como `activa` al resto).
  *
@@ -30,8 +30,11 @@ export async function AccessBanner({ isAdmin }: { isAdmin: boolean }) {
   if (!banner) return null;
 
   return (
-    <div role="status" className={`border-b px-4 py-3 print:hidden text-sm sm:px-6 ${TONE_CLASSES[banner.tone]}`}>
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-2">
+    <div
+      role="status"
+      className={`mx-4 mt-4 rounded-xl border px-4 py-3 text-sm lg:mx-8 print:hidden ${TONE_CLASSES[banner.tone]}`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <div>
           <p className="font-semibold">{banner.title}</p>
           <p className="mt-0.5">{banner.detail}</p>

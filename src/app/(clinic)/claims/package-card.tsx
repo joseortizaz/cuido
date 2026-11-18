@@ -12,7 +12,7 @@ const labelClass = "text-xs font-medium text-zinc-600 dark:text-zinc-400";
  */
 export function PackageCard({ insurers }: { insurers: PackageInsurerOption[] }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="flex flex-col gap-3 rounded-xl border border-panel-border p-4">
       <div>
         <h2 className="font-semibold">Paquete para presentar a la ARS</h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
