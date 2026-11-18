@@ -275,6 +275,23 @@ async function main() {
         .single();
       check("El paciente de A usa el formato de A", pA?.record_number === "A-0001", String(pA?.record_number));
       check("El formato de A no se filtra a B", !!pB?.record_number && !String(pB.record_number).startsWith("A-"), String(pB?.record_number));
+
+      // Editar paciente e historial (20261120100000_patient_edit_and_change_log.sql).
+      const { data: aPatient } = await tenantA.client.from("patients").select("id").limit(1).single();
+      await tenantA.client.from("patients").update({ phone: "8095550111" }).eq("id", aPatient!.id);
+      const { data: logSeenByA } = await tenantA.client.from("patient_change_log").select("id").eq("patient_id", aPatient!.id);
+      check("A ve el historial de su paciente", (logSeenByA?.length ?? 0) === 1, `vio ${logSeenByA?.length ?? 0} filas`);
+      const { data: logSeenByB } = await tenantB.client.from("patient_change_log").select("id").eq("patient_id", aPatient!.id);
+      check("SELECT patient_change_log de A (como B) devuelve 0 filas", (logSeenByB?.length ?? 0) === 0, `devolvió ${logSeenByB?.length ?? 0} filas — fuga entre tenants`);
+      const { data: bUpdate } = await tenantB.client.from("patients").update({ phone: "8095550999" }).eq("id", aPatient!.id).select("id");
+      check("B NO puede actualizar un paciente de A", (bUpdate?.length ?? 0) === 0, "actualizó filas de otra clínica");
+      const { error: bContact } = await tenantB.client.rpc("update_patient_contact", {
+        p_patient_id: aPatient!.id,
+        p_phone: "8095550999",
+        p_email: "",
+        p_phone_e164: "+18095550999",
+      });
+      check("B NO puede usar update_patient_contact sobre un paciente de A", bContact !== null, "no falló");
     }
 
     // Verifica que el mecanismo de aislamiento sea RLS y no una casualidad

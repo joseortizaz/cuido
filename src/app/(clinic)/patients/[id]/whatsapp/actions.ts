@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { readOnlyBlock } from "@/lib/supabase/clinic-access";
-import { normalizeDominicanPhone } from "@/lib/domain/phone";
+import { normalizeDominicanPhone, samePhone } from "@/lib/domain/phone";
 
 export type WhatsAppFormState = { error?: string; success?: string } | undefined;
 
@@ -42,32 +42,27 @@ export async function updatePatientContact(
 
   const rawPhone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+
+  // Recepción ya no actualiza `patients` directo (solo admin y médicos): el contacto va por
+  // update_patient_contact, que verifica el rol, deja el cambio en el historial del paciente y revoca
+  // el consentimiento de WhatsApp si era de otro número.
+  const { data: current } = await supabase.from("patients").select("phone").eq("id", patientId).maybeSingle();
+  if (!current) return { error: "No se encontró el paciente." };
   // Un número dominicano se guarda normalizado (+1809…); cualquier otro (extranjero) se guarda tal cual.
-  const phone = rawPhone ? (normalizeDominicanPhone(rawPhone) ?? rawPhone) : null;
+  // Si es el mismo número que ya estaba (aunque escrito distinto) se conserva como estaba.
+  const phone = !rawPhone ? null : samePhone(rawPhone, current.phone) ? current.phone : (normalizeDominicanPhone(rawPhone) ?? rawPhone);
 
-  const { data: active } = await supabase
-    .from("patient_messaging_consents")
-    .select("id, phone_e164")
-    .eq("patient_id", patientId)
-    .is("revoked_at", null)
-    .maybeSingle();
-
-  const { error } = await supabase
-    .from("patients")
-    .update({ phone, email: email || null })
-    .eq("id", patientId);
+  const { data: revoked, error } = await supabase.rpc("update_patient_contact", {
+    p_patient_id: patientId,
+    p_phone: phone ?? "",
+    p_email: email,
+    p_phone_e164: normalizeDominicanPhone(phone) ?? "",
+  });
   if (error) return { error: "No se pudo guardar el contacto." };
 
-  let message = "Contacto guardado.";
-  if (active && normalizeDominicanPhone(phone) !== active.phone_e164) {
-    // El consentimiento es de ESE número: si cambió, ya no vale para el nuevo.
-    await supabase
-      .from("patient_messaging_consents")
-      .update({ revoked_at: new Date().toISOString(), revoke_source: "personal" })
-      .eq("id", active.id);
-    message =
-      "Contacto guardado. El número cambió, así que el consentimiento anterior se revocó: registra uno nuevo para el número actual.";
-  }
+  const message = revoked
+    ? "Contacto guardado. El número cambió, así que el consentimiento anterior se revocó: registra uno nuevo para el número actual."
+    : "Contacto guardado.";
 
   revalidatePath(`/patients/${patientId}`);
   return { success: message };
