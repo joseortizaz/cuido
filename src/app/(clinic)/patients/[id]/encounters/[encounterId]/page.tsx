@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
+import { encounterTypeLabel } from "@/lib/domain/encounter-types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
@@ -46,6 +47,8 @@ export default async function EncounterDetailPage({
     id: string;
     encounter_date: string;
     chief_complaint: string | null;
+    present_illness: string | null;
+    encounter_type: string | null;
     specialty_data: unknown;
     specialty_template_id: string | null;
   };
@@ -53,12 +56,12 @@ export default async function EncounterDetailPage({
   if (isReception) {
     const [stub] = await fetchEncounterStubs(supabase, { encounterIds: [encounterId] });
     if (stub && stub.patient_id === id) {
-      encounter = { id: stub.id, encounter_date: stub.encounter_date, chief_complaint: null, specialty_data: {}, specialty_template_id: null };
+      encounter = { id: stub.id, encounter_date: stub.encounter_date, chief_complaint: null, present_illness: null, encounter_type: null, specialty_data: {}, specialty_template_id: null };
     }
   } else {
     const { data } = await supabase
       .from("encounters")
-      .select("id, encounter_date, chief_complaint, specialty_data, specialty_template_id")
+      .select("id, encounter_date, chief_complaint, present_illness, encounter_type, specialty_data, specialty_template_id")
       .eq("id", encounterId)
       .eq("patient_id", id)
       .maybeSingle();
@@ -170,7 +173,12 @@ export default async function EncounterDetailPage({
       <PageHeader
         back={{ href: `/patients/${id}`, label: <>{patient.first_name} {patient.last_name}</> }}
         title={template?.name ?? "Consulta"}
-        subtitle={formatDrDateTime(encounter.encounter_date)}
+        subtitle={
+          <>
+            {formatDrDateTime(encounter.encounter_date)}
+            {!isReception ? ` · ${encounterTypeLabel(encounter.encounter_type)}` : ""}
+          </>
+        }
         actions={
           !readOnly ? (
             <>
@@ -190,6 +198,13 @@ export default async function EncounterDetailPage({
         <div>
           <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Motivo de consulta</h2>
           <p className="text-sm">{encounter.chief_complaint}</p>
+        </div>
+      )}
+
+      {encounter.present_illness && (
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Historia de la enfermedad actual</h2>
+          <p className="whitespace-pre-wrap text-sm">{encounter.present_illness}</p>
         </div>
       )}
 

@@ -169,6 +169,10 @@ jobs:
       - name: Run reception isolation test
         run: npm run test:reception-isolation
 
+      # Tipos de consulta: motor de plantillas con appliesTo/legacy, plantillas sembradas, enfermedad actual, exportación e importación.
+      - name: Run encounter types test
+        run: npm run test:encounter-types
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4

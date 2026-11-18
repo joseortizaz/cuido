@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENCOUNTER_TYPES, type EncounterType } from "./encounter-types";
 
 /**
  * Motor de plantillas por especialidad. Debe reflejar el shape que se
@@ -16,6 +17,11 @@ import { z } from "zod";
  * de normativa MSP en docs/normativa-msp/):
  *   - `section`: agrupación puramente visual dentro de UNA nota (p. ej. la
  *     anamnesis de Medicina Interna tiene 5 subcampos). No afecta validación.
+ *   - `appliesTo`: lista de tipos de consulta (inicial, seguimiento…) en los que se pide el
+ *     campo; sin `appliesTo` se pide en todos. Es la forma de que el seguimiento no repita la
+ *     línea base de la especialidad (PR de tipos de consulta).
+ *   - `legacy`: el campo YA NO se pide (p. ej. los antecedentes, que ahora viven en el
+ *     expediente), pero se sigue mostrando en las consultas viejas y en las exportaciones.
  *   - `condition`: un campo solo aplica si otro campo del MISMO formulario
  *     tiene cierto valor (p. ej. "detalle de transfusión" solo si
  *     "hubo transfusión" = "Sí"). Para notas que ocurren en momentos
@@ -42,6 +48,10 @@ export type TemplateField = {
   section?: string;
   /** Este campo solo aplica si `condition.field` tiene el valor `condition.equals`. */
   condition?: TemplateFieldCondition;
+  /** Tipos de consulta en los que se pide este campo; sin él, en todos. */
+  appliesTo?: EncounterType[];
+  /** Ya no se pide; se conserva para mostrar y exportar lo que ya se guardó. */
+  legacy?: boolean;
 };
 
 export type TemplateSchema = {
@@ -67,6 +77,8 @@ const templateFieldSchema = z.object({
   options: z.array(z.string()).optional(),
   section: z.string().optional(),
   condition: templateFieldConditionSchema.optional(),
+  appliesTo: z.array(z.enum(ENCOUNTER_TYPES)).optional(),
+  legacy: z.boolean().optional(),
 });
 
 const templateSchemaSchema = z.object({
@@ -75,6 +87,27 @@ const templateSchemaSchema = z.object({
 
 export function parseTemplateSchema(raw: unknown): TemplateSchema {
   return templateSchemaSchema.parse(raw);
+}
+
+/** ¿Se pide este campo en una consulta de este tipo? (los legacy nunca; sin `appliesTo`, en todos). */
+export function isFieldActive(field: TemplateField, type: EncounterType): boolean {
+  if (field.legacy) return false;
+  return !field.appliesTo || field.appliesTo.includes(type);
+}
+
+/** Los campos que se piden en una consulta de este tipo, en el orden de la plantilla. */
+export function activeFieldsForType(fields: TemplateField[], type: EncounterType): TemplateField[] {
+  return fields.filter((f) => isFieldActive(f, type));
+}
+
+/**
+ * Campos para VALIDAR algo que no pasa por el formulario (la importación de consultas históricas): los
+ * campos que aplican al tipo conservan su exigencia y los demás (legacy o de otro tipo) se aceptan pero
+ * nunca se exigen. Sin tipo (consulta «sin clasificar») se usa la línea base (`inicial`).
+ */
+export function fieldsForValidation(fields: TemplateField[], type: EncounterType | null): TemplateField[] {
+  const t = type ?? "inicial";
+  return fields.map((f) => (isFieldActive(f, t) ? f : { ...f, required: false }));
 }
 
 /**

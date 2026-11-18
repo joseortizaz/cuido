@@ -277,6 +277,9 @@ async function confirmEncounterBatch(
       provider_id: resolved.providerId,
       specialty_template_id: specialtyTemplateId,
       specialty_data: resolved.specialtyData as Database["public"]["Tables"]["encounters"]["Insert"]["specialty_data"],
+      chief_complaint: resolved.chiefComplaint,
+      present_illness: resolved.presentIllness,
+      encounter_type: resolved.encounterType,
       encounter_date: scheduledAt,
     });
 

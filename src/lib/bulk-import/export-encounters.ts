@@ -1,3 +1,4 @@
+import { encounterTypeLabel } from "../domain/encounter-types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "../supabase/database.types";
 import { parseTemplateSchema, type TemplateField } from "../domain/specialty-template";
@@ -37,8 +38,8 @@ export type { ExportCell, ExportTable };
  */
 
 const ENCOUNTER_SELECT =
-  "id, encounter_date, chief_complaint, provider_id, specialty_template_id, specialty_data, " +
-  "patients(first_name, last_name, national_id, is_test), " +
+  "id, encounter_date, chief_complaint, present_illness, encounter_type, provider_id, specialty_template_id, specialty_data, " +
+  "patients(first_name, last_name, national_id, record_number, is_test), " +
   `vital_signs(${VITAL_KEYS.join(", ")}, recorded_at)`;
 
 type VitalRow = Record<string, number | string | null> & { recorded_at: string };
@@ -47,10 +48,12 @@ export type ExportEncounter = {
   id: string;
   encounter_date: string;
   chief_complaint: string | null;
+  present_illness: string | null;
+  encounter_type: string | null;
   provider_id: string;
   specialty_template_id: string;
   specialty_data: Json;
-  patient: { first_name: string; last_name: string; national_id: string | null } | null;
+  patient: { first_name: string; last_name: string; national_id: string | null; record_number?: string } | null;
   vitals: VitalRow[];
 };
 
@@ -79,6 +82,8 @@ export async function fetchEncounterExportData(
       id: r.id,
       encounter_date: r.encounter_date,
       chief_complaint: r.chief_complaint,
+      present_illness: r.present_illness,
+      encounter_type: r.encounter_type,
       provider_id: r.provider_id,
       specialty_template_id: r.specialty_template_id,
       specialty_data: r.specialty_data,
@@ -92,12 +97,14 @@ type RawEncounterRow = {
   id: string;
   encounter_date: string;
   chief_complaint: string | null;
+  present_illness: string | null;
+  encounter_type: string | null;
   provider_id: string;
   specialty_template_id: string;
   specialty_data: Json;
   patients:
-    | { first_name: string; last_name: string; national_id: string | null; is_test?: boolean }
-    | { first_name: string; last_name: string; national_id: string | null; is_test?: boolean }[]
+    | { first_name: string; last_name: string; national_id: string | null; record_number?: string; is_test?: boolean }
+    | { first_name: string; last_name: string; national_id: string | null; record_number?: string; is_test?: boolean }[]
     | null;
   vital_signs: VitalRow[] | null;
 };
@@ -115,12 +122,15 @@ function formatValue(value: unknown): ExportCell {
 
 const FIXED_HEADERS = [
   "ID de consulta",
+  "Código del paciente",
   "Fecha y hora",
   "Apellido",
   "Nombre",
   "Cédula o pasaporte",
   "Profesional",
+  "Tipo de consulta",
   "Motivo de consulta",
+  "Historia de la enfermedad actual",
   ...VITAL_KEYS.map((k) => VITAL_LABELS[k]),
 ];
 
@@ -165,12 +175,15 @@ export function buildEncounterTable(
     const vitals = e.vitals[0];
     const row: ExportCell[] = [
       e.id,
+      e.patient?.record_number ?? "",
       formatEncounterDateTime(e.encounter_date),
       e.patient?.last_name ?? "",
       e.patient?.first_name ?? "",
       e.patient?.national_id ?? "",
       emailByUserId.get(e.provider_id) ?? e.provider_id,
+      encounterTypeLabel(e.encounter_type),
       e.chief_complaint ?? "",
+      e.present_illness ?? "",
       ...VITAL_KEYS.map((k) => formatValue(vitals?.[k])),
       ...fields.map((f) => formatValue(data[f.key])),
     ];

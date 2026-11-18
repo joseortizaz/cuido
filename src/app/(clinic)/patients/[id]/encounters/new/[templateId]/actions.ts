@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { readOnlyBlock } from "@/lib/supabase/clinic-access";
-import { buildZodSchemaForTemplate, parseTemplateSchema } from "@/lib/domain/specialty-template";
+import { activeFieldsForType, buildZodSchemaForTemplate, parseTemplateSchema } from "@/lib/domain/specialty-template";
+import { FIXED_TYPE_BY_TEMPLATE_CODE, asksPresentIllness, isEncounterType, type EncounterType } from "@/lib/domain/encounter-types";
 import type { Json } from "@/lib/supabase/database.types";
 
 export type EncounterFormState = { error?: string } | undefined;
@@ -26,6 +27,7 @@ export async function createEncounter(
   patientId: string,
   templateId: string,
   appointmentId: string | null,
+  encounterType: EncounterType,
   _prevState: EncounterFormState,
   formData: FormData
 ): Promise<EncounterFormState> {
@@ -48,18 +50,25 @@ export async function createEncounter(
   // formulario diga que es su schema) para construir la validación.
   const { data: template, error: templateError } = await supabase
     .from("specialty_templates")
-    .select("id, schema")
+    .select("id, code, schema")
     .eq("id", templateId)
     .single();
   if (templateError || !template) {
     return { error: "No se encontró la plantilla de especialidad." };
   }
 
+  // El tipo viene de la URL del formulario: se valida aquí, y las plantillas quirúrgicas fijan el suyo.
+  if (!isEncounterType(encounterType)) return { error: "Elige el tipo de consulta." };
+  const fixedType = FIXED_TYPE_BY_TEMPLATE_CODE[template.code];
+  if (fixedType && fixedType !== encounterType) return { error: "El tipo de consulta no corresponde a esta plantilla." };
+
+  // Solo se piden y se validan los campos que aplican a este tipo (los legacy y los de otro tipo se ignoran).
   const parsed = parseTemplateSchema(template.schema);
-  const zodSchema = buildZodSchemaForTemplate(parsed.fields);
+  const activeFields = activeFieldsForType(parsed.fields, encounterType);
+  const zodSchema = buildZodSchemaForTemplate(activeFields);
 
   const rawSpecialtyData: Record<string, unknown> = {};
-  for (const field of parsed.fields) {
+  for (const field of activeFields) {
     rawSpecialtyData[field.key] = formData.get(`field-${field.key}`) ?? "";
   }
 
@@ -70,6 +79,8 @@ export async function createEncounter(
   }
 
   const chiefComplaint = String(formData.get("chief_complaint") ?? "").trim();
+  const presentIllness = asksPresentIllness(encounterType) ? String(formData.get("present_illness") ?? "").trim() : "";
+  if (presentIllness.length > 5000) return { error: "La historia de la enfermedad actual es demasiado larga (máximo 5000 caracteres)." };
 
   const { data: encounter, error: encounterError } = await supabase
     .from("encounters")
@@ -79,6 +90,8 @@ export async function createEncounter(
       provider_id: user.id,
       specialty_template_id: templateId,
       chief_complaint: chiefComplaint || null,
+      present_illness: presentIllness || null,
+      encounter_type: encounterType,
       specialty_data: validation.data as unknown as Json,
     })
     .select("id")
