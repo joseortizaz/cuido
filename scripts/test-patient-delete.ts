@@ -418,6 +418,7 @@ async function main() {
   // ------------------------------------------------------ 6. solo lectura
   console.log("\nModo solo lectura:");
   const roEmpty = await mkPatient(owner.client);
+  const roTest = await mkPatient(owner.client, { is_test: true });
   const old = new Date();
   old.setUTCDate(old.getUTCDate() - 31);
   const { error: subErr } = await admin.from("clinic_subscriptions").update({ trial_ends_at: old.toISOString().slice(0, 10), next_payment_due_on: null }).eq("clinic_id", cid);
@@ -427,12 +428,12 @@ async function main() {
   check("no se puede anular", roVoid.error !== null && roVoid.error.message.includes(ro), roVoid.error?.message ?? "no falló");
   const roFlag = await owner.client.rpc("set_patient_test_flag", { p_patient_id: real.id, p_is_test: true });
   check("ni marcar como de prueba", roFlag.error !== null && roFlag.error.message.includes(ro), roFlag.error?.message ?? "no falló");
-  const roDel = await owner.client.rpc("delete_test_patient", { p_patient_id: test.id });
+  const roDel = await owner.client.rpc("delete_test_patient", { p_patient_id: roTest.id });
   check("ni eliminar un paciente de prueba", roDel.error !== null && roDel.error.message.includes(ro), roDel.error?.message ?? "no falló");
   const roDelEmpty = await owner.client.rpc("delete_empty_patient", { p_patient_id: roEmpty.id, p_confirm_name: `${roEmpty.first_name} ${roEmpty.last_name}`, p_reason: "Solo lectura" });
   check("ni eliminar uno sin actividad", roDelEmpty.error !== null && roDelEmpty.error.message.includes(ro), roDelEmpty.error?.message ?? "no falló");
-  const { data: intact } = await admin.from("patients").select("id, voided_at, is_test").in("id", [real.id, test.id, roEmpty.id]);
-  check("todo quedó intacto", (intact ?? []).length === 3 && intact!.every((p) => p.voided_at === null), JSON.stringify(intact));
+  const { data: intact } = await admin.from("patients").select("id, voided_at, is_test").in("id", [real.id, test.id, roEmpty.id, roTest.id]);
+  check("todo quedó intacto", (intact ?? []).length === 4 && intact!.every((p) => p.voided_at === null), JSON.stringify(intact));
   const logAfter = await deletionLog();
   check("y sin constancias nuevas por esos intentos", logAfter.length === 3, `${logAfter.length}`);
 }

@@ -439,7 +439,9 @@ begin
     raise exception 'Indica el motivo (al menos 3 caracteres).' using errcode = '22023';
   end if;
   v_full_name := btrim(p.first_name || ' ' || p.last_name);
-  if lower(regexp_replace(btrim(coalesce(p_confirm_name, '')), '\s+', ' ', 'g')) <> lower(v_full_name) then
+  -- Se compara sin importar mayúsculas ni espacios repetidos (en ambos lados).
+  if lower(regexp_replace(btrim(coalesce(p_confirm_name, '')), '\s+', ' ', 'g'))
+     <> lower(regexp_replace(v_full_name, '\s+', ' ', 'g')) then
     raise exception 'El nombre escrito no coincide con el del paciente.' using errcode = '22023';
   end if;
   v_blockers := public.patient_deletion_blockers(p_patient_id, 'error');
