@@ -3,13 +3,13 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { getCurrentClinicAccess } from "@/lib/supabase/clinic-access";
-import { ClinicNav } from "./_components/clinic-nav";
+import { PanelShell } from "./_components/panel-shell";
 import { AccessBanner } from "./_components/access-banner";
 import { BlockedPage } from "./_components/blocked-page";
 
 /**
  * Layout compartido de las pantallas de clínica (dashboard, pacientes,
- * equipo). Grupo de rutas "(clinic)" -- no agrega segmento a la URL, solo
+ * equipo): menú lateral + columna principal (PanelShell). Grupo de rutas "(clinic)" -- no agrega segmento a la URL, solo
  * agrupa estas carpetas bajo un layout común sin tocar
  * src/app/layout.tsx, que sigue sirviendo también /login, /signup,
  * /onboarding y la landing SIN esta barra.
@@ -41,18 +41,15 @@ export default async function ClinicLayout({ children }: { children: ReactNode }
   const access = await getCurrentClinicAccess();
   if (access?.state === "bloqueada" || access?.state === "suspendida") {
     return (
-      <div className="flex min-h-full flex-col">
-        <ClinicNav clinicName={clinic?.name ?? null} />
+      <PanelShell clinicName={clinic?.name ?? null}>
         <BlockedPage suspended={access.state === "suspendida"} />
-      </div>
+      </PanelShell>
     );
   }
 
   return (
-    <div className="flex min-h-full flex-col">
-      <ClinicNav clinicName={clinic?.name ?? null} />
-      <AccessBanner isAdmin={membership.role === "admin"} />
+    <PanelShell clinicName={clinic?.name ?? null} banner={<AccessBanner isAdmin={membership.role === "admin"} />}>
       <div className="flex flex-1 flex-col">{children}</div>
-    </div>
+    </PanelShell>
   );
 }

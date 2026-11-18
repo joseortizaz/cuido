@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { formatDrDate } from "@/lib/domain/dr-time";
+import { HeaderLink, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 const STATUS_LABELS: Record<string, string> = {
   borrador: "Borrador",
@@ -39,26 +40,20 @@ export default async function BillingPage() {
   const patientNameById = new Map((patients ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`]));
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Facturación (e-CF)</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Para generar un e-CF, ve a la ficha del paciente correspondiente.
-          </p>
-        </div>
-        <Link href="/settings/fiscal" className="text-sm text-zinc-500 hover:underline">
-          Datos fiscales →
-        </Link>
-      </div>
-
+    <>
+      <PageHeader
+        title="Facturación (e-CF)"
+        subtitle="Para generar un e-CF, ve a la ficha del paciente correspondiente."
+        actions={<HeaderLink href="/settings/fiscal">Datos fiscales →</HeaderLink>}
+      />
+      <PageBody>
       {!documents || documents.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Todavía no se ha generado ningún e-CF.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead>
-              <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+              <tr className="border-b border-panel-border text-xs uppercase tracking-wide text-zinc-500">
                 <th className="py-2 pr-4">e-NCF</th>
                 <th className="py-2 pr-4">Paciente</th>
                 <th className="py-2 pr-4">Comprador</th>
@@ -67,7 +62,7 @@ export default async function BillingPage() {
                 <th className="py-2 pr-4">Fecha</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+            <tbody className="divide-y divide-panel-border">
               {documents.map((doc) => (
                 <tr key={doc.id}>
                   <td className="py-3 pr-4">
@@ -86,6 +81,7 @@ export default async function BillingPage() {
           </table>
         </div>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

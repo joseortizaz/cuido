@@ -6,6 +6,7 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { InviteForm } from "./invite-form";
 import { MemberRoleForm, RemoveMemberForm } from "./member-actions";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
@@ -55,25 +56,20 @@ export default async function TeamPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/dashboard" className="text-sm text-zinc-500 hover:underline">
-          ← Dashboard
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Equipo</h1>
-      </div>
-
-      <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+    <>
+      <PageHeader title="Equipo" />
+      <PageBody>
+      <ul className="flex flex-col divide-y divide-panel-border">
         {(members ?? []).map((member) => (
           <li key={member.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
-            <div>
+            <div className="min-w-0 break-all">
               <span>{emailByUserId.get(member.user_id) ?? member.user_id}</span>
               {member.user_id === user.id && (
                 <span className="ml-2 text-xs text-zinc-500">(tú)</span>
               )}
             </div>
             {isAdmin ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {member.role === "medico" && (
                   <Link
                     href={`/team/${member.id}/specialties`}
@@ -82,7 +78,7 @@ export default async function TeamPage() {
                     Especialidades
                   </Link>
                 )}
-                <fieldset disabled={readOnly} className="m-0 flex min-w-0 items-center gap-2 border-0 p-0">
+                <fieldset disabled={readOnly} className="m-0 flex min-w-0 flex-wrap items-center gap-2 border-0 p-0">
                   <MemberRoleForm memberId={member.id} currentRole={member.role} />
                   <RemoveMemberForm memberId={member.id} />
                 </fieldset>
@@ -97,13 +93,14 @@ export default async function TeamPage() {
       </ul>
 
       {isAdmin && (
-        <div className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <div className="flex max-w-2xl flex-col gap-3 border-t border-panel-border pt-6">
           <h2 className="text-lg font-medium">Invitar miembro</h2>
           <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
             <InviteForm seats={seats} />
           </fieldset>
         </div>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

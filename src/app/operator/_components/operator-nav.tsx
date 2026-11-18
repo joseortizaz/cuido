@@ -6,8 +6,8 @@ import { SignOutButton } from "../../_nav/sign-out-button";
 /**
  * Barra de navegación del panel de operador (src/app/operator/layout.tsx).
  *
- * Decisión: comparte el logo y el botón de cerrar sesión con ClinicNav
- * (src/app/(clinic)/_components/clinic-nav.tsx) pero NO reusa el mismo
+ * Decisión: comparte el logo y el botón de cerrar sesión con ClinicSidebar
+ * (src/app/(clinic)/_components/clinic-sidebar.tsx) pero NO reusa el mismo
  * componente ni su paleta clara -- fondo navy oscuro + insignia "MODO
  * OPERADOR" en ámbar, a propósito muy distinto de la barra blanca de
  * clínica. Un operador de Narnia que además administra su propia clínica

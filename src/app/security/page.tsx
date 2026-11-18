@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DisableForm, EnrollPanel } from "./two-factor-forms";
 import { formatDrDate } from "@/lib/domain/dr-time";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export const metadata = { title: "Seguridad de la cuenta" };
 
@@ -21,14 +22,12 @@ export default async function SecurityPage({
 
   const { data: factors } = await supabase.auth.mfa.listFactors();
   const active = factors?.totp?.[0] ?? null;
-  const card = "flex flex-col gap-4 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800";
+  const card = "flex flex-col gap-4 rounded-xl border border-panel-border p-5";
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <h1 className="text-2xl font-semibold">Seguridad de la cuenta</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">{user.email}</p>
-      </div>
+    <>
+      <PageHeader title="Seguridad de la cuenta" subtitle={user.email} />
+      <PageBody narrow>
 
       {activated && (
         <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
@@ -91,6 +90,7 @@ export default async function SecurityPage({
           ← Volver
         </Link>
       </p>
-    </div>
+      </PageBody>
+    </>
   );
 }

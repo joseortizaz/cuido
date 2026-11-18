@@ -43,7 +43,7 @@ export async function PlanCard({ clinicId, businessModel }: { clinicId: string; 
   const dueIsTrial = !!sub && !!due && (!sub.next_payment_due_on || due !== sub.next_payment_due_on);
 
   return (
-    <div className="rounded-xl border border-zinc-200 p-4 sm:col-span-2 dark:border-zinc-800">
+    <div className="rounded-xl border border-panel-border bg-panel-surface p-4 sm:col-span-2">
       <p className="text-xs text-zinc-500">Plan y facturación</p>
       {!sub ? (
         <p className="mt-1 text-sm text-zinc-500">Sin información de plan todavía.</p>
@@ -88,12 +88,12 @@ export async function PlanCard({ clinicId, businessModel }: { clinicId: string; 
         </div>
       )}
 
-      <div className="mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+      <div className="mt-3 border-t border-panel-border pt-3">
         <p className="text-xs text-zinc-500">Historial de pagos</p>
         {!payments || payments.length === 0 ? (
           <p className="mt-1 text-sm text-zinc-500">Sin pagos registrados.</p>
         ) : (
-          <ul className="mt-1 flex flex-col divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
+          <ul className="mt-1 flex flex-col divide-y divide-panel-border text-sm">
             {payments.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-x-4 py-1.5">
                 <span>

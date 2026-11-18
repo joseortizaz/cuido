@@ -138,7 +138,7 @@ export async function AdminDashboard({
   const hasAlerts = fiscalDocsTotal > 0 || overdueClaims.length > 0 || todayPending > 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-12">
+    <div className="flex w-full flex-1 flex-col gap-8 px-4 py-6 text-panel-row lg:px-8 print:px-0">
       {/* Hoy */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -150,7 +150,7 @@ export async function AdminDashboard({
         {todayTotal === 0 ? (
           <p className="text-sm text-zinc-500">Sin citas agendadas para hoy.</p>
         ) : (
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="rounded-xl border border-panel-border bg-panel-surface p-4">
             <p className="text-sm font-medium">
               {todayTotal} cita{todayTotal === 1 ? "" : "s"} hoy
             </p>
@@ -236,11 +236,11 @@ export async function AdminDashboard({
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Tu clínica</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="rounded-xl border border-panel-border bg-panel-surface p-4">
             <p className="text-xs text-zinc-500">Pacientes</p>
             <p className="mt-1 text-2xl font-semibold">{patientCount ?? 0}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+          <div className="rounded-xl border border-panel-border bg-panel-surface p-4">
             <p className="text-xs text-zinc-500">Equipo</p>
             <div className="mt-1 flex flex-col gap-0.5 text-sm">
               {Object.keys(ROLE_LABELS).map((role) => (
