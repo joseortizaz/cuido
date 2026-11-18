@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { PatientForm } from "./patient-form";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function NewPatientPage() {
   const supabase = await createClient();
@@ -19,14 +19,14 @@ export default async function NewPatientPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/patients" className="text-sm text-zinc-500 hover:underline">
-          ← Pacientes
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Nuevo paciente</h1>
-      </div>
+    <>
+      <PageHeader
+        title="Nuevo paciente"
+        back={{ href: "/patients", label: "Pacientes" }}
+      />
+      <PageBody narrow>
       <PatientForm canRecordConsent={membership.role === "admin" || membership.role === "recepcion"} />
-    </div>
+      </PageBody>
+    </>
   );
 }

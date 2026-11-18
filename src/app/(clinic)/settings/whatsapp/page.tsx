@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDateTime } from "@/lib/domain/dr-time";
 import { RemindersToggleForm } from "./settings-form";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 const STATUS_LABEL: Record<string, string> = {
   en_envio: "En envío",
@@ -54,17 +54,14 @@ export default async function WhatsAppSettingsPage() {
   const patientName = new Map((patients ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`]));
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
-      <div>
-        <Link href="/appointments" className="text-sm text-zinc-500 hover:underline">
-          ← Agenda
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Recordatorios por WhatsApp</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Cuido envía a cada paciente <strong>un recordatorio</strong> de su cita, la víspera a las 9:00 a. m., desde el
-          número de WhatsApp de Cuido, con la clínica, la fecha y la hora, y botones para confirmar o cancelar.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Recordatorios por WhatsApp"
+        subtitle={<>Cuido envía a cada paciente <strong>un recordatorio</strong> de su cita, la víspera a las 9:00 a. m., desde el
+          número de WhatsApp de Cuido, con la clínica, la fecha y la hora, y botones para confirmar o cancelar.</>}
+        back={{ href: "/appointments", label: "Agenda" }}
+      />
+      <PageBody narrow>
 
       <section className="flex flex-col gap-3">
         <RemindersToggleForm enabled={settings?.reminders_enabled === true} disabled={readOnly} />
@@ -100,6 +97,7 @@ export default async function WhatsAppSettingsPage() {
           </ul>
         )}
       </section>
-    </div>
+      </PageBody>
+    </>
   );
 }

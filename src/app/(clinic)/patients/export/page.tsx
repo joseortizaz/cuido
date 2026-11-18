@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { RECORD_DATASETS, RECORD_DATASET_TITLES, type RecordDataset } from "@/lib/bulk-import/export-records";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function ExportLandingPage() {
   const supabase = await createClient();
@@ -53,17 +54,13 @@ export default async function ExportLandingPage() {
   const linkClass = "text-brand-blue hover:underline";
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/patients" className="text-sm text-zinc-500 hover:underline">
-          ← Pacientes
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Exportar</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Descarga los datos de tu clínica. Solo se incluye lo que tú tienes permiso de ver. La exportación
-          funciona también si tu clínica está en modo solo lectura.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Exportar"
+        subtitle="Descarga los datos de tu clínica. Solo se incluye lo que tú tienes permiso de ver. La exportación funciona también si tu clínica está en modo solo lectura."
+        back={{ href: "/patients", label: "Pacientes" }}
+      />
+      <PageBody narrow>
 
       <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
         <h2 className="font-semibold">Exportación completa de la clínica</h2>
@@ -126,7 +123,7 @@ export default async function ExportLandingPage() {
                 Descargar .xlsx
               </a>
             </div>
-            <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+            <ul className="flex flex-col divide-y divide-panel-border">
               {withEncounters.map((t) => (
                 <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                   <span>
@@ -159,7 +156,7 @@ export default async function ExportLandingPage() {
             avisa.
           </p>
         </div>
-        <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+        <ul className="flex flex-col divide-y divide-panel-border">
           {recordCounts.map(({ ds, count }) => (
             <li key={ds} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
               <span>
@@ -188,6 +185,7 @@ export default async function ExportLandingPage() {
         </Link>
         .
       </p>
-    </div>
+      </PageBody>
+    </>
   );
 }

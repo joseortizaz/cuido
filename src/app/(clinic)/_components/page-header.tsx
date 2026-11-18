@@ -17,7 +17,7 @@ export function PageHeader({
   title: ReactNode;
   subtitle?: ReactNode;
   /** Enlace «volver» sobre el título. */
-  back?: { href: string; label: string };
+  back?: { href: string; label: ReactNode };
   actions?: ReactNode;
 }) {
   return (

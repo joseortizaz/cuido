@@ -5,6 +5,7 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { loadClaimsReport } from "@/lib/bulk-import/claims-report-data";
 import { PERIOD_OPTIONS } from "@/lib/domain/claims-report";
 import { CLAIM_STATUS_LABELS, formatMoney } from "@/lib/domain/claims";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 const pct = (r: number | null) => (r === null ? "—" : `${(r * 100).toFixed(1)} %`);
 const days = (n: number | null) => (n === null ? "—" : `${(Math.round(n * 10) / 10).toLocaleString("es-DO")} d`);
@@ -28,16 +29,13 @@ export default async function ClaimsReportsPage({ searchParams }: { searchParams
   const card = "rounded-xl border border-zinc-200 p-4 dark:border-zinc-800";
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-16">
-      <div>
-        <Link href="/claims" className="text-sm text-zinc-500 hover:underline">
-          ← Reclamaciones
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Reportes de reclamaciones</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Solo de tu clínica. {since ? `Reclamaciones registradas desde el ${since}.` : "Todo el historial."}
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Reportes de reclamaciones"
+        subtitle={<>Solo de tu clínica. {since ? `Reclamaciones registradas desde el ${since}.` : "Todo el historial."}</>}
+        back={{ href: "/claims", label: "Reclamaciones" }}
+      />
+      <PageBody>
 
       <nav className="flex flex-wrap items-center gap-2 text-sm">
         {PERIOD_OPTIONS.map((p) => (
@@ -186,6 +184,7 @@ export default async function ClaimsReportsPage({ searchParams }: { searchParams
           </table>
         </div>
       </section>
-    </div>
+      </PageBody>
+    </>
   );
 }

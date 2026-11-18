@@ -14,6 +14,7 @@ import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/whatsapp-card";
 import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -154,19 +155,14 @@ export default async function PatientDetailPage({
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-10 px-6 py-16">
-      <div>
-        <Link href="/patients" className="text-sm text-zinc-500 hover:underline">
-          ← Pacientes
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">
-          {patient.first_name} {patient.last_name}
-        </h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {patient.date_of_birth} · {patient.sex}
-          {patient.national_id ? ` · ${patient.national_id}` : ""}
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title={<>{patient.first_name} {patient.last_name}</>}
+        subtitle={<>{patient.date_of_birth} · {patient.sex}
+          {patient.national_id ? ` · ${patient.national_id}` : ""}</>}
+        back={{ href: "/patients", label: "Pacientes" }}
+      />
+      <PageBody narrow>
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -183,7 +179,7 @@ export default async function PatientDetailPage({
         {!encounters || encounters.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin consultas registradas.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="flex flex-col divide-y divide-panel-border">
             {encounters.map((encounter) => (
               <li key={encounter.id}>
                 <Link
@@ -320,7 +316,7 @@ export default async function PatientDetailPage({
         {!consents || consents.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin consentimientos firmados.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="flex flex-col divide-y divide-panel-border">
             {consents.map((consent) => (
               <li key={consent.id} className="flex flex-col gap-1 py-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -431,7 +427,7 @@ export default async function PatientDetailPage({
         {!fiscalDocuments || fiscalDocuments.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin comprobantes fiscales generados.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="flex flex-col divide-y divide-panel-border">
             {fiscalDocuments.map((doc) => (
               <li key={doc.id}>
                 <Link
@@ -459,7 +455,7 @@ export default async function PatientDetailPage({
           {!sensitiveGrants || sensitiveGrants.length === 0 ? (
             <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin concesiones registradas.</p>
           ) : (
-            <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+            <ul className="flex flex-col divide-y divide-panel-border">
               {sensitiveGrants.map((grant) => (
                 <li key={grant.id} className="flex flex-col gap-1 py-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -505,6 +501,7 @@ export default async function PatientDetailPage({
           )}
         </section>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

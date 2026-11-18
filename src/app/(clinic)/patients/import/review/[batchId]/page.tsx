@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ReviewActions } from "./review-actions";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 type PatientBatchRow = { row_number: number; raw: Record<string, string>; errors: string[] };
 type EncounterBatchGroup = {
@@ -62,16 +62,13 @@ export default async function ImportReviewPage({ params }: { params: Promise<{ b
   const invalidItems = items.filter((i) => i.errors.length > 0);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/patients/import" className="text-sm text-zinc-500 hover:underline">
-          ← Importar
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Revisión de importación</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {batch.file_name} · {items.length} {rowLabel.toLowerCase()}
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Revisión de importación"
+        subtitle={<>{batch.file_name} · {items.length} {rowLabel.toLowerCase()}</>}
+        back={{ href: "/patients/import", label: "Importar" }}
+      />
+      <PageBody>
 
       {batch.status === "validado" && (
         <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -151,6 +148,7 @@ export default async function ImportReviewPage({ params }: { params: Promise<{ b
       {batch.status === "validado" && !(await isClinicReadOnly()) && (
         <ReviewActions batchId={batch.id} hasValidRows={validItems.length > 0} />
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { SpecialtyToggle } from "./specialty-toggle";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 /**
  * Autoservicio del mecanismo 1 (preferencia de UI, ver
@@ -51,24 +51,20 @@ export default async function ProfileSpecialtiesPage() {
   const availableTemplates = (allTemplates ?? []).filter((t) => !disabledIds.has(t.id));
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/dashboard" className="text-sm text-zinc-500 hover:underline">
-          ← Dashboard
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Mis especialidades habituales</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Las que marques aparecen primero al crear una nueva consulta. Esto es solo una
-          preferencia tuya — nunca te impide usar otra especialidad no marcada.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Mis especialidades habituales"
+        subtitle="Las que marques aparecen primero al crear una nueva consulta. Esto es solo una preferencia tuya — nunca te impide usar otra especialidad no marcada."
+        back={{ href: "/dashboard", label: "Dashboard" }}
+      />
+      <PageBody narrow>
       {availableTemplates.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           No tienes ninguna especialidad habilitada todavía.
         </p>
       ) : (
         <fieldset disabled={await isClinicReadOnly()} className="m-0 min-w-0 border-0 p-0">
-          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="flex flex-col divide-y divide-panel-border">
             {availableTemplates.map((template) => (
               <SpecialtyToggle
                 key={template.id}
@@ -80,6 +76,7 @@ export default async function ProfileSpecialtiesPage() {
           </ul>
         </fieldset>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

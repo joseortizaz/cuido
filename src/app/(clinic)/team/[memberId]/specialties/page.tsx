@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { MemberSpecialtiesForm } from "./member-specialties-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 /**
  * Mecanismo 2 (restricción real, admin-only, ver
@@ -53,17 +53,14 @@ export default async function MemberSpecialtiesPage({
   const enabledIds = new Set((templates ?? []).map((t) => t.id).filter((id) => !disabledIds.has(id)));
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/team" className="text-sm text-zinc-500 hover:underline">
-          ← Equipo
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Especialidades habilitadas</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {authUser.user?.email ?? member.user_id} — desmarca una especialidad para impedirle crear
-          consultas nuevas de ella. No afecta las consultas que ya existen.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Especialidades habilitadas"
+        subtitle={<>{authUser.user?.email ?? member.user_id} — desmarca una especialidad para impedirle crear
+          consultas nuevas de ella. No afecta las consultas que ya existen.</>}
+        back={{ href: "/team", label: "Equipo" }}
+      />
+      <PageBody narrow>
       {!templates || templates.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           No hay plantillas de especialidad configuradas todavía.
@@ -73,6 +70,7 @@ export default async function MemberSpecialtiesPage({
           <MemberSpecialtiesForm memberId={memberId} templates={templates} enabledIds={enabledIds} />
         </fieldset>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

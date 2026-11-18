@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { EncounterForm } from "./encounter-form";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function NewEncounterFormPage({
   params,
@@ -62,20 +62,15 @@ export default async function NewEncounterFormPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link
-          href={appointmentId ? "/appointments" : `/patients/${id}/encounters/new`}
-          className="text-sm text-zinc-500 hover:underline"
-        >
-          ← {appointmentId ? "Agenda" : "Elegir especialidad"}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Nueva consulta — {template.name}</h1>
-        <p className="text-sm text-zinc-500">
-          {patient.first_name} {patient.last_name}
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title={<>Nueva consulta — {template.name}</>}
+        subtitle={<>{patient.first_name} {patient.last_name}</>}
+        back={{ href: appointmentId ? "/appointments" : `/patients/${id}/encounters/new`, label: <>{appointmentId ? "Agenda" : "Elegir especialidad"}</> }}
+      />
+      <PageBody narrow>
       <EncounterForm patientId={id} templateId={template.id} appointmentId={appointmentId} fields={fields} />
-    </div>
+      </PageBody>
+    </>
   );
 }
