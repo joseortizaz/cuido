@@ -41,6 +41,9 @@ export type Database = {
     Tables: {
       allergies: {
         Row: {
+          recorded_by: string | null
+          status_changed_at: string | null
+          status_changed_by: string | null
           clinic_id: string
           id: string
           patient_id: string
@@ -51,6 +54,9 @@ export type Database = {
           substance: string
         }
         Insert: {
+          recorded_by?: string | null
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           clinic_id: string
           id?: string
           patient_id: string
@@ -61,6 +67,9 @@ export type Database = {
           substance: string
         }
         Update: {
+          recorded_by?: string | null
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           clinic_id?: string
           id?: string
           patient_id?: string
@@ -1762,6 +1771,9 @@ export type Database = {
       }
       medications: {
         Row: {
+          created_by: string | null
+          status_changed_at: string | null
+          status_changed_by: string | null
           clinic_id: string
           created_at: string
           discontinued_at: string | null
@@ -1774,6 +1786,9 @@ export type Database = {
           status: string
         }
         Insert: {
+          created_by?: string | null
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           clinic_id: string
           created_at?: string
           discontinued_at?: string | null
@@ -1786,6 +1801,9 @@ export type Database = {
           status?: string
         }
         Update: {
+          created_by?: string | null
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           clinic_id?: string
           created_at?: string
           discontinued_at?: string | null
@@ -1932,6 +1950,129 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      patient_medical_history: {
+        Row: {
+          clinic_id: string
+          family_history: string | null
+          pathological_history: string | null
+          non_pathological_history: string | null
+          surgical_history: string | null
+          gyneco_obstetric_history: string | null
+          toxic_tobacco: string | null
+          toxic_alcohol: string | null
+          toxic_other_substances: string | null
+          diet_habits: string | null
+          physical_activity: string | null
+          vaccines: string | null
+          other_notes: string | null
+          patient_id: string
+          record_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          clinic_id: string
+          family_history?: string | null
+          pathological_history?: string | null
+          non_pathological_history?: string | null
+          surgical_history?: string | null
+          gyneco_obstetric_history?: string | null
+          toxic_tobacco?: string | null
+          toxic_alcohol?: string | null
+          toxic_other_substances?: string | null
+          diet_habits?: string | null
+          physical_activity?: string | null
+          vaccines?: string | null
+          other_notes?: string | null
+          patient_id: string
+          record_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          family_history?: string | null
+          pathological_history?: string | null
+          non_pathological_history?: string | null
+          surgical_history?: string | null
+          gyneco_obstetric_history?: string | null
+          toxic_tobacco?: string | null
+          toxic_alcohol?: string | null
+          toxic_other_substances?: string | null
+          diet_habits?: string | null
+          physical_activity?: string | null
+          vaccines?: string | null
+          other_notes?: string | null
+          patient_id?: string
+          record_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      patient_medical_history_revisions: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          clinic_id: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          patient_id: string
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id: string
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      patient_records: {
+        Row: {
+          clinic_id: string
+          id: string
+          migrated: boolean
+          opened_at: string
+          opened_by: string | null
+          patient_id: string
+        }
+        Insert: {
+          clinic_id: string
+          id?: string
+          migrated?: boolean
+          opened_at?: string
+          opened_by?: string | null
+          patient_id: string
+        }
+        Update: {
+          clinic_id?: string
+          id?: string
+          migrated?: boolean
+          opened_at?: string
+          opened_by?: string | null
+          patient_id?: string
+        }
+        Relationships: []
       }
       patient_insurers: {
         Row: {
@@ -2539,6 +2680,14 @@ export type Database = {
           wait_days: number
         }[]
       }
+      delete_empty_patient: {
+        Args: { p_confirm_name: string; p_patient_id: string; p_reason: string }
+        Returns: undefined
+      }
+      delete_test_patient: {
+        Args: { p_patient_id: string }
+        Returns: undefined
+      }
       dr_today: { Args: { p_ts?: string }; Returns: string }
       execute_clinic_data_deletion: {
         Args: { p_confirm_name: string; p_request_id: string }
@@ -2624,7 +2773,7 @@ export type Database = {
       mfa_satisfied: { Args: never; Returns: boolean }
       my_admin_clinic_id: { Args: never; Returns: string }
       next_patient_code: {
-        Args: { p_at?: string; p_clinic_id: string }
+        Args: { p_at?: string; p_clinic_id: string; p_is_test?: boolean }
         Returns: string
       }
       normalize_insurer_name: { Args: { p_name: string }; Returns: string }
@@ -2667,29 +2816,14 @@ export type Database = {
         Args: { p_format: string; p_reset_yearly: boolean }
         Returns: string
       }
-      delete_empty_patient: {
-        Args: { p_confirm_name: string; p_patient_id: string; p_reason: string }
-        Returns: undefined
+      patient_deletion_blockers: {
+        Args: { p_mode: string; p_patient_id: string }
+        Returns: string[]
       }
-      delete_test_patient: {
-        Args: { p_patient_id: string }
-        Returns: undefined
-      }
-      patient_deletion_status: {
-        Args: { p_patient_id: string }
-        Returns: Json
-      }
-      set_patient_test_flag: {
-        Args: { p_is_test: boolean; p_patient_id: string }
-        Returns: undefined
-      }
-      unvoid_patient: {
-        Args: { p_patient_id: string }
-        Returns: undefined
-      }
-      void_patient: {
-        Args: { p_patient_id: string; p_reason: string }
-        Returns: undefined
+      patient_deletion_status: { Args: { p_patient_id: string }; Returns: Json }
+      open_patient_record: {
+        Args: { p_history?: Json; p_patient_id: string }
+        Returns: string
       }
       preview_next_patient_code: {
         Args: { p_clinic_id: string }
@@ -2758,6 +2892,10 @@ export type Database = {
         Args: { p_phone: string; p_source?: string }
         Returns: number
       }
+      save_medical_history: {
+        Args: { p_changes: Json; p_patient_id: string; p_reason?: string }
+        Returns: undefined
+      }
       save_patient_code_settings: {
         Args: {
           p_clinic_id: string
@@ -2805,6 +2943,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_patient_test_flag: {
+        Args: { p_is_test: boolean; p_patient_id: string }
+        Returns: undefined
+      }
+      unvoid_patient: { Args: { p_patient_id: string }; Returns: undefined }
       update_clinic_plan: {
         Args: {
           new_business_model: Database["public"]["Enums"]["clinic_business_model"]
@@ -2847,6 +2990,10 @@ export type Database = {
       }
       void_fiscal_document: {
         Args: { reason: string; target_fiscal_document_id: string }
+        Returns: undefined
+      }
+      void_patient: {
+        Args: { p_patient_id: string; p_reason: string }
         Returns: undefined
       }
       withdraw_clinic_data_deletion: {

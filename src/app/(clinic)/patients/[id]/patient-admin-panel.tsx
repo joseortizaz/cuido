@@ -85,6 +85,10 @@ export function PatientAdminPanel({
     deleteEmptyPatient.bind(null, patientId),
     undefined
   );
+  // Controlados: React 19 vacía los campos no controlados tras cada envío, también cuando hay un error.
+  const [voidReason, setVoidReason] = useState("");
+  const [confirmName, setConfirmName] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
 
   return (
     <div className="flex flex-col gap-6 rounded-lg border border-red-200 p-4 dark:border-red-900">
@@ -137,7 +141,15 @@ export function PatientAdminPanel({
               <label htmlFor="void_reason" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                 Motivo (obligatorio)
               </label>
-              <input id="void_reason" name="reason" required minLength={3} className={`${inputClass} max-w-md`} />
+              <input
+                id="void_reason"
+                name="reason"
+                required
+                minLength={3}
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                className={`${inputClass} max-w-md`}
+              />
               <div>
                 <button type="submit" disabled={voidPending || disabled} className={dangerClass}>
                   {voidPending ? "Anulando…" : "Anular paciente"}
@@ -163,11 +175,27 @@ export function PatientAdminPanel({
                 <label htmlFor="confirm_name" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   Nombre completo
                 </label>
-                <input id="confirm_name" name="confirm_name" required autoComplete="off" className={`${inputClass} max-w-md`} />
+                <input
+                  id="confirm_name"
+                  name="confirm_name"
+                  required
+                  autoComplete="off"
+                  value={confirmName}
+                  onChange={(e) => setConfirmName(e.target.value)}
+                  className={`${inputClass} max-w-md`}
+                />
                 <label htmlFor="delete_reason" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   Motivo (obligatorio)
                 </label>
-                <input id="delete_reason" name="reason" required minLength={3} className={`${inputClass} max-w-md`} />
+                <input
+                  id="delete_reason"
+                  name="reason"
+                  required
+                  minLength={3}
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
+                  className={`${inputClass} max-w-md`}
+                />
                 <div>
                   <button type="submit" disabled={delPending || disabled} className={dangerClass}>
                     {delPending ? "Eliminando…" : "Eliminar paciente"}

@@ -5,6 +5,7 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { SpecialtyPicker } from "./specialty-picker";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
+import { RecordRequired } from "@/app/(clinic)/_components/record-required";
 
 /**
  * El picker de especialidad combina dos mecanismos independientes
@@ -50,6 +51,10 @@ export default async function ChooseSpecialtyPage({
     .eq("id", id)
     .maybeSingle();
   if (!patient) notFound();
+
+  // Sin expediente abierto no se registran consultas (también lo exige la base de datos).
+  const { data: openRecord } = await supabase.from("patient_records").select("id").eq("patient_id", id).maybeSingle();
+  if (!openRecord) return <RecordRequired patientId={id} patientName={`${patient.first_name} ${patient.last_name}`} />;
 
   const { data: clinicMember } = await supabase
     .from("clinic_members")

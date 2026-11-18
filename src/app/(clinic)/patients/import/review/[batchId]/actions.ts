@@ -158,6 +158,12 @@ async function confirmPatientBatch(
       );
     }
 
+    // Un paciente que llega con alergias o medicamentos ya es un paciente con historia: su expediente
+    // se abre (vacío) para que esos datos no queden ocultos; la historia general se completa después.
+    if (row.data.allergies.length > 0 || row.data.medications.length > 0) {
+      await supabase.rpc("open_patient_record", { p_patient_id: patient.id, p_history: {} });
+    }
+
     createdCount++;
     finalRows.push({ row_number: row.rowNumber, raw: rawRows[i], errors: [] });
   }
@@ -247,6 +253,7 @@ async function confirmEncounterBatch(
   // `errors`), para que la página de revisión no necesite lógica
   // distinta según el estado del lote.
   const finalGroups: (EncounterImportGroup & { errors: string[] })[] = [];
+  const openedPatientIds = new Set<string>();
   let createdCount = 0;
 
   for (const group of revalidated) {
@@ -258,6 +265,12 @@ async function confirmEncounterBatch(
     }
 
     const scheduledAt = new Date(`${group.scheduledAt}T12:00:00Z`).toISOString();
+    // Importar consultas históricas supone un paciente con historia: si aún no tiene el expediente abierto,
+    // se abre (vacío) en vez de rechazar toda la fila; se ignora el error de «ya está abierto».
+    if (!openedPatientIds.has(resolved.patientId)) {
+      await supabase.rpc("open_patient_record", { p_patient_id: resolved.patientId, p_history: {} });
+      openedPatientIds.add(resolved.patientId);
+    }
     const { error: encounterError } = await supabase.from("encounters").insert({
       clinic_id: membership.clinicId,
       patient_id: resolved.patientId,

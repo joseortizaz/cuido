@@ -308,6 +308,20 @@ async function main() {
       }
       const { data: aAfter } = await admin.from("patients").select("voided_at, is_test").eq("id", pid).single();
       check("el paciente de A quedó intacto tras los intentos de B", aAfter?.voided_at === null && aAfter?.is_test === false, JSON.stringify(aAfter));
+      // Expediente clínico (20261122100000_patient_record_and_history.sql).
+      const { error: aOpen } = await tenantA.client.rpc("open_patient_record", { p_patient_id: pid, p_history: { family_history: "Solo A" } });
+      check("A abre el expediente de su paciente", aOpen === null, aOpen?.message ?? "");
+      const { data: recSeenByB } = await tenantB.client.from("patient_records").select("id").eq("patient_id", pid);
+      const { data: histSeenByB } = await tenantB.client.from("patient_medical_history").select("patient_id").eq("patient_id", pid);
+      const { data: revSeenByB } = await tenantB.client.from("patient_medical_history_revisions").select("id").eq("patient_id", pid);
+      check("B no lee el expediente, la historia ni las revisiones de A", (recSeenByB?.length ?? 0) === 0 && (histSeenByB?.length ?? 0) === 0 && (revSeenByB?.length ?? 0) === 0, `${recSeenByB?.length}/${histSeenByB?.length}/${revSeenByB?.length}`);
+      const { error: bSave } = await tenantB.client.rpc("save_medical_history", { p_patient_id: pid, p_changes: { family_history: "Hackeado" }, p_reason: "" });
+      check("B NO puede corregir la historia de A", bSave !== null, "no falló");
+      const { error: bOpen } = await tenantB.client.rpc("open_patient_record", { p_patient_id: pid, p_history: {} });
+      check("B NO puede abrir expedientes de A", bOpen !== null, "no falló");
+      const { data: histAfter } = await admin.from("patient_medical_history").select("family_history").eq("patient_id", pid).single();
+      check("la historia de A quedó intacta", histAfter?.family_history === "Solo A", JSON.stringify(histAfter));
+
       const { data: delLogSeenByB } = await tenantB.client.from("patient_deletion_log").select("id").eq("clinic_id", tenantA.clinicId);
       check("B no lee el registro de eliminaciones de A", (delLogSeenByB?.length ?? 0) === 0, `devolvió ${delLogSeenByB?.length ?? 0} filas`);
     }
