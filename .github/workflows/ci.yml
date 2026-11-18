@@ -153,6 +153,10 @@ jobs:
       - name: Run GA4 test
         run: npm run test:ga4
 
+      # Plantillas de especialidad: ninguna repite campos del núcleo de la consulta (p. ej. Motivo de consulta).
+      - name: Run template overlap test
+        run: npm run test:templates
+
       - name: Stop local Supabase stack
         if: always()
         run: supabase stop
