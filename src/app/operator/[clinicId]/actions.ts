@@ -334,6 +334,8 @@ export async function executeDeletion(
   // antes de borrar (después ya no hay de dónde leerlos) y se retiran del bucket cuando la eliminación se confirmó.
   const admin = createAdminClient();
   const { data: studyFiles } = await admin.from("study_attachments").select("storage_path").eq("clinic_id", clinicId);
+  // Igual con los logos del timbrado (bucket clinic-letterhead, bajo la carpeta de la clínica).
+  const { data: logoFiles } = await admin.storage.from("clinic-letterhead").list(clinicId, { limit: 1000 });
 
   const { data: orphans, error } = await supabase.rpc("execute_clinic_data_deletion", {
     p_request_id: requestId,
@@ -345,6 +347,9 @@ export async function executeDeletion(
   for (let i = 0; i < paths.length; i += 100) {
     await admin.storage.from("study-results").remove(paths.slice(i, i + 100));
   }
+
+  const logoPaths = (logoFiles ?? []).map((f) => `${clinicId}/${f.name}`);
+  if (logoPaths.length > 0) await admin.storage.from("clinic-letterhead").remove(logoPaths);
 
   const failed: string[] = [];
   for (const userId of (orphans ?? []) as string[]) {

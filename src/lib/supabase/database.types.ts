@@ -786,6 +786,9 @@ export type Database = {
       }
       clinic_members: {
         Row: {
+          exequatur: string | null
+          professional_name: string | null
+          professional_title: string | null
           attends_patients: boolean
           clinic_id: string
           created_at: string
@@ -794,6 +797,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          exequatur?: string | null
+          professional_name?: string | null
+          professional_title?: string | null
           attends_patients?: boolean
           clinic_id: string
           created_at?: string
@@ -802,6 +808,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          exequatur?: string | null
+          professional_name?: string | null
+          professional_title?: string | null
           attends_patients?: boolean
           clinic_id?: string
           created_at?: string
@@ -882,6 +891,191 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      clinic_letterhead: {
+        Row: {
+          address: string | null
+          clinic_id: string
+          email: string | null
+          logo_path: string | null
+          name: string
+          phones: string | null
+          rnc: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          clinic_id: string
+          email?: string | null
+          logo_path?: string | null
+          name: string
+          phones?: string | null
+          rnc?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          clinic_id?: string
+          email?: string | null
+          logo_path?: string | null
+          name?: string
+          phones?: string | null
+          rnc?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      clinic_prescription_counters: {
+        Row: { clinic_id: string; last_value: number }
+        Insert: { clinic_id: string; last_value?: number }
+        Update: { clinic_id?: string; last_value?: number }
+        Relationships: []
+      }
+      prescription_items: {
+        Row: {
+          clinic_id: string
+          dose: string | null
+          duration: string | null
+          frequency: string | null
+          id: string
+          instructions: string | null
+          medication: string
+          position: number
+          prescription_id: string
+          quantity: string | null
+          route: string | null
+        }
+        Insert: {
+          clinic_id: string
+          dose?: string | null
+          duration?: string | null
+          frequency?: string | null
+          id?: string
+          instructions?: string | null
+          medication: string
+          position: number
+          prescription_id: string
+          quantity?: string | null
+          route?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          dose?: string | null
+          duration?: string | null
+          frequency?: string | null
+          id?: string
+          instructions?: string | null
+          medication?: string
+          position?: number
+          prescription_id?: string
+          quantity?: string | null
+          route?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_items_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescription_prints: {
+        Row: {
+          clinic_id: string
+          format: string
+          id: string
+          is_copy: boolean
+          patient_id: string
+          prescription_id: string
+          printed_at: string
+          printed_by: string | null
+        }
+        Insert: {
+          clinic_id: string
+          format: string
+          id?: string
+          is_copy: boolean
+          patient_id: string
+          prescription_id: string
+          printed_at?: string
+          printed_by?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          format?: string
+          id?: string
+          is_copy?: boolean
+          patient_id?: string
+          prescription_id?: string
+          printed_at?: string
+          printed_by?: string | null
+        }
+        Relationships: []
+      }
+      prescriptions: {
+        Row: {
+          clinic_id: string
+          encounter_id: string | null
+          id: string
+          issued_at: string
+          letterhead: Json
+          notes: string | null
+          number: number
+          patient_id: string
+          patient_snapshot: Json
+          provider_exequatur: string
+          provider_id: string | null
+          provider_name: string
+          provider_title: string | null
+          status: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          clinic_id: string
+          encounter_id?: string | null
+          id?: string
+          issued_at?: string
+          letterhead: Json
+          notes?: string | null
+          number: number
+          patient_id: string
+          patient_snapshot: Json
+          provider_exequatur: string
+          provider_id?: string | null
+          provider_name: string
+          provider_title?: string | null
+          status?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          encounter_id?: string | null
+          id?: string
+          issued_at?: string
+          letterhead?: Json
+          notes?: string | null
+          number?: number
+          patient_id?: string
+          patient_snapshot?: Json
+          provider_exequatur?: string
+          provider_id?: string | null
+          provider_name?: string
+          provider_title?: string | null
+          status?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: []
       }
       clinic_payments: {
         Row: {
@@ -3261,6 +3455,39 @@ export type Database = {
       study_file_access: {
         Args: { p_name: string; p_write: boolean }
         Returns: boolean
+      }
+      issue_prescription: {
+        Args: { p_encounter_id?: string; p_items: Json; p_notes?: string; p_patient_id: string }
+        Returns: string
+      }
+      letterhead_file_access: {
+        Args: { p_name: string; p_write: boolean }
+        Returns: boolean
+      }
+      log_prescription_print: {
+        Args: { p_format?: string; p_prescription_id: string }
+        Returns: boolean
+      }
+      save_clinic_letterhead: {
+        Args: {
+          p_address?: string
+          p_clinic_id: string
+          p_email?: string
+          p_logo_path?: string
+          p_name: string
+          p_phones?: string
+          p_remove_logo?: boolean
+          p_rnc?: string
+        }
+        Returns: undefined
+      }
+      update_my_professional_profile: {
+        Args: { p_clinic_id: string; p_exequatur: string; p_name: string; p_title: string }
+        Returns: undefined
+      }
+      void_prescription: {
+        Args: { p_prescription_id: string; p_reason: string }
+        Returns: undefined
       }
       unvoid_patient: { Args: { p_patient_id: string }; Returns: undefined }
       update_clinic_plan: {
