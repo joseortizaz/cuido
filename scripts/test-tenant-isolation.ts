@@ -326,6 +326,18 @@ async function main() {
       const { data: stubsSeenByB } = await tenantB.client.rpc("encounter_stubs", { p_patient_id: pid });
       check("B no obtiene consultas de A por encounter_stubs", (stubsSeenByB ?? []).length === 0, `devolvió ${stubsSeenByB?.length ?? 0} filas`);
 
+      // Estudios y analíticas con adjuntos (20261125100000_study_results.sql).
+      const { data: aStudyId, error: aStudyErr } = await tenantA.client.rpc("create_study_result", { p_patient_id: pid, p_category: "laboratorio", p_study_name: "Hemograma de A", p_status: "recibido" });
+      check("A registra un estudio de su paciente", aStudyErr === null && !!aStudyId, aStudyErr?.message ?? "");
+      const { data: studySeenByB } = await tenantB.client.from("study_results").select("id").eq("patient_id", pid);
+      check("B no lee los estudios de A", (studySeenByB?.length ?? 0) === 0, `devolvió ${studySeenByB?.length ?? 0} filas`);
+      const { error: bCreateStudy } = await tenantB.client.rpc("create_study_result", { p_patient_id: pid, p_category: "otro", p_study_name: "Hackeo" });
+      check("B NO puede registrar un estudio en un paciente de A", bCreateStudy !== null, "no falló");
+      const { error: bUpdStudy } = await tenantB.client.rpc("update_study_result", { p_study_id: aStudyId as string, p_changes: { result_text: "Hackeado" }, p_reason: "hack" });
+      check("B NO puede corregir un estudio de A", bUpdStudy !== null, "no falló");
+      const { error: bUploadToA } = await tenantB.client.storage.from("study-results").upload(`${tenantA.clinicId}/${pid}/${aStudyId}/intruso.pdf`, Buffer.from("%PDF-1.4 x"), { contentType: "application/pdf" });
+      check("B NO puede subir un archivo a la ruta de un estudio de A", bUploadToA !== null, "subió");
+
       const { data: delLogSeenByB } = await tenantB.client.from("patient_deletion_log").select("id").eq("clinic_id", tenantA.clinicId);
       check("B no lee el registro de eliminaciones de A", (delLogSeenByB?.length ?? 0) === 0, `devolvió ${delLogSeenByB?.length ?? 0} filas`);
     }

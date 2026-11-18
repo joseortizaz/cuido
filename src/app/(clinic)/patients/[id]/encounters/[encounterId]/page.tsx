@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import { encounterTypeLabel } from "@/lib/domain/encounter-types";
+import { OrderStudyForm } from "../../studies/order-study-form";
+import { STUDY_CATEGORY_LABELS, STUDY_STATUS_LABELS } from "@/lib/domain/study-results";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
@@ -127,6 +130,12 @@ export default async function EncounterDetailPage({
     historyByClaim.set(h.claim_id, list);
   }
 
+  // Estudios indicados desde esta consulta (solo admin y médicos; recepción no los ve).
+  const { data: encounterStudies } = isReception
+    ? { data: [] as { id: string; study_name: string; category: string; status: string }[] }
+    : await supabase.from("study_results").select("id, study_name, category, status").eq("encounter_id", encounterId).order("created_at", { ascending: true });
+  const canOrderStudies = !isReception && !readOnly && (membership?.role === "admin" || membership?.role === "medico");
+
   const documentById = new Map((documents ?? []).map((d) => [d.id, d]));
   // Se pueden vincular los comprobantes ya emitidos: no los borradores ni los anulados o rechazados por la DGII.
   const selectableDocuments: DocumentOption[] = (documents ?? []).filter(
@@ -242,6 +251,30 @@ export default async function EncounterDetailPage({
           </div>
         );
       })}
+
+      {!isReception && (
+        <div className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <h2 className="text-lg font-medium">Estudios indicados</h2>
+          {(encounterStudies ?? []).length === 0 ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">No se han indicado estudios desde esta consulta.</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-panel-border text-sm">
+              {(encounterStudies ?? []).map((st) => (
+                <li key={st.id}>
+                  <Link href={`/patients/${id}/studies/${st.id}`} className="flex flex-wrap items-baseline justify-between gap-2 py-2 hover:underline">
+                    <span>
+                      <span className="font-medium">{st.study_name}</span>
+                      <span className="ml-2 text-xs text-zinc-500">{STUDY_CATEGORY_LABELS[st.category as keyof typeof STUDY_CATEGORY_LABELS] ?? st.category}</span>
+                    </span>
+                    <span className="text-xs text-zinc-500">{STUDY_STATUS_LABELS[st.status as keyof typeof STUDY_STATUS_LABELS] ?? st.status}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          {canOrderStudies && <OrderStudyForm patientId={id} encounterId={encounterId} />}
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
         <h2 className="text-lg font-medium">Reclamaciones</h2>

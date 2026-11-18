@@ -173,6 +173,10 @@ jobs:
       - name: Run encounter types test
         run: npm run test:encounter-types
 
+      # Estudios y analíticas: registro, versiones inmutables, permisos, Storage privado (subir, descargar con URL firmada, límites) y solo lectura.
+      - name: Run study results test
+        run: npm run test:study-results
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4

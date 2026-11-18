@@ -30,6 +30,7 @@
     "test:patient-record": "tsx scripts/test-patient-record.ts",
     "test:reception-isolation": "tsx scripts/test-reception-isolation.ts",
     "test:encounter-types": "tsx scripts/test-encounter-types.ts",
+    "test:study-results": "tsx scripts/test-study-results.ts",
     "test:manual": "tsx scripts/test-manual.ts",
     "test:templates": "tsx scripts/test-template-core-overlap.ts",
     "test:ga4": "tsx scripts/test-ga4.ts",
