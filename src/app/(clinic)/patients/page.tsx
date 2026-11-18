@@ -10,8 +10,8 @@ function fold(text: string | null | undefined): string {
   return (text ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
-export default async function PatientsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q: qParam } = await searchParams;
+export default async function PatientsPage({ searchParams }: { searchParams: Promise<{ q?: string; estado?: string }> }) {
+  const { q: qParam, estado } = await searchParams;
   const q = (qParam ?? "").slice(0, 80).trim();
 
   const supabase = await createClient();
@@ -24,16 +24,19 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
   if (!membership) redirect("/onboarding");
 
   const readOnly = await isClinicReadOnly();
+  // Los anulados no aparecen en la lista; solo el administrador los ve, en el filtro «Anulados».
+  const showVoided = membership.role === "admin" && estado === "anulados";
 
-  const { data: allPatients } = await supabase
+  const { data: allRows } = await supabase
     .from("patients")
-    .select("id, record_number, first_name, last_name, national_id, date_of_birth")
+    .select("id, record_number, first_name, last_name, national_id, date_of_birth, is_test, voided_at")
     .order("last_name", { ascending: true });
+  const allPatients = (allRows ?? []).filter((p) => (showVoided ? p.voided_at !== null : p.voided_at === null));
   // Cada palabra debe aparecer en el código, el nombre, el apellido o la cédula, sin importar
   // mayúsculas ni acentos (se filtra aquí y no en la consulta porque la base no ignora acentos).
   const tokens = fold(q).split(/\s+/).filter(Boolean).slice(0, 5);
   const patients = tokens.length
-    ? (allPatients ?? []).filter((p) => {
+    ? allPatients.filter((p) => {
         const haystack = fold(`${p.record_number} ${p.first_name} ${p.last_name} ${p.national_id ?? ""}`);
         return tokens.every((t) => haystack.includes(t));
       })
@@ -57,6 +60,19 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
         }
       />
       <PageBody>
+        {membership.role === "admin" && (
+          <nav aria-label="Estado" className="flex gap-3 text-sm print:hidden">
+            <Link href="/patients" className={showVoided ? "text-zinc-500 hover:underline" : "font-semibold underline"}>
+              Activos
+            </Link>
+            <Link
+              href="/patients?estado=anulados"
+              className={showVoided ? "font-semibold underline" : "text-zinc-500 hover:underline"}
+            >
+              Anulados
+            </Link>
+          </nav>
+        )}
         <form action="/patients" method="get" role="search" className="flex flex-wrap items-center gap-2 print:hidden">
           <label htmlFor="q" className="sr-only">
             Buscar paciente
@@ -76,8 +92,9 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
           >
             Buscar
           </button>
+          {showVoided && <input type="hidden" name="estado" value="anulados" />}
           {q && (
-            <Link href="/patients" className="text-sm text-zinc-500 hover:underline">
+            <Link href={showVoided ? "/patients?estado=anulados" : "/patients"} className="text-sm text-zinc-500 hover:underline">
               Quitar búsqueda
             </Link>
           )}
@@ -85,7 +102,7 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
 
         {!patients || patients.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {q ? "Ningún paciente coincide con la búsqueda." : "Todavía no hay pacientes registrados."}
+            {q ? "Ningún paciente coincide con la búsqueda." : showVoided ? "No hay pacientes anulados." : "Todavía no hay pacientes registrados."}
           </p>
         ) : (
           <ul className="flex flex-col divide-y divide-panel-border">
@@ -99,6 +116,11 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
                     <span className="min-w-24 shrink-0 font-mono text-xs text-zinc-500">{patient.record_number}</span>
                     <span className="min-w-0 break-words">
                       {patient.last_name}, {patient.first_name}
+                      {patient.is_test && (
+                        <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                          Prueba
+                        </span>
+                      )}
                     </span>
                   </span>
                   <span className="shrink-0 text-zinc-500">{patient.date_of_birth}</span>

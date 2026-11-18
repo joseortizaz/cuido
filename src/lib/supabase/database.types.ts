@@ -1892,6 +1892,47 @@ export type Database = {
           },
         ]
       }
+      patient_deletion_log: {
+        Row: {
+          clinic_id: string
+          deleted_at: string
+          deleted_by: string | null
+          deletion_case: string
+          id: string
+          patient_name: string
+          reason: string
+          record_number: string
+        }
+        Insert: {
+          clinic_id: string
+          deleted_at?: string
+          deleted_by?: string | null
+          deletion_case: string
+          id?: string
+          patient_name: string
+          reason: string
+          record_number: string
+        }
+        Update: {
+          clinic_id?: string
+          deleted_at?: string
+          deleted_by?: string | null
+          deletion_case?: string
+          id?: string
+          patient_name?: string
+          reason?: string
+          record_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_deletion_log_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_insurers: {
         Row: {
           affiliate_number: string
@@ -2021,12 +2062,16 @@ export type Database = {
           email: string | null
           first_name: string
           id: string
+          is_test: boolean
           last_name: string
           national_id: string | null
           phone: string | null
           record_number: string
           sex: string
           updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           clinic_id: string
@@ -2035,12 +2080,16 @@ export type Database = {
           email?: string | null
           first_name: string
           id?: string
+          is_test?: boolean
           last_name: string
           national_id?: string | null
           phone?: string | null
           record_number?: string
           sex: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           clinic_id?: string
@@ -2049,12 +2098,16 @@ export type Database = {
           email?: string | null
           first_name?: string
           id?: string
+          is_test?: boolean
           last_name?: string
           national_id?: string | null
           phone?: string | null
           record_number?: string
           sex?: string
           updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
           {
@@ -2570,6 +2623,10 @@ export type Database = {
       match_insurer: { Args: { p_name: string }; Returns: string }
       mfa_satisfied: { Args: never; Returns: boolean }
       my_admin_clinic_id: { Args: never; Returns: string }
+      next_patient_code: {
+        Args: { p_at?: string; p_clinic_id: string }
+        Returns: string
+      }
       normalize_insurer_name: { Args: { p_name: string }; Returns: string }
       operator_clinic_access_overview: {
         Args: never
@@ -2606,6 +2663,38 @@ export type Database = {
           uses: number
         }[]
       }
+      patient_code_format_error: {
+        Args: { p_format: string; p_reset_yearly: boolean }
+        Returns: string
+      }
+      delete_empty_patient: {
+        Args: { p_confirm_name: string; p_patient_id: string; p_reason: string }
+        Returns: undefined
+      }
+      delete_test_patient: {
+        Args: { p_patient_id: string }
+        Returns: undefined
+      }
+      patient_deletion_status: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      set_patient_test_flag: {
+        Args: { p_is_test: boolean; p_patient_id: string }
+        Returns: undefined
+      }
+      unvoid_patient: {
+        Args: { p_patient_id: string }
+        Returns: undefined
+      }
+      void_patient: {
+        Args: { p_patient_id: string; p_reason: string }
+        Returns: undefined
+      }
+      preview_next_patient_code: {
+        Args: { p_clinic_id: string }
+        Returns: string
+      }
       readonly_guard_exempt_tables: { Args: never; Returns: string[] }
       record_reminder_send: {
         Args: {
@@ -2620,10 +2709,6 @@ export type Database = {
           p_to_phone: string
           p_variables: Json
         }
-        Returns: string
-      }
-      preview_next_patient_code: {
-        Args: { p_clinic_id: string }
         Returns: string
       }
       record_whatsapp_message_status: {
@@ -2645,6 +2730,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      render_patient_code: {
+        Args: { p_format: string; p_number: number; p_year: string }
+        Returns: string
+      }
       request_clinic_data_deletion: {
         Args: { p_accepted: boolean; p_warning_text: string }
         Returns: string
@@ -2657,13 +2746,17 @@ export type Database = {
         Args: { p_reason: string; target_grant_id: string }
         Returns: undefined
       }
-      revoke_whatsapp_consent_by_phone: {
-        Args: { p_phone: string; p_source?: string }
-        Returns: number
+      revoke_stale_messaging_consent: {
+        Args: { p_patient_id: string; p_phone_e164: string }
+        Returns: boolean
       }
       revoke_stale_patient_consent: {
         Args: { p_patient_id: string; p_phone_e164: string }
         Returns: boolean
+      }
+      revoke_whatsapp_consent_by_phone: {
+        Args: { p_phone: string; p_source?: string }
+        Returns: number
       }
       save_patient_code_settings: {
         Args: {
@@ -2712,10 +2805,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      update_patient_contact: {
-        Args: { p_email: string; p_patient_id: string; p_phone: string; p_phone_e164: string }
-        Returns: boolean
-      }
       update_clinic_plan: {
         Args: {
           new_business_model: Database["public"]["Enums"]["clinic_business_model"]
@@ -2724,6 +2813,15 @@ export type Database = {
           target_clinic_id: string
         }
         Returns: undefined
+      }
+      update_patient_contact: {
+        Args: {
+          p_email: string
+          p_patient_id: string
+          p_phone: string
+          p_phone_e164: string
+        }
+        Returns: boolean
       }
       upsert_clinic_fiscal_profile: {
         Args: {

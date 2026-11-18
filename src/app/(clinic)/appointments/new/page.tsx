@@ -24,7 +24,7 @@ export default async function NewAppointmentPage() {
   }
 
   const [{ data: patients }, { data: providerMembers }, { data: templates }] = await Promise.all([
-    supabase.from("patients").select("id, first_name, last_name").order("last_name"),
+    supabase.from("patients").select("id, first_name, last_name").is("voided_at", null).order("last_name"),
     supabase
       .from("clinic_members")
       .select("user_id, role")

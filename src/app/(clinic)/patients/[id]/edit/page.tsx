@@ -23,6 +23,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
     supabase.from("patient_messaging_consents").select("id").eq("patient_id", id).is("revoked_at", null).maybeSingle(),
   ]);
   if (!patient) notFound();
+  if (patient.voided_at !== null) redirect(`/patients/${id}`);
 
   return (
     <>

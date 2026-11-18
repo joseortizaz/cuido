@@ -43,7 +43,7 @@ type RawClaim = {
   encounters: Obj<{
     encounter_date: string;
     provider_id: string;
-    patients: Obj<{ first_name: string; last_name: string; national_id: string | null }>;
+    patients: Obj<{ first_name: string; last_name: string; national_id: string | null; is_test?: boolean }>;
   }>;
   patient_insurers: Obj<{ insurer_id: string | null; insurer_name: string; affiliate_number: string }>;
   fiscal_documents: Obj<{
@@ -75,7 +75,7 @@ function one<T>(value: Obj<T>): T | null {
 
 const CLAIM_SELECT = `
   id, status, claimed_amount, notes, authorization_number, created_at, fiscal_document_id,
-  encounters(encounter_date, provider_id, patients(first_name, last_name, national_id)),
+  encounters(encounter_date, provider_id, patients(first_name, last_name, national_id, is_test)),
   patient_insurers(insurer_id, insurer_name, affiliate_number),
   fiscal_documents(e_ncf, created_at, monto_total, status,
     fiscal_document_items(line_number, description, quantity, unit_price, itbis_indicator, line_total)),
@@ -89,7 +89,8 @@ async function fetchRawClaims(supabase: SupabaseClient<Database>, status: Packag
     // Orden único y estable: obligatorio para paginar sin repetir ni omitir filas.
     return query.order("created_at", { ascending: true }).order("id", { ascending: true }).range(from, to);
   });
-  return rows as unknown as RawClaim[];
+  // Las reclamaciones de pacientes de prueba (datos ficticios) no van en el paquete para la ARS.
+  return (rows as unknown as RawClaim[]).filter((c) => !one(one(c.encounters)?.patients ?? null)?.is_test);
 }
 
 export type PackageInsurerOption = { key: string; label: string; pending: number; total: number };
@@ -99,12 +100,17 @@ export async function listPackageInsurers(supabase: SupabaseClient<Database>): P
   const rows = await fetchAllPages(async (from, to) =>
     supabase
       .from("insurance_claims")
-      .select("id, status, patient_insurers(insurer_id, insurer_name)")
+      .select("id, status, patient_insurers(insurer_id, insurer_name), encounters(patients(is_test))")
       .order("id", { ascending: true })
       .range(from, to)
   );
   const byKey = new Map<string, PackageInsurerOption>();
-  for (const r of rows as unknown as { status: string; patient_insurers: Obj<{ insurer_id: string | null; insurer_name: string }> }[]) {
+  for (const r of rows as unknown as {
+    status: string;
+    patient_insurers: Obj<{ insurer_id: string | null; insurer_name: string }>;
+    encounters: Obj<{ patients: Obj<{ is_test: boolean }> }>;
+  }[]) {
+    if (one(one(r.encounters)?.patients ?? null)?.is_test) continue;
     const ins = one(r.patient_insurers);
     if (!ins) continue;
     const key = insurerKey(ins);

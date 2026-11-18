@@ -89,7 +89,7 @@ export async function AdminDashboard({
       .from("insurance_claims")
       .select("id, status, created_at, status_updated_at, encounter_id")
       .in("status", ["pendiente", "enviada"]),
-    supabase.from("patients").select("id", { count: "exact", head: true }),
+    supabase.from("patients").select("id", { count: "exact", head: true }).eq("is_test", false).is("voided_at", null),
     supabase.from("clinic_members").select("role"),
   ]);
 

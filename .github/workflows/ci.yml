@@ -157,6 +157,10 @@ jobs:
       - name: Run patient edit test
         run: npm run test:patient-edit
 
+      # Pacientes de prueba, eliminar (prueba / sin actividad) y anular: permisos, cascadas, constancias, exportaciones y solo lectura.
+      - name: Run patient delete test
+        run: npm run test:patient-delete
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4

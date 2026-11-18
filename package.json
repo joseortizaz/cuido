@@ -26,6 +26,7 @@
     "test:meta-pixel": "tsx scripts/test-meta-pixel.ts",
     "test:patient-code": "tsx scripts/test-patient-code.ts",
     "test:patient-edit": "tsx scripts/test-patient-edit.ts",
+    "test:patient-delete": "tsx scripts/test-patient-delete.ts",
     "test:manual": "tsx scripts/test-manual.ts",
     "test:templates": "tsx scripts/test-template-core-overlap.ts",
     "test:ga4": "tsx scripts/test-ga4.ts",
