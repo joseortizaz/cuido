@@ -243,8 +243,13 @@ async function main() {
   const uRev = await admin.from("patient_medical_history_revisions").update({ new_value: "x" }).eq("patient_id", p.id);
   const dRev = await admin.from("patient_medical_history_revisions").delete().eq("patient_id", p.id);
   check("las revisiones son inmutables (ni service_role edita ni borra)", uRev.error !== null && dRev.error !== null, `${uRev.error?.message} | ${dRev.error?.message}`);
-  const uHistSvc = await admin.from("patient_medical_history").update({ vaccines: "x" }).eq("patient_id", p.id);
-  check("ni service_role escribe la historia directo (no tiene el privilegio)", uHistSvc.error !== null, "no falló");
+  // service_role (backend de confianza) conserva su acceso por defecto, pero nada se sobrescribe sin huella:
+  // el trigger deja la revisión también para sus cambios directos.
+  const nRevBefore = (await revisions(p.id)).length;
+  await admin.from("patient_medical_history").update({ vaccines: "Cambio de mantenimiento" }).eq("patient_id", p.id);
+  const revAfterSvc = (await revisions(p.id)).slice(nRevBefore);
+  check("incluso un cambio directo de service_role deja su revisión (sin autor)", revAfterSvc.length === 1 && revAfterSvc[0].field === "vaccines" && revAfterSvc[0].new_value === "Cambio de mantenimiento" && revAfterSvc[0].changed_by === null, JSON.stringify(revAfterSvc));
+  await medico.client.rpc("save_medical_history", { p_patient_id: p.id, p_changes: { vaccines: "" }, p_reason: "Revierte la prueba" });
 
   // ------------------------------------------------------ alergias y medicamentos
   console.log("\nAlergias y medicamentos: quién y cuándo:");
