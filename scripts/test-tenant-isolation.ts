@@ -231,6 +231,52 @@ async function main() {
       );
     }
 
+    // Código automático de paciente (20261119100000_patient_record_number.sql): la configuración
+    // y los contadores de una clínica no se leen ni se tocan desde otra.
+    console.log("\nCódigo de paciente — configuración y contadores:");
+    {
+      const { error: saveErr } = await tenantA.client.rpc("save_patient_code_settings", {
+        p_clinic_id: tenantA.clinicId,
+        p_format: "A-{NNNN}",
+        p_start_number: 1,
+        p_reset_yearly: false,
+      });
+      check("El admin de A guarda el formato de su clínica", saveErr === null, saveErr?.message ?? "");
+
+      const { data: cfgSeenByB } = await tenantB.client
+        .from("clinic_patient_code_settings")
+        .select("clinic_id")
+        .eq("clinic_id", tenantA.clinicId);
+      check("SELECT clinic_patient_code_settings de A (como B) devuelve 0 filas", (cfgSeenByB?.length ?? 0) === 0, `devolvió ${cfgSeenByB?.length ?? 0} filas — fuga entre tenants`);
+
+      const { error: crossSave } = await tenantB.client.rpc("save_patient_code_settings", {
+        p_clinic_id: tenantA.clinicId,
+        p_format: "HACK-{NNNN}",
+        p_start_number: 1,
+        p_reset_yearly: false,
+      });
+      check("B NO puede guardar el formato de A", crossSave !== null, "no falló");
+
+      const { error: crossPreview } = await tenantB.client.rpc("preview_next_patient_code", { p_clinic_id: tenantA.clinicId });
+      check("B NO puede ver la vista previa de A", crossPreview !== null, "no falló");
+
+      const { data: counters, error: counterErr } = await tenantB.client.from("clinic_patient_code_counters").select("clinic_id");
+      check("B no lee contadores (ni propios ni ajenos)", counterErr !== null || (counters?.length ?? 0) === 0, `devolvió ${counters?.length ?? 0} filas`);
+
+      const { data: pA } = await tenantA.client
+        .from("patients")
+        .insert({ clinic_id: tenantA.clinicId, first_name: "Aislamiento", last_name: "A", date_of_birth: "1990-01-01", sex: "femenino" })
+        .select("record_number")
+        .single();
+      const { data: pB } = await tenantB.client
+        .from("patients")
+        .insert({ clinic_id: tenantB.clinicId, first_name: "Aislamiento", last_name: "B", date_of_birth: "1990-01-01", sex: "femenino" })
+        .select("record_number")
+        .single();
+      check("El paciente de A usa el formato de A", pA?.record_number === "A-0001", String(pA?.record_number));
+      check("El formato de A no se filtra a B", !!pB?.record_number && !String(pB.record_number).startsWith("A-"), String(pB?.record_number));
+    }
+
     // Verifica que el mecanismo de aislamiento sea RLS y no una casualidad
     // de la query: confirma independientemente, con la service_role, que
     // ambas clínicas y sus miembros siguen existiendo intactos.

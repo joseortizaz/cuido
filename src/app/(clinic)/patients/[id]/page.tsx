@@ -158,7 +158,7 @@ export default async function PatientDetailPage({
     <>
       <PageHeader
         title={<>{patient.first_name} {patient.last_name}</>}
-        subtitle={<>{patient.date_of_birth} · {patient.sex}
+        subtitle={<>Código {patient.record_number} · {patient.date_of_birth} · {patient.sex}
           {patient.national_id ? ` · ${patient.national_id}` : ""}</>}
         back={{ href: "/patients", label: "Pacientes" }}
       />

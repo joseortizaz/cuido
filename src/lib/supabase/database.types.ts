@@ -810,6 +810,70 @@ export type Database = {
           },
         ]
       }
+      clinic_patient_code_counters: {
+        Row: {
+          clinic_id: string
+          last_value: number
+          period: string
+        }
+        Insert: {
+          clinic_id: string
+          last_value?: number
+          period: string
+        }
+        Update: {
+          clinic_id?: string
+          last_value?: number
+          period?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_patient_code_counters_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinic_patient_code_settings: {
+        Row: {
+          clinic_id: string
+          created_at: string
+          format: string
+          reset_yearly: boolean
+          start_number: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          clinic_id: string
+          created_at?: string
+          format?: string
+          reset_yearly?: boolean
+          start_number?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          created_at?: string
+          format?: string
+          reset_yearly?: boolean
+          start_number?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clinic_patient_code_settings_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: true
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinic_payments: {
         Row: {
           amount: number
@@ -1912,6 +1976,7 @@ export type Database = {
           last_name: string
           national_id: string | null
           phone: string | null
+          record_number: string
           sex: string
           updated_at: string
         }
@@ -1925,6 +1990,7 @@ export type Database = {
           last_name: string
           national_id?: string | null
           phone?: string | null
+          record_number?: string
           sex: string
           updated_at?: string
         }
@@ -1938,6 +2004,7 @@ export type Database = {
           last_name?: string
           national_id?: string | null
           phone?: string | null
+          record_number?: string
           sex?: string
           updated_at?: string
         }
@@ -2507,6 +2574,10 @@ export type Database = {
         }
         Returns: string
       }
+      preview_next_patient_code: {
+        Args: { p_clinic_id: string }
+        Returns: string
+      }
       record_whatsapp_message_status: {
         Args: {
           p_error_code?: string
@@ -2541,6 +2612,15 @@ export type Database = {
       revoke_whatsapp_consent_by_phone: {
         Args: { p_phone: string; p_source?: string }
         Returns: number
+      }
+      save_patient_code_settings: {
+        Args: {
+          p_clinic_id: string
+          p_format: string
+          p_reset_yearly: boolean
+          p_start_number: number
+        }
+        Returns: undefined
       }
       set_clinic_access_exempt: {
         Args: { p_exempt: boolean; p_reason: string; target_clinic_id: string }

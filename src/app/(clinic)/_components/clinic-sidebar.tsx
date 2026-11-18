@@ -28,7 +28,7 @@ type NavItem = {
 
 const ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", Icon: DashboardIcon },
-  { href: "/patients", label: "Pacientes", Icon: PatientsIcon },
+  { href: "/patients", label: "Pacientes", Icon: PatientsIcon, alsoActiveOn: ["/settings/codigos-paciente"] },
   { href: "/appointments", label: "Agenda", Icon: AgendaIcon, alsoActiveOn: ["/settings/whatsapp"] },
   { href: "/billing", label: "Facturación", Icon: BillingIcon, alsoActiveOn: ["/settings/fiscal"] },
   { href: "/claims", label: "Reclamaciones", Icon: ClaimsIcon },
