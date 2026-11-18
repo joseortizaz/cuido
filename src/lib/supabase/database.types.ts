@@ -2336,150 +2336,6 @@ export type Database = {
         }
         Relationships: []
       }
-      study_attachments: {
-        Row: {
-          clinic_id: string
-          file_name: string
-          id: string
-          mime_type: string
-          patient_id: string
-          removed_at: string | null
-          removed_by: string | null
-          removed_reason: string | null
-          size_bytes: number
-          storage_path: string
-          study_id: string
-          uploaded_at: string
-          uploaded_by: string | null
-        }
-        Insert: {
-          clinic_id: string
-          file_name: string
-          id?: string
-          mime_type: string
-          patient_id: string
-          removed_at?: string | null
-          removed_by?: string | null
-          removed_reason?: string | null
-          size_bytes: number
-          storage_path: string
-          study_id: string
-          uploaded_at?: string
-          uploaded_by?: string | null
-        }
-        Update: {
-          clinic_id?: string
-          file_name?: string
-          id?: string
-          mime_type?: string
-          patient_id?: string
-          removed_at?: string | null
-          removed_by?: string | null
-          removed_reason?: string | null
-          size_bytes?: number
-          storage_path?: string
-          study_id?: string
-          uploaded_at?: string
-          uploaded_by?: string | null
-        }
-        Relationships: []
-      }
-      study_result_revisions: {
-        Row: {
-          changed_at: string
-          changed_by: string | null
-          clinic_id: string
-          field: string
-          id: string
-          new_value: string | null
-          old_value: string | null
-          patient_id: string
-          reason: string | null
-          study_id: string
-        }
-        Insert: {
-          changed_at?: string
-          changed_by?: string | null
-          clinic_id: string
-          field: string
-          id?: string
-          new_value?: string | null
-          old_value?: string | null
-          patient_id: string
-          reason?: string | null
-          study_id: string
-        }
-        Update: {
-          changed_at?: string
-          changed_by?: string | null
-          clinic_id?: string
-          field?: string
-          id?: string
-          new_value?: string | null
-          old_value?: string | null
-          patient_id?: string
-          reason?: string | null
-          study_id?: string
-        }
-        Relationships: []
-      }
-      study_results: {
-        Row: {
-          category: string
-          clinic_id: string
-          created_at: string
-          created_by: string | null
-          encounter_id: string | null
-          id: string
-          interpretation: string | null
-          ordered_at: string | null
-          patient_id: string
-          performed_at: string | null
-          result_text: string | null
-          result_values: Json
-          status: string
-          study_name: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          category: string
-          clinic_id: string
-          created_at?: string
-          created_by?: string | null
-          encounter_id?: string | null
-          id?: string
-          interpretation?: string | null
-          ordered_at?: string | null
-          patient_id: string
-          performed_at?: string | null
-          result_text?: string | null
-          result_values?: Json
-          status?: string
-          study_name: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          category?: string
-          clinic_id?: string
-          created_at?: string
-          created_by?: string | null
-          encounter_id?: string | null
-          id?: string
-          interpretation?: string | null
-          ordered_at?: string | null
-          patient_id?: string
-          performed_at?: string | null
-          result_text?: string | null
-          result_values?: Json
-          status?: string
-          study_name?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
       sensitive_specialty_access_grants: {
         Row: {
           clinic_id: string
@@ -2576,6 +2432,216 @@ export type Database = {
           schema?: Json
         }
         Relationships: []
+      }
+      study_attachments: {
+        Row: {
+          clinic_id: string
+          file_name: string
+          id: string
+          mime_type: string
+          patient_id: string
+          removed_at: string | null
+          removed_by: string | null
+          removed_reason: string | null
+          size_bytes: number
+          storage_path: string
+          study_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          clinic_id: string
+          file_name: string
+          id?: string
+          mime_type: string
+          patient_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
+          size_bytes: number
+          storage_path: string
+          study_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          file_name?: string
+          id?: string
+          mime_type?: string
+          patient_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          removed_reason?: string | null
+          size_bytes?: number
+          storage_path?: string
+          study_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_attachments_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_attachments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_attachments_study_id_fkey"
+            columns: ["study_id"]
+            isOneToOne: false
+            referencedRelation: "study_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_result_revisions: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          clinic_id: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          patient_id: string
+          reason: string | null
+          study_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id: string
+          reason?: string | null
+          study_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id?: string
+          reason?: string | null
+          study_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_result_revisions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_result_revisions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_result_revisions_study_id_fkey"
+            columns: ["study_id"]
+            isOneToOne: false
+            referencedRelation: "study_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_results: {
+        Row: {
+          category: string
+          clinic_id: string
+          created_at: string
+          created_by: string | null
+          encounter_id: string | null
+          id: string
+          interpretation: string | null
+          ordered_at: string | null
+          patient_id: string
+          performed_at: string | null
+          result_text: string | null
+          result_values: Json
+          status: string
+          study_name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category: string
+          clinic_id: string
+          created_at?: string
+          created_by?: string | null
+          encounter_id?: string | null
+          id?: string
+          interpretation?: string | null
+          ordered_at?: string | null
+          patient_id: string
+          performed_at?: string | null
+          result_text?: string | null
+          result_values?: Json
+          status?: string
+          study_name: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          clinic_id?: string
+          created_at?: string
+          created_by?: string | null
+          encounter_id?: string | null
+          id?: string
+          interpretation?: string | null
+          ordered_at?: string | null
+          patient_id?: string
+          performed_at?: string | null
+          result_text?: string | null
+          result_values?: Json
+          status?: string
+          study_name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_results_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_results_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_results_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vital_signs: {
         Row: {
@@ -2878,6 +2944,21 @@ export type Database = {
         }
         Returns: string
       }
+      create_study_result: {
+        Args: {
+          p_category: string
+          p_encounter_id?: string
+          p_interpretation?: string
+          p_ordered_at?: string
+          p_patient_id: string
+          p_performed_at?: string
+          p_result_text?: string
+          p_result_values?: Json
+          p_status?: string
+          p_study_name: string
+        }
+        Returns: string
+      }
       current_user_email: { Args: never; Returns: string }
       data_deletion_offsets: {
         Args: never
@@ -3084,6 +3165,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      register_study_attachment: {
+        Args: {
+          p_file_name: string
+          p_mime_type: string
+          p_size_bytes: number
+          p_storage_path: string
+          p_study_id: string
+        }
+        Returns: string
+      }
       render_patient_code: {
         Args: { p_format: string; p_number: number; p_year: string }
         Returns: string
@@ -3167,46 +3258,9 @@ export type Database = {
         Args: { p_is_test: boolean; p_patient_id: string }
         Returns: undefined
       }
-      create_study_result: {
-        Args: {
-          p_category: string
-          p_encounter_id?: string
-          p_interpretation?: string
-          p_ordered_at?: string
-          p_patient_id: string
-          p_performed_at?: string
-          p_result_text?: string
-          p_result_values?: Json
-          p_status?: string
-          p_study_name: string
-        }
-        Returns: string
-      }
-      register_study_attachment: {
-        Args: {
-          p_file_name: string
-          p_mime_type: string
-          p_size_bytes: number
-          p_storage_path: string
-          p_study_id: string
-        }
-        Returns: string
-      }
       study_file_access: {
         Args: { p_name: string; p_write: boolean }
         Returns: boolean
-      }
-      update_study_result: {
-        Args: { p_changes: Json; p_reason?: string; p_study_id: string }
-        Returns: undefined
-      }
-      void_study_attachment: {
-        Args: { p_attachment_id: string; p_reason: string }
-        Returns: undefined
-      }
-      void_study_result: {
-        Args: { p_reason: string; p_study_id: string }
-        Returns: undefined
       }
       unvoid_patient: { Args: { p_patient_id: string }; Returns: undefined }
       update_clinic_plan: {
@@ -3226,6 +3280,10 @@ export type Database = {
           p_phone_e164: string
         }
         Returns: boolean
+      }
+      update_study_result: {
+        Args: { p_changes: Json; p_reason?: string; p_study_id: string }
+        Returns: undefined
       }
       upsert_clinic_fiscal_profile: {
         Args: {
@@ -3249,12 +3307,21 @@ export type Database = {
         }
         Returns: string
       }
+      validate_study_values: { Args: { p_values: Json }; Returns: undefined }
       void_fiscal_document: {
         Args: { reason: string; target_fiscal_document_id: string }
         Returns: undefined
       }
       void_patient: {
         Args: { p_patient_id: string; p_reason: string }
+        Returns: undefined
+      }
+      void_study_attachment: {
+        Args: { p_attachment_id: string; p_reason: string }
+        Returns: undefined
+      }
+      void_study_result: {
+        Args: { p_reason: string; p_study_id: string }
         Returns: undefined
       }
       withdraw_clinic_data_deletion: {
