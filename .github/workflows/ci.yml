@@ -177,6 +177,10 @@ jobs:
       - name: Run study results test
         run: npm run test:study-results
 
+      # El código del navegador no puede leer variables NEXT_PUBLIC_* de forma dinámica (sería undefined).
+      - name: Run browser env test
+        run: npm run test:browser-env
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4
