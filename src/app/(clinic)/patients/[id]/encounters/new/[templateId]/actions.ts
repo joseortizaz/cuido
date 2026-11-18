@@ -6,6 +6,8 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import { activeFieldsForType, buildZodSchemaForTemplate, parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { FIXED_TYPE_BY_TEMPLATE_CODE, asksPresentIllness, isEncounterType, type EncounterType } from "@/lib/domain/encounter-types";
+import { parseDiagnosesJson } from "@/lib/domain/encounter-diagnoses";
+import { getIcdRelease } from "@/lib/cie11/who-client";
 import type { Json } from "@/lib/supabase/database.types";
 
 export type EncounterFormState = { error?: string } | undefined;
@@ -82,28 +84,34 @@ export async function createEncounter(
   const presentIllness = asksPresentIllness(encounterType) ? String(formData.get("present_illness") ?? "").trim() : "";
   if (presentIllness.length > 5000) return { error: "La historia de la enfermedad actual es demasiado larga (máximo 5000 caracteres)." };
 
-  const { data: encounter, error: encounterError } = await supabase
-    .from("encounters")
-    .insert({
-      clinic_id: membership.clinicId,
-      patient_id: patientId,
-      provider_id: user.id,
-      specialty_template_id: templateId,
-      chief_complaint: chiefComplaint || null,
-      present_illness: presentIllness || null,
-      encounter_type: encounterType,
-      specialty_data: validation.data as unknown as Json,
-    })
-    .select("id")
-    .single();
+  // Diagnósticos codificados CIE-11 (opcionales): se validan aquí y la base los guarda JUNTO con la consulta, en
+  // una sola transacción (create_encounter_with_diagnoses): si algo falla, no queda una consulta a medias.
+  const diagnoses = parseDiagnosesJson(String(formData.get("diagnoses_json") ?? ""));
+  if (diagnoses.error) return { error: diagnoses.error };
 
-  if (encounterError || !encounter) {
-    if ((encounterError?.message ?? "").includes("expediente abierto")) {
+  // provider_id = auth.uid() y clinic_id (del paciente) los fija la función; el cliente no los envía.
+  const { data: encounterId, error: encounterError } = await supabase.rpc("create_encounter_with_diagnoses", {
+    p_patient_id: patientId,
+    p_template_id: templateId,
+    p_encounter_type: encounterType,
+    p_chief_complaint: chiefComplaint,
+    p_present_illness: presentIllness,
+    p_specialty_data: validation.data as unknown as Json,
+    p_diagnoses: diagnoses.items as unknown as Json,
+    p_release: getIcdRelease(),
+  });
+
+  if (encounterError || !encounterId) {
+    const message = encounterError?.message ?? "";
+    if (message.includes("expediente abierto")) {
       return { error: "El paciente no tiene el expediente abierto: un médico debe abrirlo antes de registrar consultas." };
     }
-    if ((encounterError?.message ?? "").includes("anulado")) return { error: encounterError!.message };
+    if (message.includes("anulado")) return { error: message };
+    // Errores de validación de los diagnósticos codificados (la consulta no se guardó).
+    if (encounterError?.code === "22023" || encounterError?.code === "42501") return { error: message };
     return { error: "No se pudo guardar la consulta." };
   }
+  const encounter = { id: encounterId };
 
   const vitals = {
     systolic_bp: optionalNumber(formData, "systolic_bp"),

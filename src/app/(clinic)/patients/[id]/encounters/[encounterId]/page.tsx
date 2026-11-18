@@ -4,8 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import { encounterTypeLabel } from "@/lib/domain/encounter-types";
 import { OrderStudyForm } from "../../studies/order-study-form";
+import { DiagnosesPanel, type DiagnosisRowView } from "./diagnoses-panel";
 import { STUDY_CATEGORY_LABELS, STUDY_STATUS_LABELS } from "@/lib/domain/study-results";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/lib/supabase/database.types";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { groupFieldsBySection, parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { ClaimForm } from "./claims/claim-form";
@@ -136,6 +138,12 @@ export default async function EncounterDetailPage({
     : await supabase.from("study_results").select("id, study_name, category, status").eq("encounter_id", encounterId).order("created_at", { ascending: true });
   const canOrderStudies = !isReception && !readOnly && (membership?.role === "admin" || membership?.role === "medico");
 
+  // Diagnósticos codificados CIE-11 de la consulta (admin y médicos; RLS: Salud Mental solo con acceso).
+  const { data: diagnosisRows } = isReception
+    ? { data: [] as Database["public"]["Tables"]["encounter_diagnoses"]["Row"][] }
+    : await supabase.from("encounter_diagnoses").select("*").eq("encounter_id", encounterId).order("created_at", { ascending: true });
+  const canCodeDiagnoses = !isReception && !readOnly && (membership?.role === "admin" || membership?.role === "medico");
+
   const documentById = new Map((documents ?? []).map((d) => [d.id, d]));
   // Se pueden vincular los comprobantes ya emitidos: no los borradores ni los anulados o rechazados por la DGII.
   const selectableDocuments: DocumentOption[] = (documents ?? []).filter(
@@ -154,6 +162,7 @@ export default async function EncounterDetailPage({
       new Set([
         ...(claims ?? []).map((c) => c.created_by),
         ...(historyRaw ?? []).map((h) => h.changed_by).filter((v): v is string => !!v),
+        ...(diagnosisRows ?? []).flatMap((d) => [d.created_by, d.superseded_by_user]).filter((v): v is string => !!v),
       ])
     ).map(async (userId) => {
       const { data } = await admin.auth.admin.getUserById(userId);
@@ -254,6 +263,30 @@ export default async function EncounterDetailPage({
           </div>
         );
       })}
+
+      {!isReception && (
+        <DiagnosesPanel
+          patientId={id}
+          encounterId={encounterId}
+          canEdit={canCodeDiagnoses}
+          rows={(diagnosisRows ?? []).map<DiagnosisRowView>((d) => ({
+            id: d.id,
+            kind: d.kind,
+            is_primary: d.is_primary,
+            code: d.code,
+            title: d.title,
+            icd_release: d.icd_release,
+            verified: d.verified,
+            doctor_note: d.doctor_note,
+            created_at: d.created_at,
+            created_by_label: d.created_by ? (claimCreatorEmailByUserId.get(d.created_by) ?? "Médico") : "—",
+            superseded_at: d.superseded_at,
+            superseded_reason: d.superseded_reason,
+            superseded_by_label: d.superseded_by_user ? (claimCreatorEmailByUserId.get(d.superseded_by_user) ?? "Médico") : null,
+            replaced_by_code: d.superseded_by ? ((diagnosisRows ?? []).find((x) => x.id === d.superseded_by)?.code ?? null) : null,
+          }))}
+        />
+      )}
 
       {!isReception && (
         <div className="flex flex-col gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800">
