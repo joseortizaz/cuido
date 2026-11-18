@@ -19,7 +19,7 @@ import {
  * para que ambos muestren exactamente los mismos títulos sin
  * duplicar/desincronizar la lista.
  *
- * "14 especialidades, con 21 plantillas" -- contado sobre
+ * "15 especialidades, con 22 plantillas" -- contado sobre
  * supabase/migrations/ (inserts en specialty_templates menos las
  * desactivadas), con este criterio:
  *   - Solo plantillas ACTIVAS. Las 2 desactivadas (cirugia_general y
@@ -30,7 +30,7 @@ import {
  *     Cirugía General: nota preoperatoria + descripción postoperatoria).
  *   - La Orden de Terapia Física cuenta como plantilla de Ortopedia y
  *     Traumatología, no como especialidad aparte (decisión de José).
- * Las 14: Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía
+ * Las 15: Medicina Familiar y General, Medicina Interna, Pediatría, Ginecología y Obstetricia, Cirugía
  * General, Anestesiología, Gastroenterología, Nefrología, Cardiología,
  * Endocrinología, Neumología, Otorrinolaringología, Salud Mental /
  * Psicología, Ortopedia y Traumatología, Nutriología Clínica.
@@ -41,7 +41,7 @@ export const FEATURES = [
     icon: ClipboardIcon,
     title: "Historias Clínicas Digitales",
     description:
-      "14 especialidades, con 21 plantillas clínicas alineadas a la normativa del Ministerio de Salud Pública.",
+      "15 especialidades, con 22 plantillas clínicas alineadas a la normativa del Ministerio de Salud Pública.",
   },
   {
     icon: ReceiptIcon,
