@@ -32,6 +32,7 @@
     "test:encounter-types": "tsx scripts/test-encounter-types.ts",
     "test:study-results": "tsx scripts/test-study-results.ts",
     "test:prescriptions": "tsx scripts/test-prescriptions.ts",
+    "manual:pdf": "tsx scripts/manual/build.ts",
     "test:browser-env": "tsx scripts/test-browser-env.ts",
     "test:manual": "tsx scripts/test-manual.ts",
     "test:templates": "tsx scripts/test-template-core-overlap.ts",

@@ -71,14 +71,23 @@ Cada persona del equipo tiene **un rol**. El rol decide lo que puede ver y hacer
 
 | Acción | Administrador/a | Médico/a | Recepción |
 |---|:---:|:---:|:---:|
-| Ver pacientes y su expediente | Sí | Sí | Sí |
+| Ver y buscar pacientes (datos demográficos) | Sí | Sí | Sí |
 | Registrar pacientes nuevos | Sí | Sí | Sí |
+| Editar los datos de un paciente | Sí | Sí | Solo teléfono y correo |
+| Ver el expediente clínico (consultas, notas, signos vitales, alergias, medicamentos, estudios, recetas) | Sí | Sí | No |
+| Abrir el expediente y escribir la historia general | Sí | Sí | No |
 | Registrar consultas, alergias y medicamentos | Sí | Sí | No |
+| Registrar estudios y adjuntar resultados | Sí | Sí | No |
+| Emitir, imprimir y anular recetas | Sí | Sí | No |
+| Completar sus datos profesionales (exequátur) | Sí | Sí | No |
+| Configurar el timbrado de las recetas | Sí | No | No |
+| Definir el formato del código de paciente | Sí | No | No |
+| Eliminar o anular pacientes | Sí | No | No |
 | Ver su propia agenda del día | Sí | Sí | Sí |
 | Crear y administrar citas | Sí | No | Sí |
 | Convertir una cita en consulta | Sí | Sí | No |
 | Checklist prequirúrgico | Sí | Sí | No |
-| Firmar consentimientos del paciente | Sí | Sí | Sí |
+| Firmar consentimientos del paciente (de una consulta, recepción ve solo su fecha) | Sí | Sí | Sí |
 | Revocar un consentimiento firmado | Sí | Sí | No |
 | Registrar el consentimiento de WhatsApp del paciente y editar su teléfono o correo | Sí | No | Sí |
 | Activar o desactivar los recordatorios por WhatsApp de la clínica | Sí | No | No |
@@ -103,7 +112,7 @@ Al entrar, la primera pantalla es el Dashboard. Muestra el nombre de la clínica
 
 ## 3.1 Dashboard del médico
 
-Muestra **Mis citas de hoy** (solo las suyas) y cuántos pacientes ha atendido en total. Es deliberadamente simple: lo que necesita para empezar el día.
+Muestra **Mis citas de hoy** (solo las suyas) y cuántos pacientes ha atendido en total. Es deliberadamente simple: lo que necesita para empezar el día. Al pie tiene el enlace **Mis datos profesionales (exequátur)**, que debe completar antes de emitir su primera receta (sección 5.9).
 
 ## 3.2 Dashboard de administración y recepción
 
@@ -113,6 +122,7 @@ Reúne lo que requiere atención:
 - **e-CF sin firmar:** comprobantes generados que aún no se han firmado ni enviado a la DGII.
 - **Reclamaciones de seguro atrasadas:** reclamaciones que llevan 7 días o más en el mismo estado (pendiente o enviada).
 - **Su clínica:** cantidad de pacientes y de personas por rol.
+- **Enlaces de configuración:** el administrador ve **Timbrado de recetas** (sección 5.10); administradores y médicos ven **Mis datos profesionales (exequátur)** (sección 5.9).
 - **Su plan (solo administrador):** estado de la suscripción, fecha de vencimiento o fin de la prueba, período, monto, historial de pagos y médicos incluidos. Más detalles en el capítulo 14.
 
 Cuando un bloque no tiene nada pendiente, lo dice con un mensaje claro en lugar de mostrar un cero sin contexto.
@@ -127,58 +137,191 @@ Cuando un bloque no tiene nada pendiente, lo dice con un mensaje claro en lugar 
 2. Complete los datos obligatorios: **nombre, apellido, fecha de nacimiento y sexo**.
 3. Los datos opcionales son **cédula o pasaporte, teléfono y correo**. Anote el teléfono siempre que pueda: es la base para contactar al paciente.
 4. Si usted es administrador o recepción y el paciente aceptó recibir recordatorios por WhatsApp, marque la casilla **Recordatorios por WhatsApp** e indique si aceptó **verbalmente, por escrito u otro** (capítulo 13). Para eso el teléfono debe ser dominicano (809, 829 o 849).
-5. Pulse **Crear paciente**. El paciente queda registrado y se abre su ficha.
+5. Si el paciente es **ficticio** (para practicar o capacitar al equipo), marque **Paciente de prueba (datos ficticios)** (sección 4.7).
+6. Pulse **Crear paciente**. El paciente queda registrado, **recibe su código** (sección 4.4) y se abre su ficha.
 
-> **Consejo:** antes de registrar, revise en la lista de pacientes que la persona no exista ya. Evitar duplicados mantiene el historial completo en un solo lugar.
+> **Consejo:** antes de registrar, busque en la lista de pacientes que la persona no exista ya. La búsqueda funciona por **código, nombre, apellido o cédula**, sin importar mayúsculas ni acentos. Evitar duplicados mantiene el historial completo en un solo lugar.
 
 ## 4.2 La ficha del paciente
 
-La ficha es el expediente del paciente. Reúne en una sola pantalla:
+La ficha del paciente tiene **tres pestañas**:
 
-| Bloque | Contenido |
-|---|---|
-| **Consultas** | Historial de consultas, con acceso a cada nota |
-| **Alergias** | Alergias registradas |
-| **Medicamentos activos** | Lo que el paciente toma actualmente |
-| **Consentimientos** | Consentimientos firmados y su estado |
-| **Recordatorios por WhatsApp** | Teléfono, correo y si el paciente aceptó recibir recordatorios |
-| **Seguro (ARS)** | Aseguradora, número de afiliado y verificaciones de elegibilidad |
-| **Facturación** | Comprobantes e-CF del paciente |
-| **Acceso a especialidades sensibles** | Solo administradores (ver capítulo 8) |
+| Pestaña | Contenido | Quién la ve |
+|---|---|---|
+| **Datos** | Datos del paciente, su **código**, el botón **Editar paciente**, el **Historial de cambios** de sus datos y, para el administrador, **Eliminar o anular paciente** | Todos (recepción ve los datos, no el historial de cambios) |
+| **Expediente** | Alergias, medicamentos activos, historia general, consultas, estudios y analíticas, recetas y el historial de ajustes del expediente | Administrador y médicos |
+| **Administrativo** | Recordatorios por WhatsApp, consentimientos, seguro (ARS), comprobantes e-CF y acceso a especialidades sensibles | Todos (recepción ve además la lista de consultas **solo por fecha**) |
 
-## 4.3 Alergias y medicamentos activos
+> **Importante:** **recepción no ve información clínica.** No ve el motivo de consulta, las notas del médico, el diagnóstico, los signos vitales, las alergias, los medicamentos, los estudios ni las recetas. Sí puede agendar citas, firmar consentimientos, facturar (e-CF) y trabajar las reclamaciones a la aseguradora, porque para eso solo necesita saber **que hubo una consulta y su fecha**.
 
-Los registran los **médicos y administradores** desde la ficha. Son datos de seguridad del paciente: manténgalos al día en cada consulta, porque todo el equipo clínico los ve.
+## 4.3 Editar los datos de un paciente
+
+Administradores y médicos pueden corregir los datos de un paciente: en la pestaña **Datos** pulse **Editar paciente**, cambie lo necesario (nombre, apellido, fecha de nacimiento, sexo, cédula o pasaporte, teléfono y correo) y pulse **Guardar cambios**. El **código no se puede editar**.
+
+- **Nada se pierde:** cada cambio queda en el **Historial de cambios** de la pestaña **Datos**, con quién lo hizo, cuándo, el valor anterior y el nuevo.
+- **Recepción** solo puede corregir el **teléfono y el correo**, desde el bloque **Recordatorios por WhatsApp** (también queda en el historial).
+- Si cambia el **teléfono** de un paciente que había aceptado los recordatorios por WhatsApp, ese consentimiento **se revoca**: pertenecía al número anterior, que podría ser de otra persona (capítulo 13). Cuido se lo avisa antes de guardar.
+- No se puede editar a un paciente **anulado** (sección 4.6).
+
+## 4.4 El código del paciente
+
+Cada paciente recibe, al registrarse, un **código único y consecutivo** que Cuido asigna solo, por ejemplo **2026-0001**. Aparece en la lista de pacientes, en el encabezado de la ficha, en las recetas impresas y en las exportaciones. Nadie puede escribirlo ni cambiarlo, y un número que se usó nunca se reutiliza, aunque el paciente se elimine.
+
+**Formato (solo administradores).** En **Pacientes → Código de paciente** el administrador define cómo se arma el código para su clínica:
+
+- Texto fijo opcional (letras, números y los signos `. _ / -`), por ejemplo `CLI-`.
+- `{AAAA}`, que pone el año, y `{NNNN}`, que pone el número con ceros a la izquierda (de 1 a 9 dígitos). Por ejemplo, `{AAAA}-{NNNN}` da 2026-0001, y `CLI-{NNNN}` da CLI-0001.
+- **Reiniciar cada año:** si la activa, el formato debe incluir `{AAAA}` (si no, el código se repetiría cada enero).
+- **Número inicial**, para empezar en un número distinto de 1. No puede quedar por debajo del último número ya usado.
+
+La pantalla muestra una **vista previa del siguiente código**. Un cambio de formato solo afecta a los pacientes nuevos: los existentes conservan su código.
+
+## 4.5 Alergias y medicamentos activos
+
+Están en la pestaña **Expediente**. Los registran los **médicos y administradores**. Son datos de seguridad del paciente: manténgalos al día en cada consulta, porque todo el equipo clínico los ve. Cuido muestra **quién registró** cada alergia o medicamento y **quién y cuándo cambió su estado**. Además, al escribir una consulta o una receta, un resumen de las alergias y los medicamentos activos aparece a la vista.
+
+## 4.6 Eliminar o anular un paciente (solo administradores)
+
+Un paciente **nunca se borra por accidente**. En la pestaña **Datos** de su ficha, la sección desplegable **Eliminar o anular paciente** ofrece tres caminos, según el caso:
+
+| Caso | Qué hace | Cuándo no se puede |
+|---|---|---|
+| **Paciente de prueba** | **Elimina por completo** a un paciente ficticio y todo lo suyo (consultas, citas, alergias, etc.) | Si tiene comprobantes e-CF o reclamaciones (tienen valor fiscal) |
+| **Registrado por error, sin actividad** | **Elimina** al paciente. Para confirmar, escriba su **nombre completo** y un **motivo** | Si tiene cualquier actividad: consultas, consentimientos firmados, estudios, recetas, alergias o medicamentos, historia clínica escrita, citas completadas, e-CF, reclamaciones, WhatsApp, entre otras. En ese caso Cuido le indica **por qué** y le propone anularlo |
+| **Anular** (paciente real con registros) | Lo **oculta** de las listas, las búsquedas y la agenda, **cancela sus citas futuras** y no admite movimientos nuevos ni ediciones. Requiere un **motivo**. Es **reversible**: **Reactivar paciente** lo restaura | — |
+
+- Los pacientes anulados se ven solo con el filtro **Anulados** de la lista de pacientes (visible solo para el administrador) y siguen apareciendo en las exportaciones, con el estado «Anulado».
+- Al **reactivar** un paciente, sus citas canceladas **no se restauran**: agéndelas de nuevo.
+- **Toda eliminación deja constancia** (código, nombre, quién, cuándo, motivo y caso). Eliminar es **irreversible**.
+
+> **Importante:** si un paciente real ya tiene historia con la clínica, **anúlelo, no lo elimine**. Los expedientes clínicos y los documentos fiscales deben conservarse.
+
+## 4.7 Pacientes de prueba
+
+Para practicar o capacitar al equipo, marque **Paciente de prueba (datos ficticios)** al registrarlo (el administrador también puede marcarlo después, con **Marcar como paciente de prueba**). Un paciente de prueba:
+
+- recibe un código aparte, **PRUEBA-001**, **PRUEBA-002**…, que no gasta el consecutivo real;
+- se identifica con la etiqueta **Prueba** en la lista y un aviso en su ficha;
+- **no sale en las exportaciones ni en los reportes**;
+- el administrador puede **eliminarlo** cuando termine, con todo lo que se le haya registrado.
 
 ---
 
 # 5. Consultas clínicas (historia clínica)
 
-Solo **médicos y administradores** registran consultas.
+Solo **médicos y administradores** abren expedientes y registran consultas.
 
-## 5.1 Registrar una consulta
+## 5.1 Abrir el expediente del paciente
 
-1. Abra la ficha del paciente y pulse para crear una **nueva consulta**.
+Un paciente nuevo **no tiene expediente**. Mientras no exista, **no se puede registrar ninguna consulta**. Un médico (o el administrador) lo abre **una sola vez**:
+
+1. En la ficha del paciente pulse **Abrir Expediente** (está en el encabezado y en la pestaña **Expediente**).
+2. Complete la **historia general** (sección 5.2). **Todo es opcional**: puede abrirlo con lo que sepa hoy y completar el resto después.
+3. Pulse **Abrir expediente**.
+
+Una vez abierto, **cualquier médico** de la clínica puede registrar consultas del paciente. Los pacientes que ya tenían consultas, alergias o medicamentos cuando se estrenó esta función tienen su expediente abierto automáticamente (con la historia vacía).
+
+## 5.2 La historia general
+
+La historia general reúne lo que **no cambia de una consulta a otra** y por eso no se vuelve a pedir en cada nota. Está dividida en secciones:
+
+- Antecedentes **heredofamiliares**, **patológicos**, **no patológicos** y **quirúrgicos**.
+- Antecedentes **ginecoobstétricos** (solo en pacientes de sexo femenino, cuando apliquen).
+- **Hábitos tóxicos:** tabaco, alcohol y otras sustancias.
+- **Hábitos alimentarios** y **actividad física**.
+- **Vacunas** (texto libre) y **otros** antecedentes o notas generales.
+
+Se completa o corrige en cualquier momento, con el botón de cada sección o **Completar / corregir todo**, y puede indicar un **motivo** del cambio.
+
+> **Importante:** **nada se sobrescribe ni se borra.** Cada vez que un campo cambia —incluso si lo vacía— Cuido guarda quién lo cambió, cuándo, el texto anterior, el nuevo y el motivo, y lo muestra en el **Historial de ajustes** del expediente. Así la historia clínica siempre se puede reconstruir.
+
+## 5.3 Registrar una consulta
+
+1. Abra la ficha del paciente, pestaña **Expediente**, y pulse **Nueva consulta**.
 2. **Elija la especialidad** (plantilla). Cuido le ofrece primero sus especialidades preferidas; también puede ver todas las que su clínica le tiene habilitadas.
-3. Escriba el **motivo de consulta**.
-4. Si los tomó, registre los **signos vitales**: presión arterial (sistólica y diastólica), frecuencia cardíaca, frecuencia respiratoria, saturación de oxígeno, peso y talla. Son opcionales.
-5. Complete los campos de la **plantilla de la especialidad** (antecedentes, examen físico, diagnóstico, plan, etc.). Los campos marcados con asterisco (\*) son obligatorios. Algunos campos solo aparecen cuando otro campo los activa.
-6. Pulse **Guardar consulta**.
+3. **Elija el tipo de consulta** (sección 5.4).
+4. Verá primero el **resumen del expediente** (alergias activas, medicamentos activos y antecedentes patológicos), para tenerlos presentes sin volver a escribirlos.
+5. Escriba el **motivo de consulta** y la **historia de la enfermedad actual** (en seguimiento, control y postquirúrgica se llama **Evolución**).
+6. Si los tomó, registre los **signos vitales**: presión arterial (sistólica y diastólica), frecuencia cardíaca, frecuencia respiratoria, saturación de oxígeno, peso y talla. Son opcionales.
+7. Complete los campos de la **plantilla de la especialidad** (examen físico, diagnóstico, plan, etc.). Los campos marcados con asterisco (\*) son obligatorios. Algunos campos solo aparecen cuando otro campo los activa.
+8. Pulse **Guardar consulta**.
 
-## 5.2 Plantillas por especialidad
+El **histórico** de consultas está en la pestaña **Expediente**: cada una muestra su fecha, tipo, especialidad, médico, motivo y diagnóstico; al abrirla se ven todas sus notas.
+
+## 5.4 Tipos de consulta
+
+Cada consulta tiene un tipo, que decide qué datos se piden:
+
+| Tipo | Para qué sirve | Qué pide |
+|---|---|---|
+| **Inicial** | Primera consulta de esta especialidad o de este caso | Todo: motivo, enfermedad actual, signos vitales y la línea base completa de la especialidad |
+| **Seguimiento** | Evolución desde la última consulta | Motivo, evolución, signos vitales, examen dirigido, estudios nuevos, diagnóstico y plan |
+| **Control** | Control programado de una enfermedad conocida | Igual que seguimiento |
+| **Urgencia** | Atención no programada | Motivo, enfermedad actual, signos vitales, examen físico, diagnóstico y plan |
+| **Prequirúrgica** | Valoración antes de una cirugía | Formulario corto (en **Cirugía General** y **Ortopedia** ya viene su nota propia) |
+| **Postquirúrgica** | Control después de una cirugía | Formulario corto (en **Ortopedia**, lleva a la **nota operatoria**) |
+| **Alta** | Cierre del caso | Resumen de la evolución, diagnóstico final, indicaciones y seguimiento (sin signos vitales) |
+
+> **Nota:** las consultas registradas antes de que existieran los tipos aparecen como **Sin clasificar**. No se pierde nada: se siguen mostrando y exportando igual. Algunas plantillas de especialidad todavía muestran los mismos campos en todos los tipos; se irán afinando con revisión clínica.
+
+## 5.5 Plantillas por especialidad
 
 Cuido incluye **15 especialidades con 22 plantillas**, alineadas a la normativa del Ministerio de Salud Pública. La lista completa está en el **Anexo A**.
 
 > **Nota:** la especialidad es una plantilla de la historia clínica, no un sistema aparte. Si un médico atiende más de una especialidad, usa la plantilla que corresponda en cada consulta.
 
-## 5.3 Especialidades de cada médico
+## 5.6 Especialidades de cada médico
 
 - El **administrador** puede **deshabilitar** especialidades para un médico (Equipo → botón **Especialidades** junto al nombre del médico, que abre la pantalla **Especialidades habilitadas**). Una especialidad deshabilitada no aparece nunca para ese médico.
 - Cada **médico** puede marcar sus **especialidades preferidas** para que aparezcan resaltadas al crear una consulta. Es solo una comodidad: no cambia lo que tiene permitido.
 
-## 5.4 Convertir una cita en consulta
+## 5.7 Convertir una cita en consulta
 
-Desde la **Agenda**, un médico o administrador puede pulsar **Convertir a consulta** en una cita pendiente o confirmada. Cuido abre la consulta ya vinculada a esa cita, para no reescribir datos.
+Desde la **Agenda**, un médico o administrador puede pulsar **Convertir a consulta** en una cita pendiente o confirmada. Cuido abre la consulta ya vinculada a esa cita, para no reescribir datos. El paciente debe tener su expediente abierto (sección 5.1).
+
+## 5.8 Estudios y analíticas
+
+En la pestaña **Expediente** del paciente, la sección **Estudios y analíticas** guarda los resultados y sus archivos. La ven y la usan **administradores y médicos**; recepción no.
+
+**Registrar un resultado.** Pulse **Registrar resultado** y complete: el **nombre** del estudio, su **categoría** (laboratorio, imagen, cardiología —electrocardiograma, ecocardiograma—, patología u otro), las fechas de **indicación** y de **realización**, el **resultado** en texto, los **valores** (cada uno con su unidad y su rango de referencia) y la **interpretación** del médico.
+
+**Indicar un estudio desde la consulta.** En la página de la consulta, **Estudios indicados** permite indicar un estudio: queda **Pendiente** en el expediente (la lista muestra cuántos hay pendientes). Cuando llegue el resultado, se completa desde su ficha.
+
+**Archivos adjuntos.** A cada estudio se le pueden subir hasta **10 archivos** (PDF, JPG o PNG, de **hasta 10 MB** cada uno). Cuido comprueba que el archivo sea realmente de ese tipo. Los archivos se guardan en un almacenamiento **privado**: solo se abren desde Cuido, con un enlace temporal de **60 segundos**, y únicamente para administradores y médicos de su clínica. Un adjunto equivocado se **retira** con un motivo (queda oculto, no se destruye).
+
+**Correcciones.** Completar o corregir un resultado deja una **versión** por cada campo (quién, cuándo, antes y después). **Corregir un resultado ya recibido exige un motivo.** **Anular** un estudio también exige motivo, es definitivo y el estudio queda visible como **Anulado**.
+
+> **Nota:** si un estudio está ligado a una consulta de **Salud Mental**, solo lo ve (y le sube archivos) quien tiene acceso a esa consulta (capítulo 8).
+
+## 5.9 Recetas
+
+Los **médicos y administradores** emiten recetas desde la página de una consulta (**Nueva receta →**) o desde la pestaña **Expediente** del paciente (**Nueva receta**). La receta se **imprime** en una hoja pequeña **A6** (105 × 148 mm), o centrada en una hoja **A4**. Recepción no tiene acceso.
+
+> **Importante:** **la receta impresa se firma y se sella a mano.** Cuido no firma digitalmente las recetas. Deja el espacio en blanco al pie para que el médico firme y ponga su sello.
+
+**Antes de la primera receta.** Cada médico debe completar **Mis datos profesionales** (nombre como saldrá en la receta, especialidad y **exequátur**), desde el Dashboard. Sin nombre y exequátur no se emite ninguna receta. El **administrador** configura el **Timbrado de recetas** (sección 5.10).
+
+**Emitir una receta.**
+
+1. Elija **Nueva receta**. Verá los datos del paciente.
+2. Anote cada **medicamento**: nombre y concentración, dosis, vía, frecuencia, duración, cantidad e indicaciones. Al escribir el nombre de un **medicamento activo** del paciente, Cuido completa su dosis y frecuencia (puede cambiarlas). Se admiten hasta 30 medicamentos.
+3. Escriba, si quiere, las **indicaciones generales**.
+4. Si lo desea, marque **Agregar estos medicamentos a los medicamentos activos del paciente** (no repite los que ya están).
+5. Pulse **Emitir receta**. Recibe un **número consecutivo** de la clínica.
+
+**Una receta emitida no se edita.** Si hay un error, **anúlela** (sección **Anular receta** de su detalle) con un **motivo** y emita otra. La puede anular quien la emitió o el administrador. Una receta anulada no se imprime y su número no se reutiliza.
+
+**Imprimir.** En el detalle de la receta, **Imprimir (A6)** o **Imprimir en A4 centrada**. La hoja lleva, arriba, el **timbrado** de la clínica y los datos del paciente (nombre, edad, fecha y código); en el centro, los medicamentos; al pie, el **nombre, la especialidad y el exequátur** del médico y un espacio para la **firma y el sello**. Imprima al **100 %** (sin «ajustar a la página»). Si la receta tiene muchos medicamentos, **continúa en una segunda hoja** que repite el timbrado y el pie. Siempre sale en blanco y negro sobre fondo blanco, aunque su computadora esté en modo oscuro.
+
+**Copias.** La **primera impresión es el original**. Si la vuelve a imprimir, la hoja sale marcada **«COPIA»** y la impresión queda registrada (quién, cuándo y en qué formato) en el detalle de la receta.
+
+**Historial.** Todas las recetas del paciente (número, fecha, médico, medicamentos y estado **Emitida** o **Anulada**) están en la sección **Recetas** del **Expediente**.
+
+> **Nota:** la receta conserva una **copia** de los datos del médico, del timbrado y del paciente tal como estaban al emitirla. Si luego cambia su exequátur o el timbrado de la clínica, las recetas ya emitidas **no cambian** y se reimprimen idénticas.
+
+## 5.10 Timbrado de las recetas (solo administradores)
+
+En **Dashboard → Timbrado de recetas** el administrador define el encabezado que se imprime en las recetas: **nombre** de la clínica o consultorio, **dirección**, **teléfonos**, **correo**, **RNC** (opcional) y un **logo** (PNG o JPG, de hasta 2 MB). Si el médico trabaja de forma independiente, el timbrado es el suyo. La pantalla muestra una **vista previa** de la hoja A6. Guarde primero los datos y luego suba el logo. Los cambios afectan solo a las recetas nuevas.
 
 ---
 
@@ -292,7 +435,7 @@ Se crea desde la **consulta** del paciente (administración y recepción). Compl
 - **Seguro** del paciente y **monto reclamado**.
 - **Comprobante (e-CF)** vinculado, si ya lo emitió.
 - **Número de autorización**, si la aseguradora lo dio.
-- **Diagnóstico codificado**: el sistema (**CIE-10** o **CIE-11**), el **código** (por ejemplo J00 o E11.9) y su descripción.
+- **Diagnóstico codificado**: el sistema (**CIE-10** o **CIE-11**), el **código** (por ejemplo J00 o E11.9) y su descripción. Recepción **no ve el diagnóstico escrito por el médico** en la consulta: si necesita codificarlo, el médico le indica el código.
 - **Notas**, si las necesita.
 
 ## 9.3 Dar seguimiento a las reclamaciones
@@ -401,18 +544,18 @@ Sirve para cargar de una sola vez los datos que hoy lleva en Excel u otro sistem
 3. **Suba el archivo**.
 4. Cuido le muestra una **pantalla de revisión**. **Nada se guarda hasta que usted lo apruebe.** Corrija los errores que indique y confirme.
 
-Hay dos tipos de importación: **pacientes** (datos demográficos, alergias y medicamentos activos) y **consultas por especialidad** (cada especialidad tiene su propia plantilla). Los pacientes deben existir antes de importar sus consultas.
+Hay dos tipos de importación: **pacientes** (datos demográficos, alergias y medicamentos activos) y **consultas por especialidad** (cada especialidad tiene su propia plantilla). Los pacientes deben existir antes de importar sus consultas. Al importar consultas históricas, Cuido abre el expediente del paciente (vacío) si aún no existía. La plantilla de consultas acepta las columnas **Tipo de consulta**, **Historia de la enfermedad actual** y **Motivo de consulta**; si no indica el tipo, la consulta queda **Sin clasificar**.
 
 ## 12.2 Exportar
 
 En **Pacientes → Exportar** descarga los datos de su clínica. Solo se incluye lo que usted tiene permiso de ver. **La exportación funciona también si la clínica está en modo solo lectura.**
 
-- **Exportación completa de la clínica (.xlsx):** un solo libro con pacientes, alergias, medicamentos, citas, consentimientos firmados, comprobantes fiscales y sus líneas, reclamaciones, seguros, verificaciones de elegibilidad y una hoja por especialidad con sus consultas. La hoja **Resumen** indica cuántas filas tiene cada hoja, para que pueda comprobar que no falta nada.
+- **Exportación completa de la clínica (.xlsx):** un solo libro con pacientes (con su **código** y su estado), alergias, medicamentos, citas, consentimientos firmados, comprobantes fiscales y sus líneas, reclamaciones, seguros, verificaciones de elegibilidad y una hoja por especialidad con sus consultas. La hoja **Resumen** indica cuántas filas tiene cada hoja, para que pueda comprobar que no falta nada.
 - **Pacientes** (.xlsx o .csv): datos demográficos, alergias y medicamentos activos.
 - **Consultas por especialidad:** una fila por consulta, con una columna por cada campo de la plantilla.
 - **Otros registros** (.csv): cada tabla por separado, con los textos largos completos.
 
-> **Nota:** las consultas de **Salud Mental** solo se incluyen si usted las atendió o tiene acceso concedido (capítulo 8).
+> **Nota:** las consultas de **Salud Mental** solo se incluyen si usted las atendió o tiene acceso concedido (capítulo 8). Las consultas exportadas incluyen el **código del paciente**, el **tipo de consulta** y la **historia de la enfermedad actual**. Los **pacientes de prueba** no se incluyen; los **anulados** sí, con el estado «Anulado».
 
 > **Importante:** un archivo exportado contiene información personal y de salud. Guárdelo en un lugar seguro, no lo envíe por canales abiertos y bórrelo cuando ya no lo necesite.
 
@@ -424,7 +567,7 @@ Si su clínica decide terminar su uso de Cuido y quiere que se eliminen sus dato
 2. **Descarga y confirmación:** descarga el **libro completo** de la clínica, lo abre para verificarlo y **confirma** que lo revisó.
 3. **Espera de 30 días:** la eliminación se programa para **30 días después** de esa confirmación. Mientras tanto la clínica puede seguir trabajando, y puede **desistir** hasta que se ejecute.
 
-La eliminación borra pacientes, consultas, citas, consentimientos, reclamaciones, mensajes y equipo. Los **comprobantes fiscales (e-CF)** se conservan **archivados durante 5 años**, solo con sus datos fiscales y **sin vínculo con ningún paciente ni expediente**. La ejecución la realiza Narnia Tech.
+La eliminación borra pacientes, expedientes, consultas, estudios y sus archivos, recetas, el timbrado y sus logos, citas, consentimientos, reclamaciones, mensajes y equipo. Los **comprobantes fiscales (e-CF)** se conservan **archivados durante 5 años**, solo con sus datos fiscales y **sin vínculo con ningún paciente ni expediente**. La ejecución la realiza Narnia Tech.
 
 ---
 
@@ -451,7 +594,7 @@ El consentimiento para WhatsApp se registra al **crear el paciente** (casilla **
 2. Marque que el paciente aceptó e indique **cómo**: **verbalmente** (en recepción o por teléfono), **por escrito** (formulario o papel) u otro.
 3. Guarde. La ficha muestra el número, la forma de aceptación, la fecha y quién lo registró.
 
-> **Importante:** el consentimiento corresponde a **ese número**. Si el teléfono de la ficha cambia, el consentimiento anterior deja de valer: revóquelo y registre uno nuevo con el número nuevo. Informe siempre al paciente, al registrarlo, que podrá recibir recordatorios y que puede responder BAJA para dejar de recibirlos.
+> **Importante:** el consentimiento corresponde a **ese número**. Si el teléfono de la ficha cambia, Cuido **revoca automáticamente** el consentimiento anterior (le avisa antes de guardar): registre uno nuevo con el número nuevo. Informe siempre al paciente, al registrarlo, que podrá recibir recordatorios y que puede responder BAJA para dejar de recibirlos.
 
 ## 13.3 Activar los recordatorios en la clínica (administrador)
 
@@ -484,6 +627,8 @@ El día de vencimiento todavía es válido. Después, la cuenta avanza por estas
 | Etapa | Cuánto dura | Qué ocurre |
 |---|---|---|
 | **Período de gracia** | 30 días después del vencimiento | Puede trabajar con normalidad; Cuido le avisa cuántos días faltan para el solo lectura |
+| **Timbrado** | Encabezado de la clínica (nombre, dirección, teléfonos, logo) que se imprime en las recetas |
+| **Tipo de consulta** | Clase de consulta (inicial, seguimiento, control, urgencia, prequirúrgica, postquirúrgica o alta) |
 | **Solo lectura** | Hasta 90 días más | Puede **consultar toda la información** y el administrador puede **exportarla**, pero **no se puede crear ni modificar nada** |
 | **Bloqueada** | A partir del día 121 después del vencimiento | El acceso se bloquea por completo y la suscripción se **cancela**; ya no se puede consultar ni exportar |
 
@@ -571,7 +716,8 @@ Los pacientes pueden pedir acceso, corrección o eliminación de sus datos. La p
 ## 16.0 Una sola vez, al empezar a usar Cuido
 
 - **Todos:** active la **verificación en dos pasos** (sección 15.2).
-- **Administración:** complete los **datos fiscales** y las **secuencias e-NCF** (capítulo 10), invite al equipo con su rol (capítulo 11) y, si lo necesita, importe sus pacientes (capítulo 12).
+- **Administración:** complete los **datos fiscales** y las **secuencias e-NCF** (capítulo 10), el **formato del código de paciente** (sección 4.4) y el **timbrado de las recetas** (sección 5.10); invite al equipo con su rol (capítulo 11) y, si lo necesita, importe sus pacientes (capítulo 12).
+- **Médicos:** complete **Mis datos profesionales** con su exequátur (sección 5.9) y marque sus especialidades preferidas (sección 5.6).
 
 ## 16.1 Al empezar el día
 
@@ -582,6 +728,7 @@ Los pacientes pueden pedir acceso, corrección o eliminación de sus datos. La p
 ## 16.2 Durante el día
 
 - Registre al paciente nuevo **antes** de crear su cita.
+- **Médicos:** abra el **expediente** de un paciente nuevo antes de su primera consulta (sección 5.1).
 - Actualice el estado de cada cita al atenderla.
 - Firme el consentimiento **antes** del procedimiento, no después.
 
@@ -608,7 +755,25 @@ Los pacientes pueden pedir acceso, corrección o eliminación de sus datos. La p
 Es normal: depende del rol. Consulte la tabla del capítulo 2 y, si necesita otro permiso, pídaselo a su administrador.
 
 **No encuentro un paciente.**
-Revise que el nombre esté bien escrito. Si aún no se registró, créelo desde **Pacientes → Nuevo paciente**.
+Búsquelo por su **código**, nombre, apellido o cédula. Si aún no se registró, créelo desde **Pacientes → Nuevo paciente**. Si lo anuló, solo el administrador lo ve, con el filtro **Anulados** (sección 4.6).
+
+**No me deja registrar una consulta: dice que falta el expediente.**
+El paciente no tiene su expediente abierto. Un médico o el administrador debe pulsar **Abrir Expediente** en su ficha (sección 5.1).
+
+**No puedo eliminar a un paciente.**
+Solo se elimina a quien no tiene actividad (o a un paciente de prueba). Si ya tiene consultas, estudios, recetas, facturas u otros registros, Cuido se lo indica y propone **anularlo**, que es reversible (sección 4.6).
+
+**No me deja emitir una receta.**
+Falta completar **Mis datos profesionales** (nombre y exequátur) en el Dashboard (sección 5.9). Si el logo o el encabezado salen mal, el administrador los revisa en **Timbrado de recetas** (sección 5.10).
+
+**Imprimí una receta y salió con «COPIA».**
+Es la marca de toda impresión después de la primera, para distinguir el original de las copias. Cada impresión queda registrada en el detalle de la receta.
+
+**No veo las alergias, los medicamentos ni las notas de un paciente (recepción).**
+Es a propósito: la información clínica la ven solo administradores y médicos (sección 4.2). Recepción puede agendar, facturar, firmar consentimientos y gestionar reclamaciones.
+
+**No puedo subir un archivo a un estudio.**
+Debe ser PDF, JPG o PNG, de hasta 10 MB, y el estudio admite hasta 10 archivos. Un estudio anulado no admite archivos nuevos (sección 5.8).
 
 **Una cita quedó en el estado equivocado.**
 Recepción y administración pueden cambiar el estado en la agenda en cualquier momento.
@@ -673,6 +838,8 @@ Cuido incluye **15 especialidades con 22 plantillas clínicas**, alineadas a la 
 | Ortopedia y Traumatología | Nota Operatoria · Orden de Terapia Física/Rehabilitación |
 | Nutriología Clínica | |
 
+Todas se usan con los **tipos de consulta** (sección 5.4): inicial, seguimiento, control, urgencia, prequirúrgica, postquirúrgica y alta.
+
 > **Nota:** las especialidades y plantillas se amplían con el tiempo. Si su clínica necesita una que no aparece aquí, escriba a Narnia Tech.
 
 # Anexo B. Glosario
@@ -681,10 +848,14 @@ Cuido incluye **15 especialidades con 22 plantillas clínicas**, alineadas a la 
 |---|---|
 | **ARS** | Administradora de Riesgos de Salud (aseguradora) |
 | **Consentimiento informado** | Documento que el paciente acepta antes de un procedimiento o tratamiento |
+| **Anular (paciente o receta)** | Dejar un registro sin efecto, pero visible y con su motivo; no se borra |
+| **Código del paciente** | Número único y consecutivo que Cuido asigna a cada paciente |
 | **DGII** | Dirección General de Impuestos Internos |
 | **e-CF** | Comprobante fiscal electrónico |
 | **e-NCF** | Número de comprobante fiscal electrónico, tomado de la secuencia autorizada por la DGII |
 | **Elegibilidad** | Confirmación de que el paciente tiene cobertura vigente en su seguro |
+| **Exequátur** | Número de autorización oficial para ejercer la medicina; sale impreso al pie de cada receta |
+| **Expediente clínico** | Historia general del paciente y todas sus consultas, estudios y recetas; se abre una sola vez |
 | **Hash** | Huella digital que permite comprobar que un documento firmado no fue alterado |
 | **ITBIS** | Impuesto sobre Transferencias de Bienes Industrializados y Servicios |
 | **MSP** | Ministerio de Salud Pública |

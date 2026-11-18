@@ -20,12 +20,12 @@ El `.md` es la fuente. Si se edita el contenido, se regenera el PDF desde él y 
 
 ## Regenerar el PDF
 
-Solo a mano, cuando cambie el contenido (no corre en CI ni en el build de Vercel). Requiere Python con `markdown` y `playwright`:
+Solo a mano, cuando cambie el contenido (no corre en CI ni en el build de Vercel). No necesita Python ni dependencias nuevas: usa el mismo render que la página `/manual` (`src/lib/manual-render.ts`) y el Chrome/Chromium instalado para imprimir a PDF.
 
 ```bash
-pip install markdown playwright
-playwright install chromium
-python scripts/manual/build.py
+npm run manual:pdf
 ```
 
-El script (`scripts/manual/build.py`, con `scripts/manual/logo.png`) regenera el PDF desde el `.md`; si pide otros argumentos o pasos, manda su propio encabezado.
+El script (`scripts/manual/build.ts`) toma `content/manual/manual-usuario.md` y el logo de `public/Logo Cuido.png`, arma portada, índice y capítulos (A4, con número de página) y escribe `content/manual/Manual-del-Usuario-Cuido.pdf`. Si Chrome está en una ruta poco común: `CHROME_PATH="/ruta/a/chrome" npm run manual:pdf`. Requiere Chrome/Chromium 131 o posterior.
+
+Revise el PDF antes de commitearlo (portada, índice, tablas y cuadros destacados) y suba el `.md` y el `.pdf` en el mismo commit.
