@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { RetrySignForm, VoidForm } from "./void-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDateTime } from "@/lib/domain/dr-time";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 const STATUS_LABELS: Record<string, string> = {
   borrador: "Borrador",
@@ -59,22 +59,25 @@ export default async function FiscalDocumentDetailPage({
   const canVoid = canManage && (document.status === "borrador" || document.status === "generado");
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
-      <div>
-        <Link href="/billing" className="text-sm text-zinc-500 hover:underline">
-          ← Facturación
-        </Link>
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="text-2xl font-semibold">{document.e_ncf ?? "e-CF sin número"}</h1>
-          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium dark:bg-zinc-800">
-            {STATUS_LABELS[document.status] ?? document.status}
+    <>
+      <PageHeader
+        back={{ href: "/billing", label: "Facturación" }}
+        title={
+          <span className="flex flex-wrap items-center gap-3">
+            {document.e_ncf ?? "e-CF sin número"}
+            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-medium text-white print:bg-zinc-100 print:text-black">
+              {STATUS_LABELS[document.status] ?? document.status}
+            </span>
           </span>
-        </div>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Paciente: {patient ? `${patient.first_name} ${patient.last_name}` : "—"} · Comprador:{" "}
-          {document.comprador_nombre}
-        </p>
-      </div>
+        }
+        subtitle={
+          <>
+            Paciente: {patient ? `${patient.first_name} ${patient.last_name}` : "—"} · Comprador:{" "}
+            {document.comprador_nombre}
+          </>
+        }
+      />
+      <PageBody narrow>
 
       {signPending && (
         <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
@@ -85,7 +88,8 @@ export default async function FiscalDocumentDetailPage({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-medium">Líneas</h2>
-        <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[32rem] text-left text-sm">
           <thead>
             <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
               <th className="py-2 pr-4">Descripción</th>
@@ -95,7 +99,7 @@ export default async function FiscalDocumentDetailPage({
               <th className="py-2 pr-4">Monto</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
+          <tbody className="divide-y divide-panel-border">
             {(items ?? []).map((item) => (
               <tr key={item.id}>
                 <td className="py-2 pr-4">{item.description}</td>
@@ -107,6 +111,7 @@ export default async function FiscalDocumentDetailPage({
             ))}
           </tbody>
         </table>
+        </div>
         <div className="flex flex-col items-end gap-0.5 text-sm">
           <p>Gravado: {formatAmount(document.monto_gravado_total)}</p>
           <p>Exento: {formatAmount(document.monto_exento)}</p>
@@ -141,6 +146,7 @@ export default async function FiscalDocumentDetailPage({
           <VoidForm fiscalDocumentId={document.id} />
         </section>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

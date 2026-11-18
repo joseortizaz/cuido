@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ConsentForm } from "./consent-form";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDate } from "@/lib/domain/dr-time";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function NewConsentPage({
   params,
@@ -48,19 +48,19 @@ export default async function NewConsentPage({
   }));
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href={`/patients/${id}`} className="text-sm text-zinc-500 hover:underline">
-          ← {patient.first_name} {patient.last_name}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Firmar consentimiento</h1>
-      </div>
+    <>
+      <PageHeader
+        title="Firmar consentimiento"
+        back={{ href: `/patients/${id}`, label: <>{patient.first_name} {patient.last_name}</> }}
+      />
+      <PageBody narrow>
       <ConsentForm
         patientId={id}
         templates={templates ?? []}
         encounters={encounterOptions}
         defaultEncounterId={encounterId}
       />
-    </div>
+      </PageBody>
+    </>
   );
 }

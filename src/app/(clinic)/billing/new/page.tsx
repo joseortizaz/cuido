@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { BillingForm } from "./billing-form";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function NewFiscalDocumentPage({
   searchParams,
@@ -34,18 +34,18 @@ export default async function NewFiscalDocumentPage({
   if (!patient) notFound();
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href={`/patients/${patientId}`} className="text-sm text-zinc-500 hover:underline">
-          ← {patient.first_name} {patient.last_name}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Generar e-CF</h1>
-      </div>
+    <>
+      <PageHeader
+        title="Generar e-CF"
+        back={{ href: `/patients/${patientId}`, label: <>{patient.first_name} {patient.last_name}</> }}
+      />
+      <PageBody narrow>
       <BillingForm
         patientId={patient.id}
         patientName={`${patient.first_name} ${patient.last_name}`}
         encounterId={encounterId}
       />
-    </div>
+      </PageBody>
+    </>
   );
 }

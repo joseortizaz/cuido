@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
@@ -11,6 +10,7 @@ import {
 } from "@/lib/domain/data-deletion";
 import { ConfirmExportForm, RequestForm, WithdrawForm } from "./deletion-forms";
 import { drToday, formatDrDate } from "@/lib/domain/dr-time";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 function formatDate(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString("es-DO", { dateStyle: "long" });
@@ -47,17 +47,14 @@ export default async function DataDeletionPage() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 px-6 py-16">
-      <div>
-        <Link href="/dashboard" className="text-sm text-zinc-500 hover:underline">
-          ← Dashboard
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Eliminar los datos de la clínica</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Solo el administrador puede solicitarlo. Es una acción irreversible, así que ocurre en pasos y con una espera
-          de {DELETION_WAIT_DAYS} días.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Eliminar los datos de la clínica"
+        subtitle={<>Solo el administrador puede solicitarlo. Es una acción irreversible, así que ocurre en pasos y con una espera
+          de {DELETION_WAIT_DAYS} días.</>}
+        back={{ href: "/dashboard", label: "Dashboard" }}
+      />
+      <PageBody narrow>
 
       <section className="flex flex-col gap-2 text-sm text-zinc-700 dark:text-zinc-300">
         <h2 className="text-lg font-medium">Cómo funciona</h2>
@@ -115,6 +112,7 @@ export default async function DataDeletionPage() {
           <WithdrawForm requestId={open.id} />
         </section>
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }

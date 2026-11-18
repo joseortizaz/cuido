@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -14,6 +13,7 @@ import { CLAIM_STATUS_LABELS, formatMoney, pendingToCollect, type ClaimStatus } 
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { VITAL_LABELS } from "@/lib/domain/vital-signs";
 import { formatDrDateTime } from "@/lib/domain/dr-time";
+import { HeaderLink, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function EncounterDetailPage({
   params,
@@ -146,34 +146,25 @@ export default async function EncounterDetailPage({
     : [];
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 px-6 py-16">
-      <div>
-        <Link href={`/patients/${id}`} className="text-sm text-zinc-500 hover:underline">
-          ← {patient.first_name} {patient.last_name}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{template?.name ?? "Consulta"}</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {formatDrDateTime(encounter.encounter_date)}
-        </p>
-        <div className="mt-2 flex flex-col gap-1">
-          {!readOnly && (
+    <>
+      <PageHeader
+        back={{ href: `/patients/${id}`, label: <>{patient.first_name} {patient.last_name}</> }}
+        title={template?.name ?? "Consulta"}
+        subtitle={formatDrDateTime(encounter.encounter_date)}
+        actions={
+          !readOnly ? (
             <>
-              <Link
-                href={`/patients/${id}/consents/new?encounterId=${encounterId}`}
-                className="text-sm text-zinc-500 hover:underline"
-              >
+              <HeaderLink href={`/patients/${id}/consents/new?encounterId=${encounterId}`}>
                 Firmar consentimiento para esta consulta →
-              </Link>
-              <Link
-                href={`/billing/new?patientId=${id}&encounterId=${encounterId}`}
-                className="text-sm text-zinc-500 hover:underline"
-              >
+              </HeaderLink>
+              <HeaderLink href={`/billing/new?patientId=${id}&encounterId=${encounterId}`}>
                 Generar e-CF para esta consulta →
-              </Link>
+              </HeaderLink>
             </>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
+      <PageBody narrow>
 
       {encounter.chief_complaint && (
         <div>
@@ -222,7 +213,7 @@ export default async function EncounterDetailPage({
         {!claims || claims.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin reclamaciones registradas.</p>
         ) : (
-          <ul className="flex flex-col divide-y divide-zinc-200 dark:divide-zinc-800">
+          <ul className="flex flex-col divide-y divide-panel-border">
             {claims.map((claim) => {
               const doc = documentById.get(claim.fiscal_document_id ?? "");
               const claimDiagnoses = diagnosesByClaim.get(claim.id) ?? [];
@@ -301,6 +292,7 @@ export default async function EncounterDetailPage({
           />
         )}
       </div>
-    </div>
+      </PageBody>
+    </>
   );
 }

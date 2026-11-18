@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { SpecialtyPicker } from "./specialty-picker";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 /**
  * El picker de especialidad combina dos mecanismos independientes
@@ -84,16 +85,13 @@ export default async function ChooseSpecialtyPage({
   const hasPreferred = preferredTemplates.length > 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href={`/patients/${id}`} className="text-sm text-zinc-500 hover:underline">
-          ← {patient.first_name} {patient.last_name}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Nueva consulta</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Elige la especialidad de la consulta.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Nueva consulta"
+        subtitle="Elige la especialidad de la consulta."
+        back={{ href: `/patients/${id}`, label: <>{patient.first_name} {patient.last_name}</> }}
+      />
+      <PageBody narrow>
       {templates.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           No hay plantillas de especialidad disponibles para ti todavía.
@@ -109,6 +107,7 @@ export default async function ChooseSpecialtyPage({
       <Link href="/profile/specialties" className="text-sm text-zinc-500 hover:underline">
         Personalizar mis especialidades habituales
       </Link>
-    </div>
+      </PageBody>
+    </>
   );
 }

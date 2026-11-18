@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { FiscalProfileForm } from "./fiscal-profile-form";
 import { SequenceForm } from "./sequence-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function FiscalSettingsPage() {
   const supabase = await createClient();
@@ -33,16 +33,13 @@ export default async function FiscalSettingsPage() {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-10 px-6 py-16">
-      <div>
-        <Link href="/dashboard" className="text-sm text-zinc-500 hover:underline">
-          ← Dashboard
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Datos fiscales</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Necesarios para generar comprobantes fiscales electrónicos (e-CF).
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Datos fiscales"
+        subtitle="Necesarios para generar comprobantes fiscales electrónicos (e-CF)."
+        back={{ href: "/dashboard", label: "Dashboard" }}
+      />
+      <PageBody narrow>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Emisor</h2>
@@ -67,6 +64,7 @@ export default async function FiscalSettingsPage() {
           <SequenceForm currentRangeStart={sequence?.range_start} />
         </fieldset>
       </section>
-    </div>
+      </PageBody>
+    </>
   );
 }

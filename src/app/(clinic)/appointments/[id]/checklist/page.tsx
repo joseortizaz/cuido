@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { ChecklistForm } from "./checklist-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 /**
  * Checklist prequirúrgico de una cita con appointment_type =
@@ -98,17 +98,14 @@ export default async function SurgicalChecklistPage({
     !!consent && !!surgicalTemplate && consent.consent_template_id === surgicalTemplate.id;
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/appointments" className="text-sm text-zinc-500 hover:underline">
-          ← Volver a la agenda
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Checklist prequirúrgico</h1>
-        <p className="text-sm text-zinc-500">
-          {patient ? `${patient.first_name} ${patient.last_name}` : appointment.patient_id} ·{" "}
-          {formatDrDateTime(appointment.scheduled_at, { dateStyle: "medium", timeStyle: "short" })}
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Checklist prequirúrgico"
+        subtitle={<>{patient ? `${patient.first_name} ${patient.last_name}` : appointment.patient_id} ·{" "}
+          {formatDrDateTime(appointment.scheduled_at, { dateStyle: "medium", timeStyle: "short" })}</>}
+        back={{ href: "/appointments", label: "Volver a la agenda" }}
+      />
+      <PageBody narrow>
 
       <div className="rounded-md border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="text-sm font-medium">Consentimiento informado</p>
@@ -139,6 +136,7 @@ export default async function SurgicalChecklistPage({
           implantesAprobadosSeguro={checklist.implantes_aprobados_seguro}
         />
       </fieldset>
-    </div>
+      </PageBody>
+    </>
   );
 }

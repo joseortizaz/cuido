@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { getCurrentClinicAccess } from "@/lib/supabase/clinic-access";
+import { PageBody, PageHeader } from "./page-header";
 
 /**
  * ¿La clínica está en solo lectura (o suspendida)? Para decidir si una
@@ -33,15 +33,15 @@ export function ReadOnlyPage({
   children?: ReactNode;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-6 py-16">
-      <Link href={backHref} className="text-sm text-zinc-500 hover:underline">
-        ← {backLabel}
-      </Link>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Esta acción no está disponible mientras tu clínica esté en modo solo lectura. Puedes seguir consultando tu
-        información, y el administrador puede exportar toda la información de la clínica.
-      </p>
-      {children}
-    </div>
+    <>
+      <PageHeader back={{ href: backHref, label: backLabel }} title="Acción no disponible" />
+      <PageBody narrow>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Esta acción no está disponible mientras tu clínica esté en modo solo lectura. Puedes seguir consultando tu
+          información, y el administrador puede exportar toda la información de la clínica.
+        </p>
+        {children}
+      </PageBody>
+    </>
   );
 }

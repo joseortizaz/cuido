@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 /**
  * Landing de importación masiva -- pacientes (Fase 1) y consultas por
@@ -24,17 +25,13 @@ export default async function ImportLandingPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/patients" className="text-sm text-zinc-500 hover:underline">
-          ← Pacientes
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Importar</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Sube una plantilla llena para crear varios registros a la vez. Podrás revisar el resultado
-          antes de confirmar — nada se guarda hasta que lo apruebes.
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Importar"
+        subtitle="Sube una plantilla llena para crear varios registros a la vez. Podrás revisar el resultado antes de confirmar — nada se guarda hasta que lo apruebes."
+        back={{ href: "/patients", label: "Pacientes" }}
+      />
+      <PageBody narrow>
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-2 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
@@ -79,6 +76,7 @@ export default async function ImportLandingPage() {
           </Link>
         </div>
       </div>
-    </div>
+      </PageBody>
+    </>
   );
 }

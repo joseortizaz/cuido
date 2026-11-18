@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { NewAppointmentForm } from "./new-appointment-form";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
+import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
 export default async function NewAppointmentPage() {
   const supabase = await createClient();
@@ -46,13 +47,12 @@ export default async function NewAppointmentPage() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-16">
-      <div>
-        <Link href="/appointments" className="text-sm text-zinc-500 hover:underline">
-          ← Agenda
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Nueva cita</h1>
-      </div>
+    <>
+      <PageHeader
+        title="Nueva cita"
+        back={{ href: "/appointments", label: "Agenda" }}
+      />
+      <PageBody narrow>
 
       {!templates || templates.length === 0 ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -73,6 +73,7 @@ export default async function NewAppointmentPage() {
           templates={templates}
         />
       )}
-    </div>
+      </PageBody>
+    </>
   );
 }
