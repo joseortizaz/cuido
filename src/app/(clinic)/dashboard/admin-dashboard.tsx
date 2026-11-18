@@ -1,3 +1,4 @@
+import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PlanCard } from "./plan-card";
@@ -113,10 +114,10 @@ export async function AdminDashboard({
     .sort((a, b) => b.days - a.days);
 
   const claimEncounterIds = Array.from(new Set(overdueClaims.slice(0, 5).map((c) => c.encounter_id)));
-  const { data: claimEncounters } =
+  const claimEncounters =
     claimEncounterIds.length > 0
-      ? await supabase.from("encounters").select("id, patient_id").in("id", claimEncounterIds)
-      : { data: [] as { id: string; patient_id: string }[] };
+      ? (await fetchEncounterStubs(supabase, { encounterIds: claimEncounterIds })).map((e) => ({ id: e.id, patient_id: e.patient_id }))
+      : [];
   const claimPatientIds = Array.from(new Set((claimEncounters ?? []).map((e) => e.patient_id)));
   const { data: claimPatients } =
     claimPatientIds.length > 0

@@ -41,42 +41,42 @@ export type Database = {
     Tables: {
       allergies: {
         Row: {
-          recorded_by: string | null
-          status_changed_at: string | null
-          status_changed_by: string | null
           clinic_id: string
           id: string
           patient_id: string
           reaction: string | null
           recorded_at: string
+          recorded_by: string | null
           severity: string | null
           status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
           substance: string
         }
         Insert: {
-          recorded_by?: string | null
-          status_changed_at?: string | null
-          status_changed_by?: string | null
           clinic_id: string
           id?: string
           patient_id: string
           reaction?: string | null
           recorded_at?: string
+          recorded_by?: string | null
           severity?: string | null
           status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           substance: string
         }
         Update: {
-          recorded_by?: string | null
-          status_changed_at?: string | null
-          status_changed_by?: string | null
           clinic_id?: string
           id?: string
           patient_id?: string
           reaction?: string | null
           recorded_at?: string
+          recorded_by?: string | null
           severity?: string | null
           status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
           substance?: string
         }
         Relationships: [
@@ -1771,11 +1771,9 @@ export type Database = {
       }
       medications: {
         Row: {
-          created_by: string | null
-          status_changed_at: string | null
-          status_changed_by: string | null
           clinic_id: string
           created_at: string
+          created_by: string | null
           discontinued_at: string | null
           dose: string | null
           frequency: string | null
@@ -1784,13 +1782,13 @@ export type Database = {
           patient_id: string
           started_at: string | null
           status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
         }
         Insert: {
-          created_by?: string | null
-          status_changed_at?: string | null
-          status_changed_by?: string | null
           clinic_id: string
           created_at?: string
+          created_by?: string | null
           discontinued_at?: string | null
           dose?: string | null
           frequency?: string | null
@@ -1799,13 +1797,13 @@ export type Database = {
           patient_id: string
           started_at?: string | null
           status?: string
-        }
-        Update: {
-          created_by?: string | null
           status_changed_at?: string | null
           status_changed_by?: string | null
+        }
+        Update: {
           clinic_id?: string
           created_at?: string
+          created_by?: string | null
           discontinued_at?: string | null
           dose?: string | null
           frequency?: string | null
@@ -1814,6 +1812,8 @@ export type Database = {
           patient_id?: string
           started_at?: string | null
           status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
         }
         Relationships: [
           {
@@ -1951,129 +1951,6 @@ export type Database = {
           },
         ]
       }
-      patient_medical_history: {
-        Row: {
-          clinic_id: string
-          family_history: string | null
-          pathological_history: string | null
-          non_pathological_history: string | null
-          surgical_history: string | null
-          gyneco_obstetric_history: string | null
-          toxic_tobacco: string | null
-          toxic_alcohol: string | null
-          toxic_other_substances: string | null
-          diet_habits: string | null
-          physical_activity: string | null
-          vaccines: string | null
-          other_notes: string | null
-          patient_id: string
-          record_id: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          clinic_id: string
-          family_history?: string | null
-          pathological_history?: string | null
-          non_pathological_history?: string | null
-          surgical_history?: string | null
-          gyneco_obstetric_history?: string | null
-          toxic_tobacco?: string | null
-          toxic_alcohol?: string | null
-          toxic_other_substances?: string | null
-          diet_habits?: string | null
-          physical_activity?: string | null
-          vaccines?: string | null
-          other_notes?: string | null
-          patient_id: string
-          record_id: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          clinic_id?: string
-          family_history?: string | null
-          pathological_history?: string | null
-          non_pathological_history?: string | null
-          surgical_history?: string | null
-          gyneco_obstetric_history?: string | null
-          toxic_tobacco?: string | null
-          toxic_alcohol?: string | null
-          toxic_other_substances?: string | null
-          diet_habits?: string | null
-          physical_activity?: string | null
-          vaccines?: string | null
-          other_notes?: string | null
-          patient_id?: string
-          record_id?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
-      patient_medical_history_revisions: {
-        Row: {
-          changed_at: string
-          changed_by: string | null
-          clinic_id: string
-          field: string
-          id: string
-          new_value: string | null
-          old_value: string | null
-          patient_id: string
-          reason: string | null
-        }
-        Insert: {
-          changed_at?: string
-          changed_by?: string | null
-          clinic_id: string
-          field: string
-          id?: string
-          new_value?: string | null
-          old_value?: string | null
-          patient_id: string
-          reason?: string | null
-        }
-        Update: {
-          changed_at?: string
-          changed_by?: string | null
-          clinic_id?: string
-          field?: string
-          id?: string
-          new_value?: string | null
-          old_value?: string | null
-          patient_id?: string
-          reason?: string | null
-        }
-        Relationships: []
-      }
-      patient_records: {
-        Row: {
-          clinic_id: string
-          id: string
-          migrated: boolean
-          opened_at: string
-          opened_by: string | null
-          patient_id: string
-        }
-        Insert: {
-          clinic_id: string
-          id?: string
-          migrated?: boolean
-          opened_at?: string
-          opened_by?: string | null
-          patient_id: string
-        }
-        Update: {
-          clinic_id?: string
-          id?: string
-          migrated?: boolean
-          opened_at?: string
-          opened_by?: string | null
-          patient_id?: string
-        }
-        Relationships: []
-      }
       patient_insurers: {
         Row: {
           affiliate_number: string
@@ -2125,6 +2002,139 @@ export type Database = {
           },
           {
             foreignKeyName: "patient_insurers_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_medical_history: {
+        Row: {
+          clinic_id: string
+          diet_habits: string | null
+          family_history: string | null
+          gyneco_obstetric_history: string | null
+          non_pathological_history: string | null
+          other_notes: string | null
+          pathological_history: string | null
+          patient_id: string
+          physical_activity: string | null
+          record_id: string
+          surgical_history: string | null
+          toxic_alcohol: string | null
+          toxic_other_substances: string | null
+          toxic_tobacco: string | null
+          updated_at: string
+          updated_by: string | null
+          vaccines: string | null
+        }
+        Insert: {
+          clinic_id: string
+          diet_habits?: string | null
+          family_history?: string | null
+          gyneco_obstetric_history?: string | null
+          non_pathological_history?: string | null
+          other_notes?: string | null
+          pathological_history?: string | null
+          patient_id: string
+          physical_activity?: string | null
+          record_id: string
+          surgical_history?: string | null
+          toxic_alcohol?: string | null
+          toxic_other_substances?: string | null
+          toxic_tobacco?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vaccines?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          diet_habits?: string | null
+          family_history?: string | null
+          gyneco_obstetric_history?: string | null
+          non_pathological_history?: string | null
+          other_notes?: string | null
+          pathological_history?: string | null
+          patient_id?: string
+          physical_activity?: string | null
+          record_id?: string
+          surgical_history?: string | null
+          toxic_alcohol?: string | null
+          toxic_other_substances?: string | null
+          toxic_tobacco?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vaccines?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_medical_history_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_medical_history_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_medical_history_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: true
+            referencedRelation: "patient_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_medical_history_revisions: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          clinic_id: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          patient_id: string
+          reason: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id: string
+          reason?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_medical_history_revisions_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_medical_history_revisions_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
@@ -2190,6 +2200,48 @@ export type Database = {
             foreignKeyName: "patient_messaging_consents_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patient_records: {
+        Row: {
+          clinic_id: string
+          id: string
+          migrated: boolean
+          opened_at: string
+          opened_by: string | null
+          patient_id: string
+        }
+        Insert: {
+          clinic_id: string
+          id?: string
+          migrated?: boolean
+          opened_at?: string
+          opened_by?: string | null
+          patient_id: string
+        }
+        Update: {
+          clinic_id?: string
+          id?: string
+          migrated?: boolean
+          opened_at?: string
+          opened_by?: string | null
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_records_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
             referencedRelation: "patients"
             referencedColumns: ["id"]
           },
@@ -2597,8 +2649,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      encounter_stubs: {
+        Args: { p_appointment_ids?: string[]; p_encounter_ids?: string[]; p_patient_id?: string }
+        Returns: {
+          appointment_id: string
+          encounter_date: string
+          id: string
+          patient_id: string
+          provider_id: string
+        }[]
+      }
       add_clinic_internal_note: {
         Args: { note: string; target_clinic_id: string }
+        Returns: undefined
+      }
+      apply_medical_history: {
+        Args: { p_data: Json; p_patient_id: string; p_reason: string }
         Returns: undefined
       }
       apply_reminder_response: {
@@ -2777,6 +2843,10 @@ export type Database = {
         Returns: string
       }
       normalize_insurer_name: { Args: { p_name: string }; Returns: string }
+      open_patient_record: {
+        Args: { p_history?: Json; p_patient_id: string }
+        Returns: string
+      }
       operator_clinic_access_overview: {
         Args: never
         Returns: {
@@ -2821,10 +2891,6 @@ export type Database = {
         Returns: string[]
       }
       patient_deletion_status: { Args: { p_patient_id: string }; Returns: Json }
-      open_patient_record: {
-        Args: { p_history?: Json; p_patient_id: string }
-        Returns: string
-      }
       preview_next_patient_code: {
         Args: { p_clinic_id: string }
         Returns: string

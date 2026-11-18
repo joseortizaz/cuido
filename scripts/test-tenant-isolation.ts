@@ -322,6 +322,10 @@ async function main() {
       const { data: histAfter } = await admin.from("patient_medical_history").select("family_history").eq("patient_id", pid).single();
       check("la historia de A quedó intacta", histAfter?.family_history === "Solo A", JSON.stringify(histAfter));
 
+      // Recepción sin datos clínicos (20261123100000_receptionist_clinical_isolation.sql).
+      const { data: stubsSeenByB } = await tenantB.client.rpc("encounter_stubs", { p_patient_id: pid });
+      check("B no obtiene consultas de A por encounter_stubs", (stubsSeenByB ?? []).length === 0, `devolvió ${stubsSeenByB?.length ?? 0} filas`);
+
       const { data: delLogSeenByB } = await tenantB.client.from("patient_deletion_log").select("id").eq("clinic_id", tenantA.clinicId);
       check("B no lee el registro de eliminaciones de A", (delLogSeenByB?.length ?? 0) === 0, `devolvió ${delLogSeenByB?.length ?? 0} filas`);
     }

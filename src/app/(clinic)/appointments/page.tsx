@@ -1,3 +1,4 @@
+import { fetchEncounterStubs } from "@/lib/supabase/encounter-stubs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -83,7 +84,9 @@ export default async function AppointmentsPage({
         ? supabase.from("specialty_templates").select("id, name").in("id", templateIds)
         : Promise.resolve({ data: [] as { id: string; name: string }[] }),
       appointmentIds.length
-        ? supabase.from("encounters").select("appointment_id").in("appointment_id", appointmentIds)
+        ? fetchEncounterStubs(supabase, { appointmentIds }).then((rows) => ({
+            data: rows.map((r) => ({ appointment_id: r.appointment_id })),
+          }))
         : Promise.resolve({ data: [] as { appointment_id: string | null }[] }),
       canManage
         ? supabase.from("clinic_members").select("user_id, role").in("role", ["admin", "medico"])
