@@ -9,10 +9,9 @@
  * activas (las que sembraron las migraciones) y falla si alguna repite un
  * campo reservado.
  *
- * Al agregar una columna común nueva a `encounters` (p. ej. present_illness,
- * "Historia de la enfermedad actual", en el plan de tipos de consulta), se
- * agrega aquí su clave y etiqueta en RESERVED -- y las plantillas que la
- * repitan se corrigen en esa misma migración.
+ * Al agregar una columna común nueva a `encounters`, se agrega aquí su clave y
+ * etiqueta en RESERVED -- y las plantillas que la repitan se marcan `legacy` en esa
+ * misma migración (los campos legacy ya no se piden y no cuentan como duplicados).
  *
  * Datos de solo lectura del catálogo global; no crea ni borra nada.
  * Requiere: NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.
@@ -37,6 +36,16 @@ const RESERVED: { keys: string[]; labels: string[]; core: string }[] = [
     labels: ["motivo de consulta"],
     core: "Motivo de consulta (encounters.chief_complaint)",
   },
+  {
+    keys: ["enfermedad_actual", "historia_enfermedad_actual", "present_illness"],
+    labels: ["historia de la enfermedad actual", "enfermedad actual"],
+    core: "Historia de la enfermedad actual (encounters.present_illness)",
+  },
+  {
+    keys: ["tipo_consulta", "encounter_type", "tipo_de_consulta"],
+    labels: ["tipo de consulta"],
+    core: "Tipo de consulta (encounters.encounter_type)",
+  },
 ];
 
 function normalize(text: string): string {
@@ -47,7 +56,7 @@ function normalize(text: string): string {
     .toLowerCase();
 }
 
-type Field = { key: string; label: string };
+type Field = { key: string; label: string; legacy?: boolean };
 
 async function main() {
   const db = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
@@ -62,6 +71,8 @@ async function main() {
     const fields = ((t.schema as { fields?: Field[] }).fields ?? []) as Field[];
     const seen = new Set<string>();
     for (const f of fields) {
+      // Un campo legacy ya no se pide (solo se conserva lo ya guardado): no puede duplicar nada.
+      if (f.legacy) continue;
       if (seen.has(f.key)) problems.push(`${t.code}: la clave "${f.key}" está repetida dentro de la misma plantilla`);
       seen.add(f.key);
       for (const r of RESERVED) {

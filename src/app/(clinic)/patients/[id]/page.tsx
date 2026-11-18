@@ -17,6 +17,7 @@ import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/w
 import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
 import { HeaderLink, HeaderPrimaryAction, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 import { PatientAdminPanel } from "./patient-admin-panel";
+import { encounterTypeLabel, summaryDiagnosis } from "@/lib/domain/encounter-types";
 import {
   HISTORY_FIELD_LABELS,
   isSectionEmpty,
@@ -59,7 +60,15 @@ type MedicationRow = {
   status_changed_at: string | null;
   status_changed_by: string | null;
 };
-type EncounterRow = { id: string; encounter_date: string; chief_complaint: string | null; specialty_template_id: string };
+type EncounterRow = {
+  id: string;
+  encounter_date: string;
+  chief_complaint: string | null;
+  specialty_template_id: string;
+  encounter_type: string | null;
+  provider_id: string;
+  specialty_data: unknown;
+};
 type RevisionRow = {
   id: string;
   field: string;
@@ -142,7 +151,7 @@ export default async function PatientDetailPage({
       canSeeClinical
         ? supabase
             .from("encounters")
-            .select("id, encounter_date, chief_complaint, specialty_template_id")
+            .select("id, encounter_date, chief_complaint, specialty_template_id, encounter_type, provider_id, specialty_data")
             .eq("patient_id", id)
             .order("encounter_date", { ascending: false })
         : Promise.resolve({ data: [] as EncounterRow[] }),
@@ -262,6 +271,7 @@ export default async function PatientDetailPage({
     ...(allergies ?? []).flatMap((a) => [a.recorded_by, a.status_changed_by]).filter((u): u is string => u !== null),
     ...(medications ?? []).flatMap((m) => [m.created_by, m.status_changed_by]).filter((u): u is string => u !== null),
     ...(record?.opened_by ? [record.opened_by] : []),
+    ...(encounters ?? []).map((e) => e.provider_id),
   ]);
   await Promise.all(
     Array.from(insuranceUserIds).map(async (userId) => {
@@ -550,14 +560,23 @@ export default async function PatientDetailPage({
                       <li key={encounter.id}>
                         <Link
                           href={`/patients/${id}/encounters/${encounter.id}`}
-                          className="flex items-center justify-between py-3 text-sm hover:underline"
+                          className="flex flex-col gap-0.5 py-3 text-sm hover:underline"
                         >
-                          <span>
-                            {templateNameById.get(encounter.specialty_template_id) ?? "Consulta"}
-                            {encounter.chief_complaint ? ` — ${encounter.chief_complaint}` : ""}
+                          <span className="flex flex-wrap items-baseline justify-between gap-2">
+                            <span className="font-medium">
+                              {templateNameById.get(encounter.specialty_template_id) ?? "Consulta"}
+                              <span className="ml-2 rounded-full bg-panel-menu px-2 py-0.5 text-xs font-normal text-panel-row">
+                                {encounterTypeLabel(encounter.encounter_type)}
+                              </span>
+                            </span>
+                            <span className="text-zinc-500">{formatDrDate(encounter.encounter_date)}</span>
                           </span>
-                          <span className="text-zinc-500">
-                            {formatDrDate(encounter.encounter_date)}
+                          <span className="text-xs text-zinc-500">
+                            {recorderEmailByUserId.get(encounter.provider_id) ?? "Médico"}
+                            {encounter.chief_complaint ? ` · Motivo: ${encounter.chief_complaint}` : ""}
+                            {summaryDiagnosis(encounter.specialty_data)
+                              ? ` · Diagnóstico: ${summaryDiagnosis(encounter.specialty_data)}`
+                              : ""}
                           </span>
                         </Link>
                       </li>

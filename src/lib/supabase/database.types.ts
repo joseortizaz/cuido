@@ -1329,6 +1329,8 @@ export type Database = {
       }
       encounters: {
         Row: {
+          encounter_type: Database["public"]["Enums"]["encounter_type"] | null
+          present_illness: string | null
           appointment_id: string | null
           chief_complaint: string | null
           clinic_id: string
@@ -1342,6 +1344,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          encounter_type?: Database["public"]["Enums"]["encounter_type"] | null
+          present_illness?: string | null
           appointment_id?: string | null
           chief_complaint?: string | null
           clinic_id: string
@@ -1355,6 +1359,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          encounter_type?: Database["public"]["Enums"]["encounter_type"] | null
+          present_illness?: string | null
           appointment_id?: string | null
           chief_complaint?: string | null
           clinic_id?: string
@@ -2649,16 +2655,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      encounter_stubs: {
-        Args: { p_appointment_ids?: string[]; p_encounter_ids?: string[]; p_patient_id?: string }
-        Returns: {
-          appointment_id: string
-          encounter_date: string
-          id: string
-          patient_id: string
-          provider_id: string
-        }[]
-      }
       add_clinic_internal_note: {
         Args: { note: string; target_clinic_id: string }
         Returns: undefined
@@ -2755,6 +2751,20 @@ export type Database = {
         Returns: undefined
       }
       dr_today: { Args: { p_ts?: string }; Returns: string }
+      encounter_stubs: {
+        Args: {
+          p_appointment_ids?: string[]
+          p_encounter_ids?: string[]
+          p_patient_id?: string
+        }
+        Returns: {
+          appointment_id: string
+          encounter_date: string
+          id: string
+          patient_id: string
+          provider_id: string
+        }[]
+      }
       execute_clinic_data_deletion: {
         Args: { p_confirm_name: string; p_request_id: string }
         Returns: string[]
@@ -3068,6 +3078,7 @@ export type Database = {
       }
     }
     Enums: {
+      encounter_type: "inicial" | "seguimiento" | "prequirurgica" | "postquirurgica" | "control" | "urgencia" | "alta"
       clinic_business_model: "modelo_c" | "modelo_e" | "modelo_f"
       clinic_member_role: "admin" | "medico" | "recepcion"
     }
@@ -3200,6 +3211,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      encounter_type: ["inicial", "seguimiento", "prequirurgica", "postquirurgica", "control", "urgencia", "alta"],
       clinic_business_model: ["modelo_c", "modelo_e", "modelo_f"],
       clinic_member_role: ["admin", "medico", "recepcion"],
     },

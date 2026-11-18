@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
-import { buildZodSchemaForTemplate, type TemplateField } from "@/lib/domain/specialty-template";
+import { buildZodSchemaForTemplate, fieldsForValidation, type TemplateField } from "@/lib/domain/specialty-template";
+import { ENCOUNTER_TYPES, ENCOUNTER_TYPE_LABELS, parseEncounterType, type EncounterType } from "@/lib/domain/encounter-types";
 
 /**
  * Importación masiva de consultas por especialidad (Fase 2 de 2, reusa
@@ -42,6 +43,17 @@ function exclusionReason(field: TemplateField): string {
   if (field.type === "date") return "no soportado en esta versión (campo de fecha).";
   return "no soportado en esta versión.";
 }
+
+/**
+ * Datos comunes de toda consulta que también se pueden importar con «Campo» (además de los de la
+ * plantilla): el motivo, la historia de la enfermedad actual y el tipo de consulta (opcional; una
+ * consulta histórica sin tipo queda «sin clasificar»).
+ */
+const CORE_FIELD_LABELS = {
+  chiefComplaint: "Motivo de consulta",
+  presentIllness: "Historia de la enfermedad actual",
+  encounterType: "Tipo de consulta",
+} as const;
 
 function normalizeHeader(value: string): string {
   return value
@@ -86,6 +98,15 @@ export async function generateEncounterImportTemplateXlsx(
   instructions.addRow(["Médico (correo)", "Opcional. Si se deja vacío, la consulta queda a nombre de quien importa."]);
   instructions.addRow(["Campo", 'Debe ser exactamente uno de los nombres listados abajo en "Campos disponibles".']);
   instructions.addRow(["Valor", "El valor de ese campo para esa consulta."]);
+  instructions.addRow(["", ""]);
+
+  instructions.addRow(["Datos comunes a toda consulta", ""]).font = { bold: true };
+  instructions.addRow([CORE_FIELD_LABELS.chiefComplaint, "Opcional."]);
+  instructions.addRow([CORE_FIELD_LABELS.presentIllness, "Opcional."]);
+  instructions.addRow([
+    CORE_FIELD_LABELS.encounterType,
+    `Opcional; si se omite, la consulta queda «sin clasificar». Valores: ${ENCOUNTER_TYPES.map((t) => ENCOUNTER_TYPE_LABELS[t]).join(", ")}.`,
+  ]);
   instructions.addRow(["", ""]);
 
   instructions.addRow([`Campos disponibles de ${specialtyName}`, ""]).font = { bold: true };
@@ -286,6 +307,9 @@ export type EncounterImportValidatedGroup = EncounterImportGroup & {
     patientId: string;
     providerId: string;
     specialtyData: Record<string, unknown>;
+    chiefComplaint: string | null;
+    presentIllness: string | null;
+    encounterType: EncounterType | null;
   };
 };
 
@@ -340,8 +364,30 @@ export function validateEncounterGroups(
       rawSpecialtyData[field.key] = "";
     }
 
+    // Datos comunes de toda consulta (motivo, enfermedad actual, tipo).
+    let chiefComplaint: string | null = null;
+    let presentIllness: string | null = null;
+    let encounterType: EncounterType | null = null;
+    const coreLabels = new Map<string, keyof typeof CORE_FIELD_LABELS>(
+      (Object.keys(CORE_FIELD_LABELS) as (keyof typeof CORE_FIELD_LABELS)[]).map((k) => [normalizeHeader(CORE_FIELD_LABELS[k]), k])
+    );
+
     // Resuelve cada "Campo" (label) del archivo a su TemplateField real.
     for (const [label, value] of Object.entries(group.fields)) {
+      const core = coreLabels.get(normalizeHeader(label));
+      if (core) {
+        if (core === "chiefComplaint") chiefComplaint = value.trim() || null;
+        else if (core === "presentIllness") {
+          presentIllness = value.trim() || null;
+          if (presentIllness && presentIllness.length > 5000) errors.push('"Historia de la enfermedad actual" es demasiado larga (máximo 5000 caracteres).');
+        } else if (value.trim()) {
+          encounterType = parseEncounterType(value);
+          if (!encounterType) {
+            errors.push(`"Tipo de consulta" no es válido ("${value}"). Usa: ${ENCOUNTER_TYPES.map((t) => ENCOUNTER_TYPE_LABELS[t]).join(", ")}.`);
+          }
+        }
+        continue;
+      }
       const field = ctx.allFieldsByNormalizedLabel.get(normalizeHeader(label));
       if (!field) {
         errors.push(`El campo "${label}" no existe en esta especialidad.`);
@@ -362,7 +408,8 @@ export function validateEncounterGroups(
       return { ...group, errors };
     }
 
-    const validation = buildZodSchemaForTemplate(ctx.importableFields).safeParse(rawSpecialtyData);
+    // Los campos que no aplican al tipo (o ya no se piden) se aceptan pero no se exigen.
+    const validation = buildZodSchemaForTemplate(fieldsForValidation(ctx.importableFields, encounterType)).safeParse(rawSpecialtyData);
     if (!validation.success) {
       const messages = validation.error.issues.map((issue) => issue.message);
       return { ...group, errors: messages };
@@ -375,6 +422,9 @@ export function validateEncounterGroups(
         patientId: patientId!,
         providerId,
         specialtyData: validation.data as Record<string, unknown>,
+        chiefComplaint,
+        presentIllness,
+        encounterType,
       },
     };
   });

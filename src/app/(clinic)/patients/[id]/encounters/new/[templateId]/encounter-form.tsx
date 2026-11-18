@@ -5,6 +5,12 @@ import {
   groupFieldsBySection,
   type TemplateField,
 } from "@/lib/domain/specialty-template";
+import {
+  asksPresentIllness,
+  asksVitalSigns,
+  presentIllnessLabel,
+  type EncounterType,
+} from "@/lib/domain/encounter-types";
 import { createEncounter, type EncounterFormState } from "./actions";
 
 const inputClass =
@@ -102,14 +108,17 @@ export function EncounterForm({
   patientId,
   templateId,
   appointmentId,
+  encounterType,
   fields,
 }: {
   patientId: string;
   templateId: string;
   appointmentId: string | null;
+  encounterType: EncounterType;
+  /** Solo los campos que se piden en este tipo de consulta (ya filtrados por el servidor). */
   fields: TemplateField[];
 }) {
-  const boundAction = createEncounter.bind(null, patientId, templateId, appointmentId);
+  const boundAction = createEncounter.bind(null, patientId, templateId, appointmentId, encounterType);
   const [state, formAction, pending] = useActionState<EncounterFormState, FormData>(
     boundAction,
     undefined
@@ -135,6 +144,7 @@ export function EncounterForm({
 
   return (
     <form action={formAction} className="flex w-full max-w-lg flex-col gap-8">
+      {/* Toda consulta empieza por el motivo; después, la historia de la enfermedad actual. */}
       <div className="flex flex-col gap-1">
         <label htmlFor="chief_complaint" className={labelClass}>
           Motivo de consulta
@@ -142,6 +152,22 @@ export function EncounterForm({
         <input id="chief_complaint" name="chief_complaint" type="text" className={inputClass} />
       </div>
 
+      {asksPresentIllness(encounterType) && (
+        <div className="flex flex-col gap-1">
+          <label htmlFor="present_illness" className={labelClass}>
+            {presentIllnessLabel(encounterType)}
+          </label>
+          <textarea
+            id="present_illness"
+            name="present_illness"
+            rows={4}
+            maxLength={5000}
+            className={inputClass}
+          />
+        </div>
+      )}
+
+      {asksVitalSigns(encounterType) && (
       <fieldset className="flex flex-col gap-3">
         <legend className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           Signos vitales (opcional)
@@ -203,6 +229,7 @@ export function EncounterForm({
           </div>
         </div>
       </fieldset>
+      )}
 
       {sections.map(([sectionTitle, sectionFields]) => (
         <fieldset key={sectionTitle ?? "__default"} className="flex flex-col gap-3">
