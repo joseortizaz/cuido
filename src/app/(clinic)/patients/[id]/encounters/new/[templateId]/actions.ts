@@ -85,6 +85,10 @@ export async function createEncounter(
     .single();
 
   if (encounterError || !encounter) {
+    if ((encounterError?.message ?? "").includes("expediente abierto")) {
+      return { error: "El paciente no tiene el expediente abierto: un médico debe abrirlo antes de registrar consultas." };
+    }
+    if ((encounterError?.message ?? "").includes("anulado")) return { error: encounterError!.message };
     return { error: "No se pudo guardar la consulta." };
   }
 

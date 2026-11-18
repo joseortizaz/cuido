@@ -375,6 +375,8 @@ async function main() {
   const { data: uRow } = await admin.from("patients").select("voided_at, voided_by, void_reason").eq("id", v.id).single();
   check("queda limpio", uRow?.voided_at === null && uRow.voided_by === null && uRow.void_reason === null, JSON.stringify(uRow));
   const afterEdit = await medico.client.from("patients").update({ phone: "8095550000" }).eq("id", v.id).select("id");
+  // Con el expediente abierto (requisito para registrar consultas) el paciente reactivado vuelve a recibirlas.
+  await admin.from("patient_records").insert({ clinic_id: cid, patient_id: v.id });
   const afterEnc = await medico.client.from("encounters").insert({ clinic_id: cid, patient_id: v.id, provider_id: medico.userId, specialty_template_id: interna.id, specialty_data: {} });
   check("reactivado vuelve a poder editarse y recibir consultas", (afterEdit.data ?? []).length === 1 && afterEnc.error === null, `${afterEnc.error?.message ?? ""}`);
   const { data: stillCancelled } = await admin.from("appointments").select("status").eq("id", futureAppt).single();

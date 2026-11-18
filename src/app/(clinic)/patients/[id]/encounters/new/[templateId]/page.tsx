@@ -5,6 +5,7 @@ import { parseTemplateSchema } from "@/lib/domain/specialty-template";
 import { EncounterForm } from "./encounter-form";
 import { isClinicReadOnly, ReadOnlyPage } from "@/app/(clinic)/_components/read-only-notice";
 import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
+import { RecordRequired } from "@/app/(clinic)/_components/record-required";
 
 export default async function NewEncounterFormPage({
   params,
@@ -36,6 +37,9 @@ export default async function NewEncounterFormPage({
     .eq("id", id)
     .maybeSingle();
   if (!patient) notFound();
+
+  const { data: openRecord } = await supabase.from("patient_records").select("id").eq("patient_id", id).maybeSingle();
+  if (!openRecord) return <RecordRequired patientId={id} patientName={`${patient.first_name} ${patient.last_name}`} />;
 
   const { data: template } = await supabase
     .from("specialty_templates")
