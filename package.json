@@ -25,6 +25,7 @@
     "test:whatsapp-replies": "tsx scripts/test-whatsapp-replies.ts",
     "test:meta-pixel": "tsx scripts/test-meta-pixel.ts",
     "test:manual": "tsx scripts/test-manual.ts",
+    "test:templates": "tsx scripts/test-template-core-overlap.ts",
     "test:ga4": "tsx scripts/test-ga4.ts",
     "provision:clinic": "tsx scripts/provision-clinic.ts",
     "grant:operator": "tsx scripts/grant-platform-operator.ts"
