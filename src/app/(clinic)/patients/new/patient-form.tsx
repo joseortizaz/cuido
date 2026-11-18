@@ -74,6 +74,13 @@ export function PatientForm({ canRecordConsent = false }: { canRecordConsent?: b
           <input id="email" name="email" type="email" className={inputClass} />
         </div>
       </div>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="is_test" className="mt-1" />
+        <span>
+          <strong>Paciente de prueba (datos ficticios).</strong> Recibe un código PRUEBA-NNN, no gasta el consecutivo real
+          y se excluye de exportaciones y reportes. El administrador puede eliminarlo después.
+        </span>
+      </label>
       {canRecordConsent && (
         <fieldset className="flex flex-col gap-2 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
           <legend className="px-1 text-sm font-medium">Recordatorios por WhatsApp (opcional)</legend>

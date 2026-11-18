@@ -67,18 +67,18 @@ export default async function AppointmentsPage({
     query = query.eq("provider_id", providerIdParam);
   }
 
-  const { data: appointments } = await query;
+  const { data: allAppointments } = await query;
 
-  const patientIds = Array.from(new Set((appointments ?? []).map((a) => a.patient_id)));
-  const providerIds = Array.from(new Set((appointments ?? []).map((a) => a.provider_id)));
-  const templateIds = Array.from(new Set((appointments ?? []).map((a) => a.specialty_template_id)));
-  const appointmentIds = (appointments ?? []).map((a) => a.id);
+  const patientIds = Array.from(new Set((allAppointments ?? []).map((a) => a.patient_id)));
+  const providerIds = Array.from(new Set((allAppointments ?? []).map((a) => a.provider_id)));
+  const templateIds = Array.from(new Set((allAppointments ?? []).map((a) => a.specialty_template_id)));
+  const appointmentIds = (allAppointments ?? []).map((a) => a.id);
 
   const [{ data: patients }, { data: templates }, { data: linkedEncounters }, { data: clinicMembers }, { data: reminders }] =
     await Promise.all([
       patientIds.length
-        ? supabase.from("patients").select("id, first_name, last_name").in("id", patientIds)
-        : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string }[] }),
+        ? supabase.from("patients").select("id, first_name, last_name, voided_at").in("id", patientIds)
+        : Promise.resolve({ data: [] as { id: string; first_name: string; last_name: string; voided_at: string | null }[] }),
       templateIds.length
         ? supabase.from("specialty_templates").select("id, name").in("id", templateIds)
         : Promise.resolve({ data: [] as { id: string; name: string }[] }),
@@ -92,6 +92,9 @@ export default async function AppointmentsPage({
         ? supabase.from("appointment_reminders").select("appointment_id, status, response").in("appointment_id", appointmentIds)
         : Promise.resolve({ data: [] as { appointment_id: string; status: string; response: string | null }[] }),
     ]);
+  // Las citas de pacientes anulados no aparecen en la agenda.
+  const voidedPatientIds = new Set((patients ?? []).filter((p) => p.voided_at !== null).map((p) => p.id));
+  const appointments = (allAppointments ?? []).filter((a) => !voidedPatientIds.has(a.patient_id));
   const reminderByAppointment = new Map((reminders ?? []).map((r) => [r.appointment_id, r]));
 
   // El email no vive en clinic_members/appointments (auth.users no está

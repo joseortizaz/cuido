@@ -9,7 +9,7 @@ import { fetchAllPages } from "./fetch-all";
 
 type Patient = Pick<
   Database["public"]["Tables"]["patients"]["Row"],
-  "id" | "record_number" | "first_name" | "last_name" | "national_id" | "date_of_birth" | "sex" | "phone" | "email"
+  "id" | "record_number" | "is_test" | "voided_at" | "first_name" | "last_name" | "national_id" | "date_of_birth" | "sex" | "phone" | "email"
 >;
 type Allergy = Pick<
   Database["public"]["Tables"]["allergies"]["Row"],
@@ -34,10 +34,10 @@ type Medication = Pick<
  * chequear pertenencia de clínica.
  */
 
-const PATIENT_HEADERS = ["Código", "Nombre", "Apellido", "Cédula o pasaporte", "Fecha de nacimiento", "Sexo", "Teléfono", "Correo"];
+const PATIENT_HEADERS = ["Código", "Nombre", "Apellido", "Cédula o pasaporte", "Fecha de nacimiento", "Sexo", "Teléfono", "Correo", "Estado"];
 
 function patientRow(p: Patient): (string | null)[] {
-  return [p.record_number, p.first_name, p.last_name, p.national_id, p.date_of_birth, p.sex, p.phone, p.email];
+  return [p.record_number, p.first_name, p.last_name, p.national_id, p.date_of_birth, p.sex, p.phone, p.email, p.voided_at ? "Anulado" : ""];
 }
 
 export async function generatePatientsExportXlsx(
@@ -118,15 +118,18 @@ export async function fetchPatientsExportData(
   supabase: SupabaseClient<Database>,
   options: { withDetail: boolean }
 ): Promise<{ patients: Patient[]; allergies: Allergy[]; medications: Medication[] }> {
-  const patients = await fetchAllPages<Patient>(async (from, to) =>
+  const allPatients = await fetchAllPages<Patient>(async (from, to) =>
     supabase
       .from("patients")
-      .select("id, record_number, first_name, last_name, national_id, date_of_birth, sex, phone, email")
+      .select("id, record_number, is_test, voided_at, first_name, last_name, national_id, date_of_birth, sex, phone, email")
       .order("last_name", { ascending: true })
       .order("id", { ascending: true })
       .range(from, to)
   );
+  // Los pacientes de prueba (datos ficticios) no se exportan; los anulados sí, marcados en «Estado».
+  const patients = allPatients.filter((p) => !p.is_test);
   if (!options.withDetail) return { patients, allergies: [], medications: [] };
+  const kept = new Set(patients.map((p) => p.id));
 
   const [allergies, medications] = await Promise.all([
     fetchAllPages<Allergy>(async (from, to) =>
@@ -144,5 +147,9 @@ export async function fetchPatientsExportData(
         .range(from, to)
     ),
   ]);
-  return { patients, allergies, medications };
+  return {
+    patients,
+    allergies: allergies.filter((a) => kept.has(a.patient_id)),
+    medications: medications.filter((m) => kept.has(m.patient_id)),
+  };
 }

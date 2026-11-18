@@ -19,6 +19,7 @@ export async function createPatient(
   const nationalId = String(formData.get("national_id") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const isTest = formData.get("is_test") === "on";
 
   if (!firstName || !lastName) return { error: "Nombre y apellido son requeridos." };
   if (!dateOfBirth) return { error: "La fecha de nacimiento es requerida." };
@@ -52,6 +53,7 @@ export async function createPatient(
       national_id: nationalId || null,
       phone: consentPhone ?? (phone || null),
       email: email || null,
+      is_test: isTest,
     })
     .select("id")
     .single();

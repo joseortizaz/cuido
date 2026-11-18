@@ -15,6 +15,7 @@ import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/whatsapp-card";
 import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
 import { HeaderLink, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
+import { PatientAdminPanel } from "./patient-admin-panel";
 
 const CHANGE_FIELD_LABELS: Record<string, string> = {
   first_name: "Nombre",
@@ -24,6 +25,9 @@ const CHANGE_FIELD_LABELS: Record<string, string> = {
   sex: "Sexo",
   phone: "Teléfono",
   email: "Correo",
+  is_test: "Paciente de prueba",
+  voided_at: "Anulado el",
+  void_reason: "Motivo de la anulación",
 };
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
@@ -132,13 +136,21 @@ export default async function PatientDetailPage({
   // Solo lectura (o suspendida): se ocultan TODOS los controles que escriben. Es capa de
   // comodidad -- el bloqueo real es el trigger de la base de datos.
   const readOnly = await isClinicReadOnly();
-  const canWriteClinical = (membership.role === "admin" || membership.role === "medico") && !readOnly;
-  const canManageBilling = (membership.role === "admin" || membership.role === "recepcion") && !readOnly;
+  // Un paciente anulado no admite movimientos nuevos (la base de datos también lo impide).
+  const isVoided = patient.voided_at !== null;
+  const canWriteClinical = (membership.role === "admin" || membership.role === "medico") && !readOnly && !isVoided;
+  const canManageBilling = (membership.role === "admin" || membership.role === "recepcion") && !readOnly && !isVoided;
   const currentInsurer = (insurers ?? []).find((i) => i.is_current) ?? null;
   const activeMessagingConsent = (messagingConsents ?? []).find((c) => c.revoked_at === null) ?? null;
   const lastRevokedConsent = (messagingConsents ?? []).find((c) => c.revoked_at !== null) ?? null;
   const patientPhoneE164 = normalizeDominicanPhone(patient.phone);
   const remindersEnabled = whatsappSettings?.reminders_enabled === true;
+
+  // Qué se puede hacer con el paciente (eliminar / anular): solo el administrador.
+  const { data: deletionStatusRaw } = membershipIsAdmin
+    ? await supabase.rpc("patient_deletion_status", { p_patient_id: id })
+    : { data: null };
+  const deletionStatus = (deletionStatusRaw ?? null) as { test_blockers: string[]; empty_blockers: string[] } | null;
 
   // Historial de cambios de los datos del paciente: lo leen solo admin y médicos (RLS); recepción ni lo pide.
   const canSeeChangeLog = membership.role === "admin" || membership.role === "medico";
@@ -187,6 +199,17 @@ export default async function PatientDetailPage({
         actions={canWriteClinical ? <HeaderLink href={`/patients/${id}/edit`}>Editar paciente</HeaderLink> : undefined}
       />
       <PageBody narrow>
+      {isVoided && (
+        <p role="status" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
+          <strong>Paciente anulado</strong> el {formatDrDateTime(patient.voided_at!)} — motivo: {patient.void_reason}. No admite
+          movimientos nuevos hasta que el administrador lo reactive.
+        </p>
+      )}
+      {patient.is_test && (
+        <p role="status" className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          <strong>Paciente de prueba</strong> (datos ficticios): se excluye de exportaciones y reportes.
+        </p>
+      )}
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -525,6 +548,23 @@ export default async function PatientDetailPage({
           )}
         </section>
       )}
+      {membershipIsAdmin && deletionStatus && (
+        <details className="flex flex-col gap-3">
+          <summary className="cursor-pointer text-lg font-medium">Eliminar o anular paciente</summary>
+          <div className="mt-3">
+            <PatientAdminPanel
+              patientId={id}
+              patientName={`${patient.first_name} ${patient.last_name}`}
+              isTest={patient.is_test}
+              isVoided={isVoided}
+              testBlockers={deletionStatus.test_blockers}
+              emptyBlockers={deletionStatus.empty_blockers}
+              disabled={readOnly}
+            />
+          </div>
+        </details>
+      )}
+
       {canSeeChangeLog && (
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-medium">Historial de cambios</h2>

@@ -184,17 +184,36 @@ export async function fetchRecordsData(
         : empty<{ id: string; name: string }>(),
     ]);
 
+  // Los pacientes de prueba (datos ficticios) no se exportan, ni nada que cuelgue de ellos.
+  const testIds = new Set(
+    (
+      await fetchAllPages<{ id: string }>(async (from, to) =>
+        supabase.from("patients").select("id").eq("is_test", true).order("id", { ascending: true }).range(from, to)
+      )
+    ).map((p) => p.id)
+  );
+  if (testIds.size === 0) {
+    return { patients, consents, fiscalDocs, fiscalItems, claims, claimDiagnoses, appointments, checklists, insurers, eligibility, templates };
+  }
+  const notTest = <T extends { patient_id: string }>(rows: T[]) => rows.filter((r) => !testIds.has(r.patient_id));
+  const insurerPatient = new Map(insurers.map((i) => [i.id, i.patient_id]));
+  const keptFiscalDocs = notTest(fiscalDocs);
+  const keptFiscalIds = new Set(keptFiscalDocs.map((d) => d.id));
+  const keptClaims = claims.filter((c) => !testIds.has(insurerPatient.get(c.patient_insurer_id) ?? ""));
+  const keptClaimIds = new Set(keptClaims.map((c) => c.id));
+  const keptAppointments = notTest(appointments);
+  const keptAppointmentIds = new Set(keptAppointments.map((a) => a.id));
   return {
-    patients,
-    consents,
-    fiscalDocs,
-    fiscalItems,
-    claims,
-    claimDiagnoses,
-    appointments,
-    checklists,
-    insurers,
-    eligibility,
+    patients: patients.filter((p) => !testIds.has(p.id)),
+    consents: notTest(consents),
+    fiscalDocs: keptFiscalDocs,
+    fiscalItems: fiscalItems.filter((i) => keptFiscalIds.has(i.fiscal_document_id)),
+    claims: keptClaims,
+    claimDiagnoses: claimDiagnoses.filter((d) => keptClaimIds.has(d.claim_id)),
+    appointments: keptAppointments,
+    checklists: checklists.filter((c) => keptAppointmentIds.has(c.appointment_id)),
+    insurers: notTest(insurers),
+    eligibility: notTest(eligibility),
     templates,
   };
 }

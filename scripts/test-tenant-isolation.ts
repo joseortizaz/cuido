@@ -292,6 +292,24 @@ async function main() {
         p_phone_e164: "+18095550999",
       });
       check("B NO puede usar update_patient_contact sobre un paciente de A", bContact !== null, "no falló");
+
+      // Eliminar, anular y marcar pacientes de prueba (20261121100000_patient_delete_and_void.sql).
+      const pid = aPatient!.id;
+      for (const [label, call] of [
+        ["void_patient", tenantB.client.rpc("void_patient", { p_patient_id: pid, p_reason: "Intento de B" })],
+        ["unvoid_patient", tenantB.client.rpc("unvoid_patient", { p_patient_id: pid })],
+        ["set_patient_test_flag", tenantB.client.rpc("set_patient_test_flag", { p_patient_id: pid, p_is_test: true })],
+        ["delete_test_patient", tenantB.client.rpc("delete_test_patient", { p_patient_id: pid })],
+        ["delete_empty_patient", tenantB.client.rpc("delete_empty_patient", { p_patient_id: pid, p_confirm_name: "x", p_reason: "Intento de B" })],
+        ["patient_deletion_status", tenantB.client.rpc("patient_deletion_status", { p_patient_id: pid })],
+      ] as const) {
+        const { error } = await call;
+        check(`B NO puede usar ${label} sobre un paciente de A`, error !== null, "no falló");
+      }
+      const { data: aAfter } = await admin.from("patients").select("voided_at, is_test").eq("id", pid).single();
+      check("el paciente de A quedó intacto tras los intentos de B", aAfter?.voided_at === null && aAfter?.is_test === false, JSON.stringify(aAfter));
+      const { data: delLogSeenByB } = await tenantB.client.from("patient_deletion_log").select("id").eq("clinic_id", tenantA.clinicId);
+      check("B no lee el registro de eliminaciones de A", (delLogSeenByB?.length ?? 0) === 0, `devolvió ${delLogSeenByB?.length ?? 0} filas`);
     }
 
     // Verifica que el mecanismo de aislamiento sea RLS y no una casualidad

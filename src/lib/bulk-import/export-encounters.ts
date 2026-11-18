@@ -38,7 +38,7 @@ export type { ExportCell, ExportTable };
 
 const ENCOUNTER_SELECT =
   "id, encounter_date, chief_complaint, provider_id, specialty_template_id, specialty_data, " +
-  "patients(first_name, last_name, national_id), " +
+  "patients(first_name, last_name, national_id, is_test), " +
   `vital_signs(${VITAL_KEYS.join(", ")}, recorded_at)`;
 
 type VitalRow = Record<string, number | string | null> & { recorded_at: string };
@@ -70,7 +70,10 @@ export async function fetchEncounterExportData(
     return query.order("encounter_date", { ascending: true }).order("id", { ascending: true }).range(from, to);
   });
 
-  return (rows as unknown as RawEncounterRow[]).map((r) => {
+  return (rows as unknown as RawEncounterRow[])
+    // Las consultas de pacientes de prueba (datos ficticios) no se exportan.
+    .filter((r) => !(Array.isArray(r.patients) ? r.patients[0]?.is_test : r.patients?.is_test))
+    .map((r) => {
     const patient = Array.isArray(r.patients) ? (r.patients[0] ?? null) : r.patients;
     return {
       id: r.id,
@@ -93,8 +96,8 @@ type RawEncounterRow = {
   specialty_template_id: string;
   specialty_data: Json;
   patients:
-    | { first_name: string; last_name: string; national_id: string | null }
-    | { first_name: string; last_name: string; national_id: string | null }[]
+    | { first_name: string; last_name: string; national_id: string | null; is_test?: boolean }
+    | { first_name: string; last_name: string; national_id: string | null; is_test?: boolean }[]
     | null;
   vital_signs: VitalRow[] | null;
 };
