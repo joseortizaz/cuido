@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { drDayRange, drToday, formatDrTime } from "@/lib/domain/dr-time";
 
@@ -79,6 +80,12 @@ export async function DoctorDashboard({ userId }: { userId: string }) {
           </ul>
         )}
       </section>
+
+      <p className="text-sm">
+        <Link href="/profile/professional" className="text-brand-blue hover:underline">
+          Mis datos profesionales (exequátur) →
+        </Link>
+      </p>
 
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         Has atendido a <strong>{attendedPatientCount}</strong> paciente{attendedPatientCount === 1 ? "" : "s"} en total.

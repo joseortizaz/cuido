@@ -12,6 +12,7 @@ import { EligibilityForm } from "./insurance/eligibility-form";
 import { GrantAccessForm } from "./sensitive-access/grant-access-form";
 import { RevokeAccessForm } from "./sensitive-access/revoke-access-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
+import { formatRxNumber, summarizeRxItems } from "@/lib/domain/prescriptions";
 import { formatDateString, formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/whatsapp-card";
 import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
@@ -254,6 +255,16 @@ export default async function PatientDetailPage({
   const studyStatus = isStudyStatus(estadoParam) ? estadoParam : null;
   const studies = (studiesAll ?? []).filter((x) => (!studyCat || x.category === studyCat) && (!studyStatus || x.status === studyStatus));
   const pendingStudies = (studiesAll ?? []).filter((x) => x.status === "pendiente").length;
+  // Recetas del expediente (solo admin y médicos; RLS). Cada una trae sus medicamentos para el resumen.
+  const { data: prescriptions } =
+    canSeeClinical && recordOpen
+      ? await supabase
+          .from("prescriptions")
+          .select("id, number, issued_at, status, provider_name, prescription_items(medication, dose, position)")
+          .eq("patient_id", id)
+          .order("number", { ascending: false })
+          .limit(100)
+      : { data: [] as { id: string; number: number; issued_at: string; status: string; provider_name: string; prescription_items: { medication: string; dose: string | null; position: number }[] }[] };
   const studyHref = (cat: string | null, estado: string | null) =>
     `/patients/${id}?tab=expediente${cat ? `&cat=${cat}` : ""}${estado ? `&estado=${estado}` : ""}`;
 
@@ -678,6 +689,51 @@ export default async function PatientDetailPage({
                               }`}
                             >
                               {STUDY_STATUS_LABELS[st.status as keyof typeof STUDY_STATUS_LABELS] ?? st.status}
+                            </span>
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-lg font-medium">Recetas</h2>
+                  {canWriteClinical && (
+                    <Link
+                      href={`/patients/${id}/prescriptions/new`}
+                      className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+                    >
+                      Nueva receta
+                    </Link>
+                  )}
+                </div>
+                {(prescriptions ?? []).length === 0 ? (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin recetas emitidas.</p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-panel-border">
+                    {(prescriptions ?? []).map((rx) => (
+                      <li key={rx.id}>
+                        <Link href={`/patients/${id}/prescriptions/${rx.id}`} className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm hover:underline">
+                          <span className={rx.status === "anulada" ? "text-zinc-500 line-through" : ""}>
+                            <span className="font-medium">N.º {formatRxNumber(rx.number)}</span>
+                            <span className="ml-2 text-xs text-zinc-500">
+                              {rx.provider_name} ·{" "}
+                              {summarizeRxItems([...rx.prescription_items].sort((a, b) => a.position - b.position))}
+                            </span>
+                          </span>
+                          <span className="flex items-center gap-2 text-xs text-zinc-500">
+                            {formatDateString(rx.issued_at.slice(0, 10))}
+                            <span
+                              className={`rounded-full px-2 py-0.5 font-medium ${
+                                rx.status === "anulada"
+                                  ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200"
+                                  : "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
+                              }`}
+                            >
+                              {rx.status === "anulada" ? "Anulada" : "Emitida"}
                             </span>
                           </span>
                         </Link>

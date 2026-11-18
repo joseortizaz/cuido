@@ -253,6 +253,18 @@ export async function AdminDashboard({
           </div>
           {canSeePlan && <PlanCard clinicId={clinicId} businessModel={businessModel} />}
         </div>
+        {role !== "recepcion" && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {role === "admin" && (
+              <Link href="/settings/timbrado" className="text-brand-blue hover:underline">
+                Timbrado de recetas →
+              </Link>
+            )}
+            <Link href="/profile/professional" className="text-brand-blue hover:underline">
+              Mis datos profesionales (exequátur) →
+            </Link>
+          </div>
+        )}
       </section>
     </div>
   );

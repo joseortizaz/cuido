@@ -191,6 +191,9 @@ export default async function EncounterDetailPage({
         actions={
           !readOnly ? (
             <>
+              {!isReception && (
+                <HeaderLink href={`/patients/${id}/prescriptions/new?encounterId=${encounterId}`}>Nueva receta →</HeaderLink>
+              )}
               <HeaderLink href={`/patients/${id}/consents/new?encounterId=${encounterId}`}>
                 Firmar consentimiento para esta consulta →
               </HeaderLink>
