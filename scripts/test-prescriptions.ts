@@ -30,6 +30,10 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import {
   MAX_RX_ITEMS,
+  RX_CONTINUE_MM,
+  RX_PAGE_BODY_MM,
+  estimateItemHeightMm,
+  estimateNotesHeightMm,
   formatRxNumber,
   isPrintFormat,
   paginateRx,
@@ -146,6 +150,16 @@ async function main() {
   check("14 medicamentos se reparten en varias hojas, cada uno una sola vez y en orden", pages.length > 1 && flat.length === 14 && flat.every((m, i) => m === many[i].medication), `${pages.length} hojas, ${flat.length} renglones`);
   check("el índice de inicio de cada hoja es correcto", pages.every((pg, i) => pg.startIndex === pages.slice(0, i).reduce((n, q) => n + q.items.length, 0) || pg.items.length === 0), JSON.stringify(pages.map((pg) => pg.startIndex)));
   check("las indicaciones generales salen una sola vez, al final", pages.filter((pg) => pg.notes).length === 1 && pages[pages.length - 1].notes !== null, JSON.stringify(pages.map((pg) => pg.notes)));
+  const fits = (list: typeof many, notes: string | null) => {
+    const pgs = paginateRx(list, notes);
+    return pgs.every((pg, i) => {
+      const used = pg.items.reduce((n, it) => n + estimateItemHeightMm(it), 0) + (pg.notes ? estimateNotesHeightMm(pg.notes) : 0);
+      const reserve = i < pgs.length - 1 ? RX_CONTINUE_MM : 0;
+      return pg.items.length + (pg.notes ? 1 : 0) <= 1 || used <= RX_PAGE_BODY_MM - reserve;
+    });
+  };
+  const longNotes = "Indicación general larga. ".repeat(12);
+  check("ninguna hoja pasa de su presupuesto, y las que continúan dejan sitio a «Continúa en la hoja siguiente…»", [1, 2, 3, 4, 5, 7, 12, 30].every((n) => fits(Array.from({ length: n }, (_, i) => ({ ...many[i % many.length], medication: `Medicamento ${i}` })), null) && fits(Array.from({ length: n }, (_, i) => ({ ...many[i % many.length], medication: `Medicamento ${i}` })), longNotes)), "");
   check("una receta corta cabe en una sola hoja", paginateRx(many.slice(0, 2), null).length === 1 && paginateRx([], null).length === 1, "");
   check("el máximo de renglones coincide con la base de datos (30)", MAX_RX_ITEMS === 30, `${MAX_RX_ITEMS}`);
 

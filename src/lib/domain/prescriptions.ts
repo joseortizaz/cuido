@@ -104,8 +104,13 @@ export function sniffLogoMime(bytes: Uint8Array): "image/png" | "image/jpeg" | n
 // firma y sello) abajo. La paginación se calcula AQUÍ (con una estimación conservadora de cuántas líneas ocupa cada
 // renglón) y no con el navegador: así la receta se ve y se imprime igual en cualquier impresora y ninguna hoja se desborda.
 
-/** Alto disponible (mm) para renglones en una hoja A6, entre el encabezado y el pie. Conservador. */
-export const RX_PAGE_BODY_MM = 68;
+/**
+ * Alto disponible (mm) para renglones en una hoja A6, entre el encabezado y el pie. Medido en el navegador con el
+ * timbrado de 4 líneas y logo (~64 mm); se toma un poco menos para absorber encabezados algo más altos.
+ */
+export const RX_PAGE_BODY_MM = 62;
+/** Alto que ocupa la línea «Continúa en la hoja siguiente…»: se reserva en toda hoja que no es la última. */
+export const RX_CONTINUE_MM = 6;
 
 const CHARS_DETAIL = 66;
 const CHARS_NAME = 50;
@@ -145,9 +150,13 @@ export function paginateRx<T extends RxLayoutItem>(items: T[], notes: string | n
   let current: T[] = [];
   let used = 0;
   let start = 0;
+  const notesH = notes ? estimateNotesHeightMm(notes) : 0;
   items.forEach((it, i) => {
     const h = estimateItemHeightMm(it);
-    if (current.length > 0 && used + h > bodyMm) {
+    // Si después de este renglón hay más hojas, esta lleva la línea «Continúa…» y hay que dejarle sitio.
+    const isLast = i === items.length - 1;
+    const needsRoom = !isLast || (notes !== null && notes !== "" && used + h + notesH > bodyMm);
+    if (current.length > 0 && used + h > bodyMm - (needsRoom ? RX_CONTINUE_MM : 0)) {
       pages.push({ items: current, notes: null, startIndex: start });
       current = [];
       used = 0;

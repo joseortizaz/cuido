@@ -63,7 +63,7 @@ ${page}
 .rx-page { position: relative; width: 105mm; height: 147mm; ${pageMargin} background: #fff; color: #000; box-shadow: 0 1px 6px rgba(0,0,0,.25); overflow: hidden; display: flex; flex-direction: column; font-size: 9pt; line-height: 1.25; margin-bottom: 8mm; }
 .rx-page:last-child { margin-bottom: 0; }
 ${pageBreak}
-.rx-head { padding: 8mm 8mm 0 8mm; flex: none; }
+.rx-head { padding: 6mm 8mm 0 8mm; flex: none; }
 .rx-letterhead { display: flex; gap: 3mm; align-items: center; border-bottom: 0.4mm solid #000; padding-bottom: 2.5mm; }
 .rx-logo { max-height: 15mm; max-width: 28mm; object-fit: contain; }
 .rx-clinic { flex: 1; min-width: 0; text-align: center; }
