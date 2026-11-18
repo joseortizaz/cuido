@@ -14,7 +14,17 @@ import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/whatsapp-card";
 import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
-import { PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
+import { HeaderLink, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
+
+const CHANGE_FIELD_LABELS: Record<string, string> = {
+  first_name: "Nombre",
+  last_name: "Apellido",
+  national_id: "Cédula o pasaporte",
+  date_of_birth: "Fecha de nacimiento",
+  sex: "Sexo",
+  phone: "Teléfono",
+  email: "Correo",
+};
 
 const CONSENT_RELATIONSHIP_LABELS: Record<string, string> = {
   paciente: "el propio paciente",
@@ -130,6 +140,18 @@ export default async function PatientDetailPage({
   const patientPhoneE164 = normalizeDominicanPhone(patient.phone);
   const remindersEnabled = whatsappSettings?.reminders_enabled === true;
 
+  // Historial de cambios de los datos del paciente: lo leen solo admin y médicos (RLS); recepción ni lo pide.
+  const canSeeChangeLog = membership.role === "admin" || membership.role === "medico";
+  const { data: changeLog } = canSeeChangeLog
+    ? await supabase
+        .from("patient_change_log")
+        .select("id, changed_by, changed_at, field, old_value, new_value")
+        .eq("patient_id", id)
+        .order("changed_at", { ascending: false })
+        .order("field", { ascending: true })
+        .limit(200)
+    : { data: [] as { id: string; changed_by: string | null; changed_at: string; field: string; old_value: string | null; new_value: string | null }[] };
+
   // El email no vive en `consents` (auth.users no está expuesto vía la Data
   // API) -- se resuelve server-side, mismo patrón que src/app/team/page.tsx.
   const admin = createAdminClient();
@@ -139,6 +161,7 @@ export default async function PatientDetailPage({
     ...(messagingConsents ?? []).map((c) => c.granted_by).filter((u): u is string => u !== null),
     ...(eligibilityChecks ?? []).map((c) => c.checked_by),
     ...(sensitiveGrants ?? []).flatMap((g) => [g.granted_to_user_id, g.granted_by_user_id]),
+    ...(changeLog ?? []).map((c) => c.changed_by).filter((u): u is string => u !== null),
   ]);
   await Promise.all(
     Array.from(insuranceUserIds).map(async (userId) => {
@@ -161,6 +184,7 @@ export default async function PatientDetailPage({
         subtitle={<>Código {patient.record_number} · {patient.date_of_birth} · {patient.sex}
           {patient.national_id ? ` · ${patient.national_id}` : ""}</>}
         back={{ href: "/patients", label: "Pacientes" }}
+        actions={canWriteClinical ? <HeaderLink href={`/patients/${id}/edit`}>Editar paciente</HeaderLink> : undefined}
       />
       <PageBody narrow>
 
@@ -498,6 +522,31 @@ export default async function PatientDetailPage({
               sensitiveSpecialties={sensitiveSpecialties}
               clinicMembers={clinicMembers}
             />
+          )}
+        </section>
+      )}
+      {canSeeChangeLog && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-medium">Historial de cambios</h2>
+          {!changeLog || changeLog.length === 0 ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">Los datos de este paciente no se han modificado.</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-panel-border text-sm">
+              {changeLog.map((c) => (
+                <li key={c.id} className="flex flex-col gap-0.5 py-2">
+                  <span>
+                    <span className="font-medium">{CHANGE_FIELD_LABELS[c.field] ?? c.field}:</span>{" "}
+                    <span className="text-zinc-500 line-through">{c.old_value || "(vacío)"}</span>
+                    {" → "}
+                    <span>{c.new_value || "(vacío)"}</span>
+                  </span>
+                  <span className="text-xs text-zinc-500">
+                    {formatDrDateTime(c.changed_at)} ·{" "}
+                    {c.changed_by ? (recorderEmailByUserId.get(c.changed_by) ?? "usuario") : "sistema"}
+                  </span>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
       )}

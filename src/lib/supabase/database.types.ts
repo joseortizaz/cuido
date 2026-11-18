@@ -1844,6 +1844,54 @@ export type Database = {
         }
         Relationships: []
       }
+      patient_change_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          clinic_id: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          patient_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          patient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_change_log_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_change_log_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_insurers: {
         Row: {
           affiliate_number: string
@@ -2613,6 +2661,10 @@ export type Database = {
         Args: { p_phone: string; p_source?: string }
         Returns: number
       }
+      revoke_stale_patient_consent: {
+        Args: { p_patient_id: string; p_phone_e164: string }
+        Returns: boolean
+      }
       save_patient_code_settings: {
         Args: {
           p_clinic_id: string
@@ -2659,6 +2711,10 @@ export type Database = {
           target_user_id: string
         }
         Returns: undefined
+      }
+      update_patient_contact: {
+        Args: { p_email: string; p_patient_id: string; p_phone: string; p_phone_e164: string }
+        Returns: boolean
       }
       update_clinic_plan: {
         Args: {

@@ -153,6 +153,10 @@ jobs:
       - name: Run patient code test
         run: npm run test:patient-code
 
+      # Editar paciente: solo admin y médicos, historial de cambios inmutable, contacto desde recepción y consentimiento de WhatsApp.
+      - name: Run patient edit test
+        run: npm run test:patient-edit
+
       # GA4: ID válido y rutas permitidas (nunca el área autenticada).
       - name: Run GA4 test
         run: npm run test:ga4
