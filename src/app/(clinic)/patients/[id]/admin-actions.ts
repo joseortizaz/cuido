@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { readOnlyBlock } from "@/lib/supabase/clinic-access";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PatientAdminState = { error?: string; success?: string } | undefined;
 
@@ -37,8 +38,12 @@ function friendly(error: { code?: string; message: string }): string {
 export async function deleteTestPatient(patientId: string): Promise<PatientAdminState> {
   const ctx = await adminContext();
   if (ctx.error) return { error: ctx.error };
+  // Los archivos de sus estudios viven en Storage: la base borra las filas en cascada pero no los archivos.
+  const { data: studyFiles } = await ctx.supabase.from("study_attachments").select("storage_path").eq("patient_id", patientId);
   const { error } = await ctx.supabase.rpc("delete_test_patient", { p_patient_id: patientId });
   if (error) return { error: friendly(error) };
+  const paths = (studyFiles ?? []).map((f) => f.storage_path);
+  if (paths.length > 0) await createAdminClient().storage.from("study-results").remove(paths);
   revalidatePath("/patients");
   redirect("/patients");
 }

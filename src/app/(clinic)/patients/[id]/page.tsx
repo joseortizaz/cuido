@@ -12,11 +12,19 @@ import { EligibilityForm } from "./insurance/eligibility-form";
 import { GrantAccessForm } from "./sensitive-access/grant-access-form";
 import { RevokeAccessForm } from "./sensitive-access/revoke-access-form";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
-import { formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
+import { formatDateString, formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/whatsapp-card";
 import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
 import { HeaderLink, HeaderPrimaryAction, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 import { PatientAdminPanel } from "./patient-admin-panel";
+import {
+  STUDY_CATEGORIES,
+  STUDY_CATEGORY_LABELS,
+  STUDY_STATUSES,
+  STUDY_STATUS_LABELS,
+  isStudyCategory,
+  isStudyStatus,
+} from "@/lib/domain/study-results";
 import { encounterTypeLabel, summaryDiagnosis } from "@/lib/domain/encounter-types";
 import {
   HISTORY_FIELD_LABELS,
@@ -90,10 +98,10 @@ export default async function PatientDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; cat?: string; estado?: string }>;
 }) {
   const { id } = await params;
-  const { tab: tabParam } = await searchParams;
+  const { tab: tabParam, cat: catParam, estado: estadoParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -231,6 +239,23 @@ export default async function PatientDetailPage({
     : [{ data: null }, { data: null }, { data: [] as RevisionRow[] }];
 
   const recordOpen = !!record;
+
+  // Estudios y analíticas del expediente (solo admin y médicos; RLS). Filtro por categoría y estado.
+  const { data: studiesAll } =
+    canSeeClinical && recordOpen
+      ? await supabase
+          .from("study_results")
+          .select("id, category, study_name, status, ordered_at, performed_at, created_at")
+          .eq("patient_id", id)
+          .order("created_at", { ascending: false })
+          .limit(200)
+      : { data: [] as { id: string; category: string; study_name: string; status: string; ordered_at: string | null; performed_at: string | null; created_at: string }[] };
+  const studyCat = isStudyCategory(catParam) ? catParam : null;
+  const studyStatus = isStudyStatus(estadoParam) ? estadoParam : null;
+  const studies = (studiesAll ?? []).filter((x) => (!studyCat || x.category === studyCat) && (!studyStatus || x.status === studyStatus));
+  const pendingStudies = (studiesAll ?? []).filter((x) => x.status === "pendiente").length;
+  const studyHref = (cat: string | null, estado: string | null) =>
+    `/patients/${id}?tab=expediente${cat ? `&cat=${cat}` : ""}${estado ? `&estado=${estado}` : ""}`;
 
   // Recepción no lee las consultas: para facturar, reclamar a la ARS o firmar consentimientos solo ve la fecha
   // de cada una (encounter_stubs), sin motivo, notas, diagnóstico ni especialidad.
@@ -577,6 +602,83 @@ export default async function PatientDetailPage({
                             {summaryDiagnosis(encounter.specialty_data)
                               ? ` · Diagnóstico: ${summaryDiagnosis(encounter.specialty_data)}`
                               : ""}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="text-lg font-medium">
+                    Estudios y analíticas
+                    {pendingStudies > 0 && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 align-middle text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                        {pendingStudies} pendiente{pendingStudies === 1 ? "" : "s"}
+                      </span>
+                    )}
+                  </h2>
+                  {canWriteClinical && (
+                    <Link
+                      href={`/patients/${id}/studies/new`}
+                      className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+                    >
+                      Registrar resultado
+                    </Link>
+                  )}
+                </div>
+                {(studiesAll ?? []).length > 0 && (
+                  <nav aria-label="Filtrar estudios" className="flex flex-col gap-1 text-xs">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      <Link href={studyHref(null, studyStatus)} className={!studyCat ? "font-semibold underline" : "text-zinc-500 hover:underline"}>
+                        Todas las categorías
+                      </Link>
+                      {STUDY_CATEGORIES.map((c) => (
+                        <Link key={c} href={studyHref(c, studyStatus)} className={studyCat === c ? "font-semibold underline" : "text-zinc-500 hover:underline"}>
+                          {STUDY_CATEGORY_LABELS[c]}
+                        </Link>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      <Link href={studyHref(studyCat, null)} className={!studyStatus ? "font-semibold underline" : "text-zinc-500 hover:underline"}>
+                        Todos los estados
+                      </Link>
+                      {STUDY_STATUSES.map((st) => (
+                        <Link key={st} href={studyHref(studyCat, st)} className={studyStatus === st ? "font-semibold underline" : "text-zinc-500 hover:underline"}>
+                          {STUDY_STATUS_LABELS[st]}
+                        </Link>
+                      ))}
+                    </div>
+                  </nav>
+                )}
+                {studies.length === 0 ? (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {(studiesAll ?? []).length === 0 ? "Sin estudios registrados." : "Ningún estudio coincide con el filtro."}
+                  </p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-panel-border">
+                    {studies.map((st) => (
+                      <li key={st.id}>
+                        <Link href={`/patients/${id}/studies/${st.id}`} className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm hover:underline">
+                          <span>
+                            <span className="font-medium">{st.study_name}</span>
+                            <span className="ml-2 text-xs text-zinc-500">{STUDY_CATEGORY_LABELS[st.category as keyof typeof STUDY_CATEGORY_LABELS] ?? st.category}</span>
+                          </span>
+                          <span className="flex items-center gap-2 text-xs text-zinc-500">
+                            {formatDateString(st.performed_at ?? st.ordered_at ?? st.created_at.slice(0, 10))}
+                            <span
+                              className={`rounded-full px-2 py-0.5 font-medium ${
+                                st.status === "pendiente"
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                                  : st.status === "recibido"
+                                    ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
+                                    : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200"
+                              }`}
+                            >
+                              {STUDY_STATUS_LABELS[st.status as keyof typeof STUDY_STATUS_LABELS] ?? st.status}
+                            </span>
                           </span>
                         </Link>
                       </li>

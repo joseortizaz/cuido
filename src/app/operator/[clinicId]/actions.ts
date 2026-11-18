@@ -330,13 +330,22 @@ export async function executeDeletion(
   const supabase = await requireSignedIn();
   const confirmName = String(formData.get("confirm_name") ?? "");
 
+  // Los archivos de los estudios viven en Storage: la base borra sus filas en cascada pero no los archivos. Se anotan
+  // antes de borrar (después ya no hay de dónde leerlos) y se retiran del bucket cuando la eliminación se confirmó.
+  const admin = createAdminClient();
+  const { data: studyFiles } = await admin.from("study_attachments").select("storage_path").eq("clinic_id", clinicId);
+
   const { data: orphans, error } = await supabase.rpc("execute_clinic_data_deletion", {
     p_request_id: requestId,
     p_confirm_name: confirmName,
   });
   if (error) return { error: error.message };
 
-  const admin = createAdminClient();
+  const paths = (studyFiles ?? []).map((f) => f.storage_path);
+  for (let i = 0; i < paths.length; i += 100) {
+    await admin.storage.from("study-results").remove(paths.slice(i, i + 100));
+  }
+
   const failed: string[] = [];
   for (const userId of (orphans ?? []) as string[]) {
     const { error: delError } = await admin.auth.admin.deleteUser(userId);
