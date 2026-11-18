@@ -33,6 +33,8 @@
     "test:study-results": "tsx scripts/test-study-results.ts",
     "test:prescriptions": "tsx scripts/test-prescriptions.ts",
     "manual:pdf": "tsx scripts/manual/build.ts",
+    "test:cie11": "tsx scripts/test-cie11.ts",
+    "test:encounter-diagnoses": "tsx scripts/test-encounter-diagnoses.ts",
     "test:browser-env": "tsx scripts/test-browser-env.ts",
     "test:manual": "tsx scripts/test-manual.ts",
     "test:templates": "tsx scripts/test-template-core-overlap.ts",

@@ -338,6 +338,40 @@ async function main() {
       const { error: bUploadToA } = await tenantB.client.storage.from("study-results").upload(`${tenantA.clinicId}/${pid}/${aStudyId}/intruso.pdf`, Buffer.from("%PDF-1.4 x"), { contentType: "application/pdf" });
       check("B NO puede subir un archivo a la ruta de un estudio de A", bUploadToA !== null, "subió");
 
+      // Diagnósticos codificados CIE-11 (20261127100000_encounter_diagnoses.sql).
+      const { data: dxTpl } = await admin.from("specialty_templates").select("id").eq("code", "medicina_interna").single();
+      const { data: aEncDx, error: aEncDxErr } = await tenantA.client.rpc("create_encounter_with_diagnoses", {
+        p_patient_id: pid,
+        p_template_id: dxTpl!.id,
+        p_encounter_type: "inicial",
+        p_chief_complaint: "Control",
+        p_present_illness: "",
+        p_specialty_data: {},
+        p_diagnoses: [{ kind: "definitivo", code: "5A11", title: "Diabetes de A", entity_uri: "http://id.who.int/icd/release/11/2026-01/mms/1", is_primary: true }],
+        p_release: "2026-01",
+      });
+      check("A crea una consulta con un diagnóstico CIE-11", aEncDxErr === null && !!aEncDx, aEncDxErr?.message ?? "");
+      const { data: dxSeenByB } = await tenantB.client.from("encounter_diagnoses").select("id").eq("patient_id", pid);
+      check("B no lee los diagnósticos codificados de A", (dxSeenByB?.length ?? 0) === 0, `devolvió ${dxSeenByB?.length ?? 0} filas`);
+      const { error: bAddDx } = await tenantB.client.rpc("add_encounter_diagnoses", { p_encounter_id: aEncDx as string, p_items: [{ kind: "presuntivo", code: "BA00", title: "Hackeo" }], p_release: "2026-01" });
+      check("B NO puede agregar diagnósticos a una consulta de A", bAddDx !== null, "no falló");
+      const { data: aDxRow } = await admin.from("encounter_diagnoses").select("id").eq("encounter_id", aEncDx as string).single();
+      const { error: bCorrDx } = await tenantB.client.rpc("correct_encounter_diagnosis", { p_diagnosis_id: aDxRow!.id, p_reason: "Hackeo", p_new: null });
+      check("B NO puede corregir ni retirar un diagnóstico de A", bCorrDx !== null, "no falló");
+      const { error: bCreateDx } = await tenantB.client.rpc("create_encounter_with_diagnoses", {
+        p_patient_id: pid,
+        p_template_id: dxTpl!.id,
+        p_encounter_type: "inicial",
+        p_chief_complaint: "x",
+        p_present_illness: "",
+        p_specialty_data: {},
+        p_diagnoses: [],
+        p_release: "2026-01",
+      });
+      check("B NO puede crear una consulta (con o sin diagnósticos) para un paciente de A", bCreateDx !== null, "no falló");
+      const { data: dxAfter } = await admin.from("encounter_diagnoses").select("superseded_at").eq("encounter_id", aEncDx as string);
+      check("el diagnóstico de A quedó intacto y vigente", (dxAfter ?? []).length === 1 && dxAfter![0].superseded_at === null, JSON.stringify(dxAfter));
+
       const { data: delLogSeenByB } = await tenantB.client.from("patient_deletion_log").select("id").eq("clinic_id", tenantA.clinicId);
       check("B no lee el registro de eliminaciones de A", (delLogSeenByB?.length ?? 0) === 0, `devolvió ${delLogSeenByB?.length ?? 0} filas`);
     }

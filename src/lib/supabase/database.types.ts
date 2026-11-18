@@ -1378,6 +1378,83 @@ export type Database = {
           },
         ]
       }
+      encounter_diagnoses: {
+        Row: {
+          clinic_id: string
+          code: string
+          code_system: string
+          created_at: string
+          created_by: string | null
+          doctor_note: string | null
+          encounter_id: string
+          entity_uri: string | null
+          icd_release: string
+          id: string
+          is_primary: boolean
+          kind: string
+          language: string
+          patient_id: string
+          superseded_at: string | null
+          superseded_by: string | null
+          superseded_by_user: string | null
+          superseded_reason: string | null
+          title: string
+          verified: boolean
+        }
+        Insert: {
+          clinic_id: string
+          code: string
+          code_system?: string
+          created_at?: string
+          created_by?: string | null
+          doctor_note?: string | null
+          encounter_id: string
+          entity_uri?: string | null
+          icd_release: string
+          id?: string
+          is_primary?: boolean
+          kind: string
+          language?: string
+          patient_id: string
+          superseded_at?: string | null
+          superseded_by?: string | null
+          superseded_by_user?: string | null
+          superseded_reason?: string | null
+          title: string
+          verified?: boolean
+        }
+        Update: {
+          clinic_id?: string
+          code?: string
+          code_system?: string
+          created_at?: string
+          created_by?: string | null
+          doctor_note?: string | null
+          encounter_id?: string
+          entity_uri?: string | null
+          icd_release?: string
+          id?: string
+          is_primary?: boolean
+          kind?: string
+          language?: string
+          patient_id?: string
+          superseded_at?: string | null
+          superseded_by?: string | null
+          superseded_by_user?: string | null
+          superseded_reason?: string | null
+          title?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encounter_diagnoses_encounter_id_fkey"
+            columns: ["encounter_id"]
+            isOneToOne: false
+            referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encounters: {
         Row: {
           appointment_id: string | null
@@ -3179,6 +3256,27 @@ export type Database = {
       }
       confirm_deletion_export: {
         Args: { p_request_id: string }
+        Returns: string
+      }
+      add_encounter_diagnoses: {
+        Args: { p_encounter_id: string; p_items: Json; p_release: string }
+        Returns: number
+      }
+      correct_encounter_diagnosis: {
+        Args: { p_diagnosis_id: string; p_new?: Json; p_reason: string; p_release?: string }
+        Returns: string
+      }
+      create_encounter_with_diagnoses: {
+        Args: {
+          p_chief_complaint: string
+          p_diagnoses?: Json
+          p_encounter_type: Database["public"]["Enums"]["encounter_type"]
+          p_patient_id: string
+          p_present_illness: string
+          p_release?: string
+          p_specialty_data: Json
+          p_template_id: string
+        }
         Returns: string
       }
       create_clinic_with_admin: {

@@ -11,6 +11,8 @@ import {
   presentIllnessLabel,
   type EncounterType,
 } from "@/lib/domain/encounter-types";
+import { Cie11Picker } from "@/app/(clinic)/_components/cie11-picker";
+import type { DiagnosisDraft } from "@/lib/domain/encounter-diagnoses";
 import { createEncounter, type EncounterFormState } from "./actions";
 
 const inputClass =
@@ -142,6 +144,9 @@ export function EncounterForm({
 
   const sections = useMemo(() => groupFieldsBySection(fields), [fields]);
 
+  // Diagnósticos codificados CIE-11 (opcional): viajan en un campo oculto como JSON y el servidor los valida.
+  const [diagnoses, setDiagnoses] = useState<DiagnosisDraft[]>([]);
+
   return (
     <form action={formAction} className="flex w-full max-w-lg flex-col gap-8">
       {/* Toda consulta empieza por el motivo; después, la historia de la enfermedad actual. */}
@@ -248,6 +253,17 @@ export function EncounterForm({
           ))}
         </fieldset>
       ))}
+
+      <fieldset className="flex flex-col gap-3">
+        <legend className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          Diagnósticos codificados (CIE-11), opcional
+        </legend>
+        <p className="text-xs text-zinc-500">
+          Complementa el diagnóstico escrito arriba; no lo reemplaza. Puedes dejarlo vacío.
+        </p>
+        <input type="hidden" name="diagnoses_json" value={JSON.stringify(diagnoses)} />
+        <Cie11Picker value={diagnoses} onChange={setDiagnoses} defaultKind={encounterType === "alta" ? "definitivo" : "presuntivo"} />
+      </fieldset>
 
       {state?.error && <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p>}
       <button
