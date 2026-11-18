@@ -5,13 +5,9 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { isClinicReadOnly } from "@/app/(clinic)/_components/read-only-notice";
 import { HeaderLink, HeaderPrimaryAction, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 
-/** Quita lo que rompería el filtro `or` de PostgREST o actuaría como comodín. */
-function searchTokens(q: string): string[] {
-  return q
-    .replace(/[,()"%_*\\]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 5);
+/** Minúsculas y sin acentos: «perez» encuentra «Pérez». */
+function fold(text: string | null | undefined): string {
+  return (text ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 export default async function PatientsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
@@ -29,17 +25,19 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
 
   const readOnly = await isClinicReadOnly();
 
-  let query = supabase
+  const { data: allPatients } = await supabase
     .from("patients")
-    .select("id, record_number, first_name, last_name, date_of_birth")
+    .select("id, record_number, first_name, last_name, national_id, date_of_birth")
     .order("last_name", { ascending: true });
-  // Cada palabra debe aparecer en el código, el nombre, el apellido o la cédula.
-  for (const token of searchTokens(q)) {
-    query = query.or(
-      `record_number.ilike.%${token}%,first_name.ilike.%${token}%,last_name.ilike.%${token}%,national_id.ilike.%${token}%`
-    );
-  }
-  const { data: patients } = await query;
+  // Cada palabra debe aparecer en el código, el nombre, el apellido o la cédula, sin importar
+  // mayúsculas ni acentos (se filtra aquí y no en la consulta porque la base no ignora acentos).
+  const tokens = fold(q).split(/\s+/).filter(Boolean).slice(0, 5);
+  const patients = tokens.length
+    ? (allPatients ?? []).filter((p) => {
+        const haystack = fold(`${p.record_number} ${p.first_name} ${p.last_name} ${p.national_id ?? ""}`);
+        return tokens.every((t) => haystack.includes(t));
+      })
+    : allPatients;
 
   return (
     <>
