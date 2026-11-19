@@ -1447,10 +1447,31 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "encounter_diagnoses_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "encounter_diagnoses_encounter_id_fkey"
             columns: ["encounter_id"]
             isOneToOne: false
             referencedRelation: "encounters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encounter_diagnoses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encounter_diagnoses_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "encounter_diagnoses"
             referencedColumns: ["id"]
           },
         ]
@@ -3191,6 +3212,10 @@ export type Database = {
         Args: { note: string; target_clinic_id: string }
         Returns: undefined
       }
+      add_encounter_diagnoses: {
+        Args: { p_encounter_id: string; p_items: Json; p_release: string }
+        Returns: number
+      }
       apply_medical_history: {
         Args: { p_data: Json; p_patient_id: string; p_reason: string }
         Returns: undefined
@@ -3258,12 +3283,21 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: string
       }
-      add_encounter_diagnoses: {
-        Args: { p_encounter_id: string; p_items: Json; p_release: string }
-        Returns: number
-      }
       correct_encounter_diagnosis: {
-        Args: { p_diagnosis_id: string; p_new?: Json; p_reason: string; p_release?: string }
+        Args: {
+          p_diagnosis_id: string
+          p_new?: Json
+          p_reason: string
+          p_release?: string
+        }
+        Returns: string
+      }
+      create_clinic_with_admin: {
+        Args: {
+          clinic_business_model: Database["public"]["Enums"]["clinic_business_model"]
+          clinic_name: string
+          clinic_province: string
+        }
         Returns: string
       }
       create_encounter_with_diagnoses: {
@@ -3276,14 +3310,6 @@ export type Database = {
           p_release?: string
           p_specialty_data: Json
           p_template_id: string
-        }
-        Returns: string
-      }
-      create_clinic_with_admin: {
-        Args: {
-          clinic_business_model: Database["public"]["Enums"]["clinic_business_model"]
-          clinic_name: string
-          clinic_province: string
         }
         Returns: string
       }
@@ -3319,6 +3345,14 @@ export type Database = {
         Returns: undefined
       }
       dr_today: { Args: { p_ts?: string }; Returns: string }
+      encounter_for_diagnosis: {
+        Args: { p_encounter_id: string }
+        Returns: {
+          enc_clinic_id: string
+          enc_id: string
+          enc_patient_id: string
+        }[]
+      }
       encounter_stubs: {
         Args: {
           p_appointment_ids?: string[]
@@ -3375,6 +3409,17 @@ export type Database = {
           target_patient_id: string
           target_specialty_template_id: string
           target_user_id: string
+        }
+        Returns: string
+      }
+      insert_encounter_diagnosis_row: {
+        Args: {
+          p_clinic_id: string
+          p_encounter_id: string
+          p_item: Json
+          p_new_id?: string
+          p_patient_id: string
+          p_release: string
         }
         Returns: string
       }

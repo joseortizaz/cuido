@@ -252,7 +252,7 @@ async function main() {
   console.log("\nModo solo lectura:");
   const logBefore = (await logOf(pid)).length;
   const old = new Date();
-  old.setUTCDate(old.getUTCDate() - 31);
+  old.setUTCDate(old.getUTCDate() - 40);
   const { error: subErr } = await admin
     .from("clinic_subscriptions")
     .update({ trial_ends_at: old.toISOString().slice(0, 10), next_payment_due_on: null })

@@ -300,7 +300,7 @@ async function main() {
 
   console.log("\nModo solo lectura:");
   const today = new Date();
-  today.setUTCDate(today.getUTCDate() - 31);
+  today.setUTCDate(today.getUTCDate() - 40);
   const { error: subErr } = await admin
     .from("clinic_subscriptions")
     .update({ trial_ends_at: today.toISOString().slice(0, 10), next_payment_due_on: null })

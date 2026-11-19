@@ -296,7 +296,7 @@ async function main() {
   console.log("\nModo solo lectura:");
   const pro = await mkPatient();
   const old = new Date();
-  old.setUTCDate(old.getUTCDate() - 31);
+  old.setUTCDate(old.getUTCDate() - 40);
   const { error: subErr } = await admin.from("clinic_subscriptions").update({ trial_ends_at: old.toISOString().slice(0, 10), next_payment_due_on: null }).eq("clinic_id", cid);
   if (subErr) throw new Error(`No se pudo vencer la suscripción: ${subErr.message}`);
   const ro1 = await owner.client.rpc("open_patient_record", { p_patient_id: pro.id, p_history: {} });
