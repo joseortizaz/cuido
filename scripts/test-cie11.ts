@@ -45,8 +45,9 @@ let tokenCounter = 0;
 const URI = (n: number) => `http://id.who.int/icd/release/11/2026-01/mms/${n}`;
 const SEARCH_BODY = {
   destinationEntities: [
-    { id: URI(1), title: "<em class='found'>Diabetes</em> mellitus tipo 2", theCode: "5A11", isLeaf: false },
-    { id: URI(2), title: "Diabetes mellitus tipo 2 con &amp; complicaciones", theCode: "5A11.0", isLeaf: true },
+    { id: URI(9), title: "Menos relevante", theCode: "1A0Z", isLeaf: true, score: 0.4 },
+    { id: URI(1), title: "<em class='found'>Diabetes</em> mellitus tipo 2", theCode: "5A11", isLeaf: false, score: 1 },
+    { id: URI(2), title: "Diabetes mellitus tipo 2 con &amp; complicaciones", theCode: "5A11.0", isLeaf: true, score: 0.8 },
     { id: URI(3), title: "Capítulo 5: Enfermedades endocrinas", theCode: "", isLeaf: false },
     { id: URI(1), title: "Duplicado", theCode: "5A11", isLeaf: false },
     { id: "https://evil.example.com/x", title: "URI ajena", theCode: "ZZ99", isLeaf: true },
@@ -121,6 +122,7 @@ async function main() {
     const out = mapWhoSearchResponse(SEARCH_BODY);
     return out.length === 10 && out[0].code === "5A11" && out[0].title === "Diabetes mellitus tipo 2" && out[1].title.includes("& complicaciones") && !out.some((r) => r.code === "" || r.code === "ZZ99") && out.filter((r) => r.code === "5A11").length === 1 && Object.keys(out[0]).sort().join() === "code,entityUri,isLeaf,title";
   })(), "");
+  check("los resultados salen por relevancia (score mayor primero), sin importar el orden en que lleguen", (() => { const o = mapWhoSearchResponse(SEARCH_BODY); return o[0].code === "5A11" && o[1].code === "5A11.0" && o.findIndex((r) => r.code === "1A0Z") > 1; })(), JSON.stringify(mapWhoSearchResponse(SEARCH_BODY).slice(0, 3).map((r) => r.code)));
   check("una respuesta rara no rompe (null, sin lista)", mapWhoSearchResponse(null).length === 0 && mapWhoSearchResponse({}).length === 0 && mapWhoSearchResponse({ destinationEntities: "x" }).length === 0, "");
 
   console.log("\nCliente de la OMS (servidor simulado):");
@@ -148,7 +150,7 @@ async function main() {
   const searchReq = seen.find((s) => s.url.includes("/mms/search"))!;
   const u = new URL(searchReq.url, "http://x");
   check("la búsqueda va a la linearización MMS de la versión fijada, con Bearer, español y API v2", u.pathname === "/icd/release/11/2026-01/mms/search" && searchReq.headers.authorization === "Bearer tok-1" && searchReq.headers["accept-language"] === "es" && searchReq.headers["api-version"] === "v2", `${u.pathname} ${JSON.stringify(searchReq.headers)}`);
-  check("usa flexisearch, sin resaltado y en modo de codificación médica", u.searchParams.get("useFlexisearch") === "true" && u.searchParams.get("highlightingEnabled") === "false" && u.searchParams.get("medicalCodingMode") === "true" && u.searchParams.get("q") === "diabetes", searchReq.url);
+  check("usa flexisearch, sin resaltado y en modo de codificación médica", u.searchParams.get("useFlexisearch") === "true" && u.searchParams.get("flatResults") === "true" && u.searchParams.get("highlightingEnabled") === "false" && u.searchParams.get("medicalCodingMode") === "true" && u.searchParams.get("q") === "diabetes", searchReq.url);
   check("a la OMS solo viaja el texto buscado: ni cookies ni otros datos", !searchReq.headers.cookie && !searchReq.headers.referer && [...u.searchParams.keys()].sort().join() === "flatResults,highlightingEnabled,medicalCodingMode,q,useFlexisearch", [...u.searchParams.keys()].join());
   await searchCie11("hipertensión");
   check("el token se guarda en memoria y se reutiliza (una sola petición de token)", seen.filter((s) => s.url.startsWith("/connect/token")).length === 1, `${seen.filter((s) => s.url.startsWith("/connect/token")).length}`);

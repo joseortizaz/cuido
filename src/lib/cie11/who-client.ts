@@ -102,7 +102,7 @@ async function getToken(forceRenew = false): Promise<string | null> {
 // Búsqueda
 // ---------------------------------------------------------------------------
 
-type WhoEntity = { id?: unknown; title?: unknown; theCode?: unknown; isLeaf?: unknown };
+type WhoEntity = { id?: unknown; title?: unknown; theCode?: unknown; isLeaf?: unknown; score?: unknown };
 
 /** Convierte la respuesta de la OMS en lo único que ve nuestro cliente: código, título, URI y si es hoja. */
 export function mapWhoSearchResponse(json: unknown): Cie11Result[] {
@@ -110,7 +110,12 @@ export function mapWhoSearchResponse(json: unknown): Cie11Result[] {
   if (!Array.isArray(entities)) return [];
   const out: Cie11Result[] = [];
   const seen = new Set<string>();
-  for (const raw of entities as WhoEntity[]) {
+  // La OMS ya la entrega por relevancia; se reordena de forma estable por `score` (mayor primero) por si acaso.
+  const ranked = (entities as WhoEntity[])
+    .map((e, i) => ({ e, i, s: typeof e?.score === "number" ? e.score : 0 }))
+    .sort((a, b) => b.s - a.s || a.i - b.i)
+    .map((x) => x.e);
+  for (const raw of ranked) {
     const code = typeof raw?.theCode === "string" ? raw.theCode.trim().toUpperCase() : "";
     // Capítulos y bloques no tienen código: no se pueden elegir como diagnóstico.
     if (!code || seen.has(code)) continue;
@@ -129,7 +134,9 @@ async function callSearch(token: string, q: string): Promise<Response> {
   const params = new URLSearchParams({
     q,
     useFlexisearch: "true",
-    flatResults: "false",
+    // flatResults=true = lista plana ORDENADA POR RELEVANCIA (con false la OMS devuelve la jerarquía por capítulos,
+    // en orden de código, y el mejor resultado queda enterrado). Comprobado contra la API real.
+    flatResults: "true",
     highlightingEnabled: "false",
     medicalCodingMode: "true",
   });
