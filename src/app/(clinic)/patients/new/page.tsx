@@ -24,8 +24,11 @@ export default async function NewPatientPage() {
         title="Nuevo paciente"
         back={{ href: "/patients", label: "Pacientes" }}
       />
-      <PageBody narrow>
-      <PatientForm canRecordConsent={membership.role === "admin" || membership.role === "recepcion"} />
+      <PageBody>
+        <PatientForm
+          canRecordConsent={membership.role === "admin" || membership.role === "recepcion"}
+          canEditReligion={membership.role === "admin" || membership.role === "medico"}
+        />
       </PageBody>
     </>
   );

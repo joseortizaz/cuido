@@ -3,13 +3,37 @@ import Papa from "papaparse";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { fetchAllPages } from "./fetch-all";
+import {
+  EDUCATION_LABELS,
+  INFORMANT_LABELS,
+  MARITAL_LABELS,
+  labelOf,
+  religionDisplay,
+} from "@/lib/domain/patient-identity";
 
 // Deliberadamente SIN `import "server-only"` -- ver la misma nota en
 // src/lib/bulk-import/patients.ts.
 
 type Patient = Pick<
   Database["public"]["Tables"]["patients"]["Row"],
-  "id" | "record_number" | "is_test" | "voided_at" | "first_name" | "last_name" | "national_id" | "date_of_birth" | "sex" | "phone" | "email"
+  | "id"
+  | "record_number"
+  | "is_test"
+  | "voided_at"
+  | "first_name"
+  | "last_name"
+  | "national_id"
+  | "date_of_birth"
+  | "sex"
+  | "phone"
+  | "email"
+  | "education_level"
+  | "marital_status"
+  | "residence"
+  | "place_of_origin"
+  | "occupation"
+  | "informant_type"
+  | "informant_name"
 >;
 type Allergy = Pick<
   Database["public"]["Tables"]["allergies"]["Row"],
@@ -34,26 +58,77 @@ type Medication = Pick<
  * chequear pertenencia de clínica.
  */
 
-const PATIENT_HEADERS = ["Código", "Nombre", "Apellido", "Cédula o pasaporte", "Fecha de nacimiento", "Sexo", "Teléfono", "Correo", "Estado"];
+const PATIENT_HEADERS = [
+  "Código",
+  "Nombre",
+  "Apellido",
+  "Cédula o pasaporte",
+  "Fecha de nacimiento",
+  "Sexo",
+  "Teléfono",
+  "Correo",
+  "Estado",
+  "Escolaridad",
+  "Estado civil",
+  "Residencia",
+  "Procedencia",
+  "Ocupación",
+  "Informante",
+  "Nombre del informante",
+];
 
-function patientRow(p: Patient): (string | null)[] {
-  return [p.record_number, p.first_name, p.last_name, p.national_id, p.date_of_birth, p.sex, p.phone, p.email, p.voided_at ? "Anulado" : ""];
+/** La religión es un dato sensible (Ley 172-13): NO sale en las exportaciones salvo que el administrador la pida expresamente. */
+const RELIGION_HEADER = "Religión";
+
+export type ReligionByPatient = Map<string, { religion: string; religion_other: string | null }>;
+
+/** Las claves de las listas cerradas salen con su texto en español. */
+function identityCells(p: Patient): (string | null)[] {
+  return [
+    p.education_level ? labelOf(EDUCATION_LABELS, p.education_level) : null,
+    p.marital_status ? labelOf(MARITAL_LABELS, p.marital_status) : null,
+    p.residence,
+    p.place_of_origin,
+    p.occupation,
+    p.informant_type ? labelOf(INFORMANT_LABELS, p.informant_type) : null,
+    p.informant_name,
+  ];
 }
+
+function patientRow(p: Patient, religion?: ReligionByPatient): (string | null)[] {
+  const row = [
+    p.record_number,
+    p.first_name,
+    p.last_name,
+    p.national_id,
+    p.date_of_birth,
+    p.sex,
+    p.phone,
+    p.email,
+    p.voided_at ? "Anulado" : "",
+    ...identityCells(p),
+  ];
+  if (religion) row.push(religionDisplay(religion.get(p.id)) || null);
+  return row;
+}
+
+const headersFor = (religion?: ReligionByPatient) => (religion ? [...PATIENT_HEADERS, RELIGION_HEADER] : PATIENT_HEADERS);
 
 export async function generatePatientsExportXlsx(
   patients: Patient[],
   allergies: Allergy[],
-  medications: Medication[]
+  medications: Medication[],
+  religion?: ReligionByPatient
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
   const patientNameById = new Map(patients.map((p) => [p.id, `${p.first_name} ${p.last_name}`]));
 
   const patientsSheet = workbook.addWorksheet("Pacientes");
-  patientsSheet.addRow(PATIENT_HEADERS);
+  patientsSheet.addRow(headersFor(religion));
   patientsSheet.getRow(1).font = { bold: true };
   patientsSheet.views = [{ state: "frozen", ySplit: 1 }];
   patientsSheet.columns.forEach((c) => (c.width = 22));
-  for (const p of patients) patientsSheet.addRow(patientRow(p));
+  for (const p of patients) patientsSheet.addRow(patientRow(p, religion));
 
   const allergiesSheet = workbook.addWorksheet("Alergias");
   allergiesSheet.addRow(["Paciente", "Sustancia", "Reacción", "Severidad", "Estado"]);
@@ -88,13 +163,13 @@ export async function generatePatientsExportXlsx(
  * celda que empieza por = + - @ se antepone con ' para que Excel nunca la
  * ejecute como fórmula al abrir el archivo (inyección de fórmulas en CSV).
  */
-export function generatePatientsExportCsv(patients: Patient[]): string {
+export function generatePatientsExportCsv(patients: Patient[], religion?: ReligionByPatient): string {
   return (
     "﻿" +
     Papa.unparse(
       {
-        fields: PATIENT_HEADERS,
-        data: patients.map(patientRow),
+        fields: headersFor(religion),
+        data: patients.map((p) => patientRow(p, religion)),
       },
       { escapeFormulae: true }
     )
@@ -121,7 +196,9 @@ export async function fetchPatientsExportData(
   const allPatients = await fetchAllPages<Patient>(async (from, to) =>
     supabase
       .from("patients")
-      .select("id, record_number, is_test, voided_at, first_name, last_name, national_id, date_of_birth, sex, phone, email")
+      .select(
+        "id, record_number, is_test, voided_at, first_name, last_name, national_id, date_of_birth, sex, phone, email, education_level, marital_status, residence, place_of_origin, occupation, informant_type, informant_name"
+      )
       .order("last_name", { ascending: true })
       .order("id", { ascending: true })
       .range(from, to)
@@ -152,4 +229,22 @@ export async function fetchPatientsExportData(
     allergies: allergies.filter((a) => kept.has(a.patient_id)),
     medications: medications.filter((m) => kept.has(m.patient_id)),
   };
+}
+
+/** Religión de los pacientes indicados (solo se llama cuando el administrador la pide expresamente). RLS: admin y médicos. */
+export async function fetchReligionByPatient(
+  supabase: SupabaseClient<Database>,
+  patientIds: string[]
+): Promise<ReligionByPatient> {
+  const kept = new Set(patientIds);
+  const rows = await fetchAllPages<{ patient_id: string; religion: string; religion_other: string | null }>(async (from, to) =>
+    supabase
+      .from("patient_religion")
+      .select("patient_id, religion, religion_other")
+      .order("patient_id", { ascending: true })
+      .range(from, to)
+  );
+  const map: ReligionByPatient = new Map();
+  for (const r of rows) if (kept.has(r.patient_id)) map.set(r.patient_id, { religion: r.religion, religion_other: r.religion_other });
+  return map;
 }

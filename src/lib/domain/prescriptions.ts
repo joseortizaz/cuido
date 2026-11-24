@@ -4,6 +4,8 @@
  * (supabase/migrations/20261126100000_prescriptions.sql) valida de nuevo todo lo que importa.
  */
 
+import { ageLabel } from "@/lib/domain/age";
+
 export const MAX_RX_ITEMS = 30;
 
 export type RxItem = {
@@ -50,16 +52,12 @@ export function formatRxNumber(n: number): string {
   return String(n).padStart(6, "0");
 }
 
-/** Edad al momento de emitir la receta: años, o meses si es menor de 2 años. */
+/**
+ * Edad al momento de emitir la receta: años (meses si es menor de 2 años; días si es menor de un mes). Es el
+ * mismo cálculo de la ficha del paciente (src/lib/domain/age.ts), con la fecha de emisión como referencia.
+ */
 export function patientAgeLabel(dateOfBirth: string, at: string | Date): string {
-  const dob = new Date(`${dateOfBirth.slice(0, 10)}T00:00:00Z`);
-  const ref = new Date(typeof at === "string" ? at : at.toISOString());
-  const refDr = new Date(ref.getTime() - 4 * 3600_000); // hora de Santo Domingo (UTC-4 todo el año)
-  let months = (refDr.getUTCFullYear() - dob.getUTCFullYear()) * 12 + (refDr.getUTCMonth() - dob.getUTCMonth());
-  if (refDr.getUTCDate() < dob.getUTCDate()) months -= 1;
-  if (months < 0) months = 0;
-  if (months < 24) return `${months} ${months === 1 ? "mes" : "meses"}`;
-  return `${Math.floor(months / 12)} años`;
+  return ageLabel(dateOfBirth, at);
 }
 
 export const PRINT_FORMATS = ["a6", "a4"] as const;

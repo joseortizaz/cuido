@@ -372,6 +372,20 @@ async function main() {
       const { data: dxAfter } = await admin.from("encounter_diagnoses").select("superseded_at").eq("encounter_id", aEncDx as string);
       check("el diagnóstico de A quedó intacto y vigente", (dxAfter ?? []).length === 1 && dxAfter![0].superseded_at === null, JSON.stringify(dxAfter));
 
+      // Ficha de identificación y religión (20261128100000_patient_identity.sql).
+      const { error: aRel } = await tenantA.client.rpc("save_patient_religion", { p_patient_id: pid, p_religion: "catolica" });
+      check("A registra la religión de su paciente", aRel === null, aRel?.message ?? "");
+      const { data: relSeenByB } = await tenantB.client.from("patient_religion").select("patient_id").eq("patient_id", pid);
+      const { data: relLogSeenByB } = await tenantB.client.from("patient_religion_log").select("id").eq("patient_id", pid);
+      check("B no lee la religión de A ni su historial", (relSeenByB?.length ?? 0) === 0 && (relLogSeenByB?.length ?? 0) === 0, `${relSeenByB?.length}/${relLogSeenByB?.length}`);
+      const { error: bRel } = await tenantB.client.rpc("save_patient_religion", { p_patient_id: pid, p_religion: "ninguna" });
+      check("B NO puede cambiar la religión de un paciente de A", bRel !== null, "no falló");
+      const { data: bEditIdentity } = await tenantB.client.from("patients").update({ occupation: "Hackeo", education_level: "posgrado" }).eq("id", pid).select("id");
+      check("B NO puede editar la ficha de identificación de un paciente de A", (bEditIdentity?.length ?? 0) === 0, `${bEditIdentity?.length}`);
+      const { data: relAfter } = await admin.from("patient_religion").select("religion").eq("patient_id", pid).single();
+      const { data: ptAfter } = await admin.from("patients").select("occupation, education_level").eq("id", pid).single();
+      check("la religión y la ficha de A quedaron intactas", relAfter?.religion === "catolica" && ptAfter?.occupation === null && ptAfter?.education_level === null, JSON.stringify([relAfter, ptAfter]));
+
       const { data: delLogSeenByB } = await tenantB.client.from("patient_deletion_log").select("id").eq("clinic_id", tenantA.clinicId);
       check("B no lee el registro de eliminaciones de A", (delLogSeenByB?.length ?? 0) === 0, `devolvió ${delLogSeenByB?.length ?? 0} filas`);
     }

@@ -2402,8 +2402,78 @@ export type Database = {
           },
         ]
       }
+      patient_religion: {
+        Row: {
+          clinic_id: string
+          patient_id: string
+          religion: string
+          religion_other: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          clinic_id: string
+          patient_id: string
+          religion: string
+          religion_other?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          clinic_id?: string
+          patient_id?: string
+          religion?: string
+          religion_other?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      patient_religion_log: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          clinic_id: string
+          id: string
+          new_religion: string
+          new_religion_other: string | null
+          old_religion: string | null
+          old_religion_other: string | null
+          patient_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id: string
+          id?: string
+          new_religion: string
+          new_religion_other?: string | null
+          old_religion?: string | null
+          old_religion_other?: string | null
+          patient_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          clinic_id?: string
+          id?: string
+          new_religion?: string
+          new_religion_other?: string | null
+          old_religion?: string | null
+          old_religion_other?: string | null
+          patient_id?: string
+        }
+        Relationships: []
+      }
       patients: {
         Row: {
+          education_level: string | null
+          informant_name: string | null
+          informant_type: string | null
+          marital_status: string | null
+          occupation: string | null
+          place_of_origin: string | null
+          residence: string | null
           clinic_id: string
           created_at: string
           date_of_birth: string
@@ -2422,6 +2492,13 @@ export type Database = {
           voided_by: string | null
         }
         Insert: {
+          education_level?: string | null
+          informant_name?: string | null
+          informant_type?: string | null
+          marital_status?: string | null
+          occupation?: string | null
+          place_of_origin?: string | null
+          residence?: string | null
           clinic_id: string
           created_at?: string
           date_of_birth: string
@@ -2440,6 +2517,13 @@ export type Database = {
           voided_by?: string | null
         }
         Update: {
+          education_level?: string | null
+          informant_name?: string | null
+          informant_type?: string | null
+          marital_status?: string | null
+          occupation?: string | null
+          place_of_origin?: string | null
+          residence?: string | null
           clinic_id?: string
           created_at?: string
           date_of_birth?: string
@@ -3607,6 +3691,10 @@ export type Database = {
       revoke_whatsapp_consent_by_phone: {
         Args: { p_phone: string; p_source?: string }
         Returns: number
+      }
+      save_patient_religion: {
+        Args: { p_other?: string; p_patient_id: string; p_religion: string }
+        Returns: undefined
       }
       save_clinic_letterhead: {
         Args: {

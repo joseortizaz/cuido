@@ -4,6 +4,7 @@ import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { exportBlockedMessage } from "@/lib/supabase/clinic-access";
 import {
   fetchPatientsExportData,
+  fetchReligionByPatient,
   generatePatientsExportCsv,
   generatePatientsExportXlsx,
 } from "@/lib/bulk-import/export";
@@ -38,11 +39,16 @@ export async function GET(request: Request) {
   const blocked = await exportBlockedMessage(supabase);
   if (blocked) return NextResponse.json({ error: blocked }, { status: 403 });
 
-  const format = new URL(request.url).searchParams.get("format") === "csv" ? "csv" : "xlsx";
+  const params = new URL(request.url).searchParams;
+  const format = params.get("format") === "csv" ? "csv" : "xlsx";
+  // La religión es un dato sensible: solo sale si el administrador la pide expresamente (enlace aparte en la pantalla).
+  const includeReligion = params.get("religion") === "1";
 
   let data;
+  let religion: Awaited<ReturnType<typeof fetchReligionByPatient>> | undefined;
   try {
     data = await fetchPatientsExportData(supabase, { withDetail: format === "xlsx" });
+    religion = includeReligion ? await fetchReligionByPatient(supabase, data.patients.map((p) => p.id)) : undefined;
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "No se pudo generar la exportación." },
@@ -51,7 +57,7 @@ export async function GET(request: Request) {
   }
 
   if (format === "csv") {
-    return new NextResponse(generatePatientsExportCsv(data.patients), {
+    return new NextResponse(generatePatientsExportCsv(data.patients, religion), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": 'attachment; filename="pacientes.csv"',
@@ -60,7 +66,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const buffer = await generatePatientsExportXlsx(data.patients, data.allergies, data.medications);
+  const buffer = await generatePatientsExportXlsx(data.patients, data.allergies, data.medications, religion);
   // new Uint8Array(buffer): ver la misma nota en
   // .../import/template/patients/route.ts.
   return new NextResponse(new Uint8Array(buffer), {

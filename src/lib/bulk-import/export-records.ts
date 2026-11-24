@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
 import { fetchAllPages } from "./fetch-all";
+import { EDUCATION_LABELS, INFORMANT_LABELS, MARITAL_LABELS, labelOf } from "../domain/patient-identity";
 import { formatDateTimeSantoDomingo, type ExportCell, type ExportTable } from "./export-tables";
 
 // Deliberadamente SIN `import "server-only"` -- ver la misma nota en
@@ -570,6 +571,13 @@ export function buildPatientTables(
     phone: string | null;
     email: string | null;
     id: string;
+    education_level?: string | null;
+    marital_status?: string | null;
+    residence?: string | null;
+    place_of_origin?: string | null;
+    occupation?: string | null;
+    informant_type?: string | null;
+    informant_name?: string | null;
   }[],
   allergies: { patient_id: string; substance: string; reaction: string | null; severity: string | null; status: string }[],
   medications: {
@@ -586,7 +594,23 @@ export function buildPatientTables(
   return [
     {
       name: "Pacientes",
-      headers: ["Nombre", "Apellido", "Cédula o pasaporte", "Fecha de nacimiento", "Sexo", "Teléfono", "Correo"],
+      // La religión (dato sensible) NO va en el libro completo.
+      headers: [
+        "Nombre",
+        "Apellido",
+        "Cédula o pasaporte",
+        "Fecha de nacimiento",
+        "Sexo",
+        "Teléfono",
+        "Correo",
+        "Escolaridad",
+        "Estado civil",
+        "Residencia",
+        "Procedencia",
+        "Ocupación",
+        "Informante",
+        "Nombre del informante",
+      ],
       rows: patients.map((p) => [
         p.first_name,
         p.last_name,
@@ -595,6 +619,13 @@ export function buildPatientTables(
         cell(p.sex),
         cell(p.phone),
         cell(p.email),
+        cell(p.education_level ? labelOf(EDUCATION_LABELS, p.education_level) : null),
+        cell(p.marital_status ? labelOf(MARITAL_LABELS, p.marital_status) : null),
+        cell(p.residence),
+        cell(p.place_of_origin),
+        cell(p.occupation),
+        cell(p.informant_type ? labelOf(INFORMANT_LABELS, p.informant_type) : null),
+        cell(p.informant_name),
       ]),
     },
     {

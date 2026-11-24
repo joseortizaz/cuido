@@ -1,5 +1,14 @@
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
+import {
+  EDUCATION_LABELS,
+  INFORMANT_LABELS,
+  MARITAL_LABELS,
+  MAX_IDENTITY_TEXT,
+  type EducationLevel,
+  type InformantType,
+  type MaritalStatus,
+} from "@/lib/domain/patient-identity";
 
 /**
  * Importación masiva de pacientes -- plantilla descargable, parseo de
@@ -44,6 +53,13 @@ export type PatientImportValidatedRow = {
     sex: "femenino" | "masculino";
     phone: string | null;
     email: string | null;
+    education_level: EducationLevel | null;
+    marital_status: MaritalStatus | null;
+    residence: string | null;
+    place_of_origin: string | null;
+    occupation: string | null;
+    informant_type: InformantType | null;
+    informant_name: string | null;
     allergies: string[];
     medications: string[];
   } | null;
@@ -63,6 +79,13 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   sex: ["sexo"],
   phone: ["telefono"],
   email: ["correo"],
+  education_level: ["escolaridad"],
+  marital_status: ["estado civil"],
+  residence: ["residencia"],
+  place_of_origin: ["procedencia"],
+  occupation: ["ocupacion"],
+  informant_type: ["informante"],
+  informant_name: ["nombre del informante", "nombre informante"],
   allergies: ["alergias"],
   medications: ["medicamentos activos", "medicamentos"],
 };
@@ -85,6 +108,16 @@ function buildHeaderIndex(headers: string[]): Record<string, number> {
   return index;
 }
 
+const OPTIONAL_IDENTITY_FIELDS = [
+  "education_level",
+  "marital_status",
+  "residence",
+  "place_of_origin",
+  "occupation",
+  "informant_type",
+  "informant_name",
+];
+
 const HUMAN_HEADERS = [
   "Nombre",
   "Apellido",
@@ -95,6 +128,13 @@ const HUMAN_HEADERS = [
   "Correo",
   "Alergias",
   "Medicamentos activos",
+  "Escolaridad",
+  "Estado civil",
+  "Residencia",
+  "Procedencia",
+  "Ocupación",
+  "Informante",
+  "Nombre del informante",
 ] as const;
 
 const EXAMPLE_ROW = [
@@ -107,6 +147,13 @@ const EXAMPLE_ROW = [
   "maria.perez@example.com",
   "Penicilina; Mariscos",
   "Losartán 50mg",
+  "Secundaria completa",
+  "Casado/a",
+  "Santiago",
+  "Moca, Espaillat",
+  "Maestra",
+  "El mismo paciente",
+  "",
 ];
 
 /**
@@ -138,6 +185,14 @@ export async function generatePatientImportTemplateXlsx(): Promise<Buffer> {
     };
   }
 
+  // Listas desplegables de las columnas de valores cerrados (J Escolaridad, K Estado civil, O Informante).
+  const listOf = (labels: Record<string, string>) => `"${Object.values(labels).join(",")}"`;
+  for (let row = 2; row <= 501; row++) {
+    sheet.getCell(`J${row}`).dataValidation = { type: "list", allowBlank: true, formulae: [listOf(EDUCATION_LABELS)] };
+    sheet.getCell(`K${row}`).dataValidation = { type: "list", allowBlank: true, formulae: [listOf(MARITAL_LABELS)] };
+    sheet.getCell(`O${row}`).dataValidation = { type: "list", allowBlank: true, formulae: [listOf(INFORMANT_LABELS)] };
+  }
+
   const instructions = workbook.addWorksheet("Instrucciones");
   instructions.columns = [{ width: 28 }, { width: 70 }];
   instructions.addRows([
@@ -151,6 +206,14 @@ export async function generatePatientImportTemplateXlsx(): Promise<Buffer> {
     ["Correo", "Opcional."],
     ["Alergias", 'Opcional. Nombres separados por ";" (ej. "Penicilina; Mariscos"). No captura severidad/reacción — se completa después desde la ficha del paciente si hace falta.'],
     ["Medicamentos activos", 'Opcional. Nombres separados por ";" (ej. "Losartán 50mg; Metformina 850mg"). No captura dosis/frecuencia estructurada — se completa después.'],
+    ["Escolaridad", `Opcional. Una de: ${Object.values(EDUCATION_LABELS).join(" · ")}.`],
+    ["Estado civil", `Opcional. Una de: ${Object.values(MARITAL_LABELS).join(" · ")}.`],
+    ["Residencia", "Opcional. Dónde vive hoy (calle o sector, municipio, provincia). Hasta 200 caracteres."],
+    ["Procedencia", "Opcional. De dónde proviene (municipio, provincia o país). Hasta 200 caracteres."],
+    ["Ocupación", "Opcional. Hasta 200 caracteres."],
+    ["Informante", `Opcional. Quien da los datos. Uno de: ${Object.values(INFORMANT_LABELS).join(" · ")}. Si lo dejas vacío no se registra.`],
+    ["Nombre del informante", 'Obligatorio si el informante NO es "El mismo paciente"; si lo es, déjalo vacío.'],
+    ["Religión", "No se importa: es un dato sensible y se registra desde la ficha del paciente (solo administradores y médicos)."],
     ["", ""],
     ["Ejemplo (solo ilustrativo — no lo copies a la hoja Pacientes)", ""],
   ]);
@@ -207,9 +270,19 @@ export async function parsePatientImportFile(
 
   if (!headers) return { rows: [], parseError: "El archivo está vacío." };
 
+  // La religión es un dato sensible (Ley 172-13): no se importa, y se avisa en vez de ignorarla en silencio.
+  if (headers.map(normalizeHeader).includes("religion")) {
+    return {
+      rows: [],
+      parseError: "El archivo trae una columna «Religión»: no se importa porque es un dato sensible. Quita esa columna; se registra desde la ficha del paciente (solo administradores y médicos).",
+    };
+  }
+
   const headerIndex = buildHeaderIndex(headers);
   const missing = Object.keys(COLUMN_ALIASES).filter(
-    (f) => !["national_id", "phone", "email", "allergies", "medications"].includes(f) && headerIndex[f] === undefined
+    (f) =>
+      !["national_id", "phone", "email", "allergies", "medications", ...OPTIONAL_IDENTITY_FIELDS].includes(f) &&
+      headerIndex[f] === undefined
   );
   if (missing.length > 0) {
     return {
@@ -238,6 +311,26 @@ function isValidCalendarDate(value: string): boolean {
   if (!DATE_RE.test(value)) return false;
   const d = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
+/** Texto sin acentos, minúsculas y sin signos, para comparar `Soltero/a` con `soltero`. */
+function foldOption(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** La clave de la lista que corresponde al texto o a la clave escrita; null si está vacío o no coincide. */
+function matchList(value: string | undefined, labels: Record<string, string>): string | null {
+  const wanted = foldOption(value ?? "");
+  if (!wanted) return null;
+  for (const [key, label] of Object.entries(labels)) {
+    if (foldOption(key) === wanted || foldOption(label) === wanted) return key;
+  }
+  return null;
 }
 
 function splitList(value: string): string[] {
@@ -293,6 +386,27 @@ export function validatePatientRows(
       seenInFile.add(nationalId);
     }
 
+    // Ficha de identificación (todo opcional). Una lista cerrada solo acepta su texto o su clave; lo que no coincida
+    // es un error de la fila (no se adivina).
+    const education = matchList(raw.education_level, EDUCATION_LABELS);
+    if (raw.education_level && !education) errors.push(`Escolaridad "${raw.education_level}" no es válida. Opciones: ${Object.values(EDUCATION_LABELS).join(", ")}.`);
+    const marital = matchList(raw.marital_status, MARITAL_LABELS);
+    if (raw.marital_status && !marital) errors.push(`Estado civil "${raw.marital_status}" no es válido. Opciones: ${Object.values(MARITAL_LABELS).join(", ")}.`);
+    const informant = matchList(raw.informant_type, INFORMANT_LABELS);
+    if (raw.informant_type && !informant) errors.push(`Informante "${raw.informant_type}" no es válido. Opciones: ${Object.values(INFORMANT_LABELS).join(", ")}.`);
+    const texts: [string, string, string][] = [
+      ["residence", "Residencia", raw.residence],
+      ["place_of_origin", "Procedencia", raw.place_of_origin],
+      ["occupation", "Ocupación", raw.occupation],
+      ["informant_name", "Nombre del informante", raw.informant_name],
+    ];
+    for (const [, label, value] of texts) {
+      if ((value ?? "").length > MAX_IDENTITY_TEXT) errors.push(`${label} es demasiado largo (máximo ${MAX_IDENTITY_TEXT} caracteres).`);
+    }
+    const informantName = raw.informant_name || null;
+    if (informant && informant !== "paciente" && !informantName) errors.push("El nombre del informante es obligatorio cuando el informante no es el mismo paciente.");
+    if (informantName && (!informant || informant === "paciente")) errors.push('El nombre del informante solo aplica cuando el informante no es el mismo paciente (columna "Informante").');
+
     if (errors.length > 0) {
       return { rowNumber, data: null, errors };
     }
@@ -307,6 +421,13 @@ export function validatePatientRows(
         sex: sexRaw as "femenino" | "masculino",
         phone: raw.phone || null,
         email: raw.email || null,
+        education_level: education as EducationLevel | null,
+        marital_status: marital as MaritalStatus | null,
+        residence: raw.residence || null,
+        place_of_origin: raw.place_of_origin || null,
+        occupation: raw.occupation || null,
+        informant_type: informant as InformantType | null,
+        informant_name: informantName,
         allergies: splitList(raw.allergies),
         medications: splitList(raw.medications),
       },

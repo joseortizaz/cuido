@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type PatientSummary = {
+  /** Ocupación de la ficha del paciente (ya no se pide dentro de la consulta). */
+  occupation: string | null;
   allergies: { substance: string; reaction: string | null; severity: string | null }[];
   medications: { name: string; dose: string | null; frequency: string | null }[];
   pathological: string | null;
@@ -16,7 +18,7 @@ export async function loadPatientSummary(
   supabase: SupabaseClient<Database>,
   patientId: string
 ): Promise<PatientSummary> {
-  const [{ data: allergies }, { data: medications }, { data: history }] = await Promise.all([
+  const [{ data: allergies }, { data: medications }, { data: history }, { data: patient }] = await Promise.all([
     supabase
       .from("allergies")
       .select("substance, reaction, severity")
@@ -30,8 +32,10 @@ export async function loadPatientSummary(
       .eq("status", "activo")
       .order("created_at", { ascending: false }),
     supabase.from("patient_medical_history").select("pathological_history").eq("patient_id", patientId).maybeSingle(),
+    supabase.from("patients").select("occupation").eq("id", patientId).maybeSingle(),
   ]);
   return {
+    occupation: patient?.occupation ?? null,
     allergies: allergies ?? [],
     medications: medications ?? [],
     pathological: history?.pathological_history ?? null,
@@ -46,6 +50,8 @@ export function PatientSummaryCard({ summary, patientId }: { summary: PatientSum
     >
       <h2 className="text-sm font-semibold">Resumen del expediente</h2>
       <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1">
+        <dt className="text-zinc-500">Ocupación</dt>
+        <dd>{summary.occupation?.trim() ? summary.occupation : "Sin registrar"}</dd>
         <dt className="text-zinc-500">Alergias</dt>
         <dd>
           {summary.allergies.length === 0
