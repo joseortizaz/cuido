@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { samePhone } from "@/lib/domain/phone";
 import { IdentityFields, inputClass, type IdentityForm } from "../../_components/identity-fields";
 import { updatePatient, type EditPatientState } from "./actions";
@@ -27,7 +27,16 @@ export function EditPatientForm({
     updatePatient.bind(null, patientId),
     undefined
   );
-  // Campos controlados: si el servidor rechaza el envío, React 19 vacía los no controlados.
+  // El envío se hace a mano (no con <form action={…}>): React 19 vacía el formulario al terminar la acción y, en un
+  // <select>, lo vuelve a la primera opción aunque el estado diga otra; con tantos campos sería perder lo escrito.
+  const [, startTransition] = useTransition();
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startTransition(() => formAction(data));
+  }
+
+  // Campos controlados (y envío a mano, ver arriba): si el servidor rechaza el envío no se pierde lo escrito.
   const [identity, setIdentity] = useState<IdentityForm>({
     first_name: initial.first_name,
     last_name: initial.last_name,
@@ -49,7 +58,7 @@ export function EditPatientForm({
   const phoneChanged = phone.trim() !== initial.phone.trim() && !samePhone(phone, initial.phone);
 
   return (
-    <form action={formAction} className="flex w-full max-w-3xl flex-col gap-6">
+    <form onSubmit={onSubmit} className="flex w-full max-w-3xl flex-col gap-6">
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-1 text-base font-semibold">Identificación</legend>
         <IdentityFields

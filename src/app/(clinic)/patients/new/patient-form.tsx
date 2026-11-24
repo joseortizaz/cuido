@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import { EMPTY_IDENTITY, IdentityFields, inputClass, type IdentityForm } from "../_components/identity-fields";
 import { createPatient, type PatientFormState } from "./actions";
 
@@ -16,6 +16,15 @@ export function PatientForm({
 
   // Todo en estado: si el servidor rechaza el envío (p. ej. cédula repetida), React 19 vacía los campos no
   // controlados y con tantos campos sería perder todo lo escrito.
+  // El envío se hace a mano (no con <form action={…}>): React 19 vacía el formulario al terminar la acción y, en un
+  // <select>, lo vuelve a la primera opción aunque el estado diga otra; con tantos campos sería perder lo escrito.
+  const [, startTransition] = useTransition();
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startTransition(() => formAction(data));
+  }
+
   const [identity, setIdentity] = useState<IdentityForm>(EMPTY_IDENTITY);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -24,7 +33,7 @@ export function PatientForm({
   const [source, setSource] = useState("verbal");
 
   return (
-    <form action={formAction} className="flex w-full max-w-3xl flex-col gap-6">
+    <form onSubmit={onSubmit} className="flex w-full max-w-3xl flex-col gap-6">
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-1 text-base font-semibold">Identificación</legend>
         <IdentityFields value={identity} onChange={(patch) => setIdentity((p) => ({ ...p, ...patch }))} canEditReligion={canEditReligion} />
