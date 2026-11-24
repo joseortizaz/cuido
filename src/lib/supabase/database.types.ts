@@ -2427,7 +2427,22 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patient_religion_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_religion_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       patient_religion_log: {
         Row: {
@@ -2463,28 +2478,43 @@ export type Database = {
           old_religion_other?: string | null
           patient_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patient_religion_log_clinic_id_fkey"
+            columns: ["clinic_id"]
+            isOneToOne: false
+            referencedRelation: "clinics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_religion_log_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       patients: {
         Row: {
-          education_level: string | null
-          informant_name: string | null
-          informant_type: string | null
-          marital_status: string | null
-          occupation: string | null
-          place_of_origin: string | null
-          residence: string | null
           clinic_id: string
           created_at: string
           date_of_birth: string
+          education_level: string | null
           email: string | null
           first_name: string
           id: string
+          informant_name: string | null
+          informant_type: string | null
           is_test: boolean
           last_name: string
+          marital_status: string | null
           national_id: string | null
+          occupation: string | null
           phone: string | null
+          place_of_origin: string | null
           record_number: string
+          residence: string | null
           sex: string
           updated_at: string
           void_reason: string | null
@@ -2492,24 +2522,24 @@ export type Database = {
           voided_by: string | null
         }
         Insert: {
-          education_level?: string | null
-          informant_name?: string | null
-          informant_type?: string | null
-          marital_status?: string | null
-          occupation?: string | null
-          place_of_origin?: string | null
-          residence?: string | null
           clinic_id: string
           created_at?: string
           date_of_birth: string
+          education_level?: string | null
           email?: string | null
           first_name: string
           id?: string
+          informant_name?: string | null
+          informant_type?: string | null
           is_test?: boolean
           last_name: string
+          marital_status?: string | null
           national_id?: string | null
+          occupation?: string | null
           phone?: string | null
+          place_of_origin?: string | null
           record_number?: string
+          residence?: string | null
           sex: string
           updated_at?: string
           void_reason?: string | null
@@ -2517,24 +2547,24 @@ export type Database = {
           voided_by?: string | null
         }
         Update: {
-          education_level?: string | null
-          informant_name?: string | null
-          informant_type?: string | null
-          marital_status?: string | null
-          occupation?: string | null
-          place_of_origin?: string | null
-          residence?: string | null
           clinic_id?: string
           created_at?: string
           date_of_birth?: string
+          education_level?: string | null
           email?: string | null
           first_name?: string
           id?: string
+          informant_name?: string | null
+          informant_type?: string | null
           is_test?: boolean
           last_name?: string
+          marital_status?: string | null
           national_id?: string | null
+          occupation?: string | null
           phone?: string | null
+          place_of_origin?: string | null
           record_number?: string
+          residence?: string | null
           sex?: string
           updated_at?: string
           void_reason?: string | null
@@ -3692,10 +3722,6 @@ export type Database = {
         Args: { p_phone: string; p_source?: string }
         Returns: number
       }
-      save_patient_religion: {
-        Args: { p_other?: string; p_patient_id: string; p_religion: string }
-        Returns: undefined
-      }
       save_clinic_letterhead: {
         Args: {
           p_address?: string
@@ -3720,6 +3746,10 @@ export type Database = {
           p_reset_yearly: boolean
           p_start_number: number
         }
+        Returns: undefined
+      }
+      save_patient_religion: {
+        Args: { p_other?: string; p_patient_id: string; p_religion: string }
         Returns: undefined
       }
       set_clinic_access_exempt: {
