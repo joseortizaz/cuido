@@ -66,7 +66,7 @@ export const HISTORY_SECTIONS: HistorySection[] = [
       {
         key: "non_pathological_history",
         label: "Antecedentes no patológicos",
-        hint: "Vivienda, ocupación, escolaridad, convivencia y otros datos de contexto.",
+        hint: "Vivienda, convivencia y otros datos de contexto. La ocupación, la escolaridad y el estado civil ya están en la ficha del paciente.",
       },
     ],
   },

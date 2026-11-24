@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentClinicMembership } from "@/lib/supabase/clinic-context";
 import { readOnlyBlock } from "@/lib/supabase/clinic-access";
 import { normalizeDominicanPhone } from "@/lib/domain/phone";
+import { parseIdentityFromForm, parseReligionFromForm } from "@/lib/domain/patient-identity";
 
 export type PatientFormState = { error?: string } | undefined;
 
@@ -25,6 +26,10 @@ export async function createPatient(
   if (!dateOfBirth) return { error: "La fecha de nacimiento es requerida." };
   if (sex !== "femenino" && sex !== "masculino") return { error: "Selecciona el sexo." };
 
+  // Ficha de identificación: listas cerradas, longitudes y regla del informante (la base de datos vuelve a validar).
+  const identity = parseIdentityFromForm(formData);
+  if (identity.error) return { error: identity.error };
+
   // Consentimiento de WhatsApp (opcional): exige un teléfono dominicano válido ANTES de crear al paciente.
   const wantsConsent = formData.get("whatsapp_consent") === "on";
   const consentSource = String(formData.get("whatsapp_source") ?? "verbal");
@@ -42,6 +47,12 @@ export async function createPatient(
   const readOnly = await readOnlyBlock(supabase);
   if (readOnly) return { error: readOnly };
 
+  // La religión es un dato sensible: solo la registran administradores y médicos (recepción ni la ve en el formulario;
+  // si llegara el campo, se ignora aquí y la base de datos lo rechazaría igual).
+  const isClinician = membership.role === "admin" || membership.role === "medico";
+  const religion = isClinician ? parseReligionFromForm(formData) : { value: null };
+  if ("error" in religion && religion.error) return { error: religion.error };
+
   const { data: patient, error } = await supabase
     .from("patients")
     .insert({
@@ -54,6 +65,7 @@ export async function createPatient(
       phone: consentPhone ?? (phone || null),
       email: email || null,
       is_test: isTest,
+      ...identity.values,
     })
     .select("id")
     .single();
@@ -70,6 +82,17 @@ export async function createPatient(
       phone_e164: consentPhone,
       source: consentSource as "verbal" | "escrito" | "otro",
     });
+  }
+
+  // Religión (opcional): segunda escritura en la misma operación, por la función que verifica rol y clínica. Si fallara,
+  // el paciente ya existe: se lleva a Editar para volver a indicarla (en vez de dejar el formulario y duplicar el alta).
+  if (religion.value) {
+    const { error: religionError } = await supabase.rpc("save_patient_religion", {
+      p_patient_id: patient.id,
+      p_religion: religion.value.religion,
+      p_other: religion.value.religion_other ?? undefined,
+    });
+    if (religionError) redirect(`/patients/${patient.id}/edit?aviso=religion`);
   }
 
   redirect(`/patients/${patient.id}`);

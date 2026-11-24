@@ -123,6 +123,13 @@ async function confirmPatientBatch(
         sex: row.data.sex,
         phone: row.data.phone,
         email: row.data.email,
+        education_level: row.data.education_level,
+        marital_status: row.data.marital_status,
+        residence: row.data.residence,
+        place_of_origin: row.data.place_of_origin,
+        occupation: row.data.occupation,
+        informant_type: row.data.informant_type,
+        informant_name: row.data.informant_name,
       })
       .select("id")
       .single();

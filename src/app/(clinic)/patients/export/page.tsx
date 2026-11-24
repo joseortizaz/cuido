@@ -95,6 +95,20 @@ export default async function ExportLandingPage() {
             Descargar .csv
           </a>
         </div>
+        <p className="mt-2 text-xs text-zinc-500">
+          Incluye escolaridad, estado civil, residencia, procedencia, ocupación e informante. La <strong>religión</strong> es un
+          dato sensible y <strong>no se incluye</strong> a menos que la pidas aquí:
+        </p>
+        <div className="flex gap-3 text-sm">
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/patients/export/patients?religion=1" className={linkClass}>
+            .xlsx con religión
+          </a>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/patients/export/patients?format=csv&religion=1" className={linkClass}>
+            .csv con religión
+          </a>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">

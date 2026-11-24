@@ -46,6 +46,42 @@ const RESERVED: { keys: string[]; labels: string[]; core: string }[] = [
     labels: ["tipo de consulta"],
     core: "Tipo de consulta (encounters.encounter_type)",
   },
+  // Ficha de identificación del paciente (columnas de patients): ya no se piden dentro de la consulta.
+  {
+    keys: ["ocupacion", "occupation"],
+    labels: ["ocupacion"],
+    core: "Ocupación (patients.occupation)",
+  },
+  {
+    keys: ["escolaridad", "nivel_educativo", "education_level"],
+    labels: ["escolaridad", "nivel educativo"],
+    core: "Escolaridad (patients.education_level)",
+  },
+  {
+    keys: ["estado_civil", "marital_status"],
+    labels: ["estado civil"],
+    core: "Estado civil (patients.marital_status)",
+  },
+  {
+    keys: ["residencia", "domicilio", "residence"],
+    labels: ["residencia", "domicilio"],
+    core: "Residencia (patients.residence)",
+  },
+  {
+    keys: ["procedencia", "place_of_origin"],
+    labels: ["procedencia"],
+    core: "Procedencia (patients.place_of_origin)",
+  },
+  {
+    keys: ["religion"],
+    labels: ["religion"],
+    core: "Religión (patient_religion, dato sensible)",
+  },
+  {
+    keys: ["informante", "informant"],
+    labels: ["informante"],
+    core: "Informante (patients.informant_type)",
+  },
 ];
 
 function normalize(text: string): string {

@@ -16,6 +16,14 @@ import { formatRxNumber, summarizeRxItems } from "@/lib/domain/prescriptions";
 import { formatDateString, formatDrDate, formatDrDateTime } from "@/lib/domain/dr-time";
 import { ContactForm, GrantConsentForm, RevokeConsentButton } from "./whatsapp/whatsapp-card";
 import { formatDominicanPhone, normalizeDominicanPhone } from "@/lib/domain/phone";
+import { ageLabel } from "@/lib/domain/age";
+import {
+  EDUCATION_LABELS,
+  INFORMANT_LABELS,
+  MARITAL_LABELS,
+  labelOf,
+  religionDisplay,
+} from "@/lib/domain/patient-identity";
 import { HeaderLink, HeaderPrimaryAction, PageBody, PageHeader } from "@/app/(clinic)/_components/page-header";
 import { PatientAdminPanel } from "./patient-admin-panel";
 import {
@@ -42,10 +50,27 @@ const CHANGE_FIELD_LABELS: Record<string, string> = {
   sex: "Sexo",
   phone: "Teléfono",
   email: "Correo",
+  education_level: "Escolaridad",
+  marital_status: "Estado civil",
+  residence: "Residencia",
+  place_of_origin: "Procedencia",
+  occupation: "Ocupación",
+  informant_type: "Informante",
+  informant_name: "Nombre del informante",
+  religion: "Religión",
   is_test: "Paciente de prueba",
   voided_at: "Anulado el",
   void_reason: "Motivo de la anulación",
 };
+
+/** Los valores de las listas cerradas se guardan como claves; en el historial se muestran con su texto en español. */
+function changeValueLabel(field: string, value: string | null): string {
+  if (!value) return "(vacío)";
+  if (field === "education_level") return labelOf(EDUCATION_LABELS, value);
+  if (field === "marital_status") return labelOf(MARITAL_LABELS, value);
+  if (field === "informant_type") return labelOf(INFORMANT_LABELS, value);
+  return value;
+}
 
 type AllergyRow = {
   id: string;
@@ -283,7 +308,7 @@ export default async function PatientDetailPage({
 
   // Historial de cambios de los datos del paciente: lo leen solo admin y médicos (RLS); recepción ni lo pide.
   const canSeeChangeLog = membership.role === "admin" || membership.role === "medico";
-  const { data: changeLog } = canSeeChangeLog
+  const { data: patientChangeLog } = canSeeChangeLog
     ? await supabase
         .from("patient_change_log")
         .select("id, changed_by, changed_at, field, old_value, new_value")
@@ -292,6 +317,30 @@ export default async function PatientDetailPage({
         .order("field", { ascending: true })
         .limit(200)
     : { data: [] as { id: string; changed_by: string | null; changed_at: string; field: string; old_value: string | null; new_value: string | null }[] };
+
+  // Religión (dato sensible): solo admin y médicos la leen (RLS); su historial se mezcla con el de los demás datos.
+  const [{ data: religionRow }, { data: religionLog }] = canSeeChangeLog
+    ? await Promise.all([
+        supabase.from("patient_religion").select("religion, religion_other").eq("patient_id", id).maybeSingle(),
+        supabase
+          .from("patient_religion_log")
+          .select("id, changed_by, changed_at, old_religion, old_religion_other, new_religion, new_religion_other")
+          .eq("patient_id", id)
+          .order("changed_at", { ascending: false })
+          .limit(50),
+      ])
+    : [{ data: null }, { data: [] as { id: string; changed_by: string | null; changed_at: string; old_religion: string | null; old_religion_other: string | null; new_religion: string; new_religion_other: string | null }[] }];
+  const changeLog = [
+    ...(patientChangeLog ?? []),
+    ...(religionLog ?? []).map((r) => ({
+      id: `religion-${r.id}`,
+      changed_by: r.changed_by,
+      changed_at: r.changed_at,
+      field: "religion",
+      old_value: r.old_religion ? religionDisplay({ religion: r.old_religion, religion_other: r.old_religion_other }) : null,
+      new_value: religionDisplay({ religion: r.new_religion, religion_other: r.new_religion_other }),
+    })),
+  ].sort((a, b) => b.changed_at.localeCompare(a.changed_at));
 
   // El email no vive en `consents` (auth.users no está expuesto vía la Data
   // API) -- se resuelve server-side, mismo patrón que src/app/team/page.tsx.
@@ -327,7 +376,7 @@ export default async function PatientDetailPage({
     <>
       <PageHeader
         title={<>{patient.first_name} {patient.last_name}</>}
-        subtitle={<>Código {patient.record_number} · {patient.date_of_birth} · {patient.sex}
+        subtitle={<>Código {patient.record_number} · {ageLabel(patient.date_of_birth) || patient.date_of_birth} · {patient.sex}
           {patient.national_id ? ` · ${patient.national_id}` : ""}</>}
         back={{ href: "/patients", label: "Pacientes" }}
         actions={
@@ -380,7 +429,7 @@ export default async function PatientDetailPage({
       {tab === "datos" && (
         <>
           <section className="flex flex-col gap-3">
-            <h2 className="text-lg font-medium">Datos del paciente</h2>
+            <h2 className="text-lg font-medium">Identificación</h2>
             <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
               <dt className="text-zinc-500">Código</dt>
               <dd className="font-mono">{patient.record_number}</dd>
@@ -388,12 +437,42 @@ export default async function PatientDetailPage({
               <dd>
                 {patient.first_name} {patient.last_name}
               </dd>
+              <dt className="text-zinc-500">No. Identidad</dt>
+              <dd>{patient.national_id ?? "sin registrar"}</dd>
               <dt className="text-zinc-500">Fecha de nacimiento</dt>
               <dd>{patient.date_of_birth}</dd>
+              <dt className="text-zinc-500">Edad</dt>
+              <dd>{ageLabel(patient.date_of_birth) || "—"}</dd>
               <dt className="text-zinc-500">Sexo</dt>
               <dd>{patient.sex}</dd>
-              <dt className="text-zinc-500">Cédula o pasaporte</dt>
-              <dd>{patient.national_id ?? "sin registrar"}</dd>
+              <dt className="text-zinc-500">Escolaridad</dt>
+              <dd>{patient.education_level ? labelOf(EDUCATION_LABELS, patient.education_level) : "sin registrar"}</dd>
+              <dt className="text-zinc-500">Estado civil</dt>
+              <dd>{patient.marital_status ? labelOf(MARITAL_LABELS, patient.marital_status) : "sin registrar"}</dd>
+              <dt className="text-zinc-500">Residencia</dt>
+              <dd>{patient.residence ?? "sin registrar"}</dd>
+              <dt className="text-zinc-500">Procedencia</dt>
+              <dd>{patient.place_of_origin ?? "sin registrar"}</dd>
+              <dt className="text-zinc-500">Ocupación</dt>
+              <dd>{patient.occupation ?? "sin registrar"}</dd>
+              {canSeeClinical && (
+                <>
+                  <dt className="text-zinc-500">Religión</dt>
+                  <dd>{religionRow ? religionDisplay(religionRow) : "sin registrar"}</dd>
+                </>
+              )}
+              <dt className="text-zinc-500">Informante</dt>
+              <dd>
+                {patient.informant_type
+                  ? `${labelOf(INFORMANT_LABELS, patient.informant_type)}${patient.informant_name ? `: ${patient.informant_name}` : ""}`
+                  : "sin registrar"}
+              </dd>
+            </dl>
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h2 className="text-lg font-medium">Contacto</h2>
+            <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-1 text-sm">
               <dt className="text-zinc-500">Teléfono</dt>
               <dd>{patient.phone ? formatDominicanPhone(patientPhoneE164) || patient.phone : "sin registrar"}</dd>
               <dt className="text-zinc-500">Correo</dt>
@@ -429,9 +508,9 @@ export default async function PatientDetailPage({
                   <li key={c.id} className="flex flex-col gap-0.5 py-2">
                     <span>
                       <span className="font-medium">{CHANGE_FIELD_LABELS[c.field] ?? c.field}:</span>{" "}
-                      <span className="text-zinc-500 line-through">{c.old_value || "(vacío)"}</span>
+                      <span className="text-zinc-500 line-through">{changeValueLabel(c.field, c.old_value)}</span>
                       {" → "}
-                      <span>{c.new_value || "(vacío)"}</span>
+                      <span>{changeValueLabel(c.field, c.new_value)}</span>
                     </span>
                     <span className="text-xs text-zinc-500">
                       {formatDrDateTime(c.changed_at)} ·{" "}

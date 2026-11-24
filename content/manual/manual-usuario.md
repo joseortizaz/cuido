@@ -73,7 +73,8 @@ Cada persona del equipo tiene **un rol**. El rol decide lo que puede ver y hacer
 |---|:---:|:---:|:---:|
 | Ver y buscar pacientes (datos demográficos) | Sí | Sí | Sí |
 | Registrar pacientes nuevos | Sí | Sí | Sí |
-| Editar los datos de un paciente | Sí | Sí | Solo teléfono y correo |
+| Editar los datos de un paciente (ficha de identificación) | Sí | Sí | Solo teléfono y correo |
+| Ver y registrar la religión del paciente (dato sensible) | Sí | Sí | No |
 | Ver el expediente clínico (consultas, notas, signos vitales, alergias, medicamentos, estudios, recetas) | Sí | Sí | No |
 | Abrir el expediente y escribir la historia general | Sí | Sí | No |
 | Registrar consultas, alergias y medicamentos | Sí | Sí | No |
@@ -134,11 +135,26 @@ Cuando un bloque no tiene nada pendiente, lo dice con un mensaje claro en lugar 
 ## 4.1 Registrar un paciente nuevo
 
 1. Entre a **Pacientes** y pulse **Nuevo paciente**.
-2. Complete los datos obligatorios: **nombre, apellido, fecha de nacimiento y sexo**.
-3. Los datos opcionales son **cédula o pasaporte, teléfono y correo**. Anote el teléfono siempre que pueda: es la base para contactar al paciente.
-4. Si usted es administrador o recepción y el paciente aceptó recibir recordatorios por WhatsApp, marque la casilla **Recordatorios por WhatsApp** e indique si aceptó **verbalmente, por escrito u otro** (capítulo 13). Para eso el teléfono debe ser dominicano (809, 829 o 849).
-5. Si el paciente es **ficticio** (para practicar o capacitar al equipo), marque **Paciente de prueba (datos ficticios)** (sección 4.7).
-6. Pulse **Crear paciente**. El paciente queda registrado, **recibe su código** (sección 4.4) y se abre su ficha.
+2. En el bloque **Identificación** complete los datos obligatorios: **Nombre, Apellido, Fecha de nacimiento y Sexo**. La **Edad** aparece sola junto a la fecha de nacimiento (por ejemplo «34 años», «8 meses» o «12 días» en los recién nacidos); no se escribe ni se guarda, se calcula siempre.
+3. Los demás datos de identificación son **opcionales**, pero conviene llenarlos cuando se conozcan:
+
+   | Campo | Qué anotar |
+   |---|---|
+   | **No. Identidad** | Cédula o pasaporte (puede quedar vacío: hay menores y extranjeros). No puede repetirse entre pacientes de la clínica |
+   | **Escolaridad** | Desde «Sin escolaridad» hasta «Posgrado» (elija de la lista) |
+   | **Estado civil** | Soltero/a, Casado/a, Unión libre, Separado/a, Divorciado/a o Viudo/a |
+   | **Residencia** | Dónde vive hoy: calle o sector, municipio y provincia |
+   | **Procedencia** | De dónde proviene: municipio, provincia o país. Al escribir sugiere las 32 provincias, pero acepta texto libre |
+   | **Ocupación** | A qué se dedica |
+   | **Religión** | Solo administradores y médicos (ver más abajo) |
+   | **Informante** | Quién da los datos: **El mismo paciente** (opción por defecto), Madre/padre, Cónyuge o pareja, Hijo/a, Otro familiar, Acompañante u Otro. Si no es el mismo paciente, escriba también **el nombre del informante** (es obligatorio). Sirve para la anamnesis indirecta: niños, adultos mayores o pacientes que no pueden hablar |
+
+4. En el bloque **Contacto** anote el **teléfono** (siempre que pueda: es la base para contactar al paciente) y el **correo**.
+5. Si usted es administrador o recepción y el paciente aceptó recibir recordatorios por WhatsApp, marque la casilla **Recordatorios por WhatsApp** e indique si aceptó **verbalmente, por escrito u otro** (capítulo 13). Para eso el teléfono debe ser dominicano (809, 829 o 849).
+6. Si el paciente es **ficticio** (para practicar o capacitar al equipo), marque **Paciente de prueba (datos ficticios)** (sección 4.7).
+7. Pulse **Crear paciente**. El paciente queda registrado, **recibe su código** (sección 4.4) y se abre su ficha. Si algo falla (por ejemplo, una cédula repetida), Cuido le avisa y **conserva lo que escribió**.
+
+> **Importante:** **la religión es un dato sensible** (la Ley 172-13 protege las convicciones religiosas). Por eso **solo la ven y la llenan administradores y médicos**: el campo no aparece para recepción. Pregúntela solo si es relevante para la atención; es opcional y existe la opción «Prefiere no decir».
 
 > **Consejo:** antes de registrar, busque en la lista de pacientes que la persona no exista ya. La búsqueda funciona por **código, nombre, apellido o cédula**, sin importar mayúsculas ni acentos. Evitar duplicados mantiene el historial completo en un solo lugar.
 
@@ -148,17 +164,19 @@ La ficha del paciente tiene **tres pestañas**:
 
 | Pestaña | Contenido | Quién la ve |
 |---|---|---|
-| **Datos** | Datos del paciente, su **código**, el botón **Editar paciente**, el **Historial de cambios** de sus datos y, para el administrador, **Eliminar o anular paciente** | Todos (recepción ve los datos, no el historial de cambios) |
+| **Datos** | La ficha de **Identificación** (código, nombre, No. Identidad, fecha de nacimiento, **edad**, sexo, escolaridad, estado civil, residencia, procedencia, ocupación, religión e informante) y el **Contacto**; el botón **Editar paciente**, el **Historial de cambios** y, para el administrador, **Eliminar o anular paciente** | Todos. Recepción ve toda la ficha **menos la religión** y no ve el historial de cambios |
 | **Expediente** | Alergias, medicamentos activos, historia general, consultas, estudios y analíticas, recetas y el historial de ajustes del expediente | Administrador y médicos |
 | **Administrativo** | Recordatorios por WhatsApp, consentimientos, seguro (ARS), comprobantes e-CF y acceso a especialidades sensibles | Todos (recepción ve además la lista de consultas **solo por fecha**) |
+
+El encabezado de la ficha muestra siempre **«Código · edad · sexo»** del paciente.
 
 > **Importante:** **recepción no ve información clínica.** No ve el motivo de consulta, las notas del médico, el diagnóstico, los signos vitales, las alergias, los medicamentos, los estudios ni las recetas. Sí puede agendar citas, firmar consentimientos, facturar (e-CF) y trabajar las reclamaciones a la aseguradora, porque para eso solo necesita saber **que hubo una consulta y su fecha**.
 
 ## 4.3 Editar los datos de un paciente
 
-Administradores y médicos pueden corregir los datos de un paciente: en la pestaña **Datos** pulse **Editar paciente**, cambie lo necesario (nombre, apellido, fecha de nacimiento, sexo, cédula o pasaporte, teléfono y correo) y pulse **Guardar cambios**. El **código no se puede editar**.
+Administradores y médicos pueden corregir los datos de un paciente: en la pestaña **Datos** pulse **Editar paciente**, cambie lo necesario (cualquiera de los campos de identificación de la sección 4.1, incluida la **religión**, y el teléfono y el correo) y pulse **Guardar cambios**. Los pacientes registrados antes de que existieran los campos nuevos (escolaridad, estado civil, residencia, procedencia, ocupación e informante) aparecen con ellos vacíos: se completan aquí. El **código no se puede editar**.
 
-- **Nada se pierde:** cada cambio queda en el **Historial de cambios** de la pestaña **Datos**, con quién lo hizo, cuándo, el valor anterior y el nuevo.
+- **Nada se pierde:** cada cambio queda en el **Historial de cambios** de la pestaña **Datos**, con quién lo hizo, cuándo, el valor anterior y el nuevo. Los cambios de la religión también quedan ahí (solo lo ven administradores y médicos).
 - **Recepción** solo puede corregir el **teléfono y el correo**, desde el bloque **Recordatorios por WhatsApp** (también queda en el historial).
 - Si cambia el **teléfono** de un paciente que había aceptado los recordatorios por WhatsApp, ese consentimiento **se revoca**: pertenecía al número anterior, que podría ser de otra persona (capítulo 13). Cuido se lo avisa antes de guardar.
 - No se puede editar a un paciente **anulado** (sección 4.6).
@@ -240,7 +258,7 @@ Se completa o corrige en cualquier momento, con el botón de cada sección o **C
 1. Abra la ficha del paciente, pestaña **Expediente**, y pulse **Nueva consulta**.
 2. **Elija la especialidad** (plantilla). Cuido le ofrece primero sus especialidades preferidas; también puede ver todas las que su clínica le tiene habilitadas.
 3. **Elija el tipo de consulta** (sección 5.4).
-4. Verá primero el **resumen del expediente** (alergias activas, medicamentos activos y antecedentes patológicos), para tenerlos presentes sin volver a escribirlos.
+4. Verá primero el **resumen del expediente** (ocupación del paciente, alergias activas, medicamentos activos y antecedentes patológicos), para tenerlos presentes sin volver a escribirlos. La ocupación ya no se pide dentro de la consulta: vive en la ficha del paciente.
 5. Escriba el **motivo de consulta** y la **historia de la enfermedad actual** (en seguimiento, control y postquirúrgica se llama **Evolución**).
 6. Si los tomó, registre los **signos vitales**: presión arterial (sistólica y diastólica), frecuencia cardíaca, frecuencia respiratoria, saturación de oxígeno, peso y talla. Son opcionales.
 7. Complete los campos de la **plantilla de la especialidad** (examen físico, diagnóstico, plan, etc.). Los campos marcados con asterisco (\*) son obligatorios. Algunos campos solo aparecen cuando otro campo los activa.
@@ -544,14 +562,14 @@ Sirve para cargar de una sola vez los datos que hoy lleva en Excel u otro sistem
 3. **Suba el archivo**.
 4. Cuido le muestra una **pantalla de revisión**. **Nada se guarda hasta que usted lo apruebe.** Corrija los errores que indique y confirme.
 
-Hay dos tipos de importación: **pacientes** (datos demográficos, alergias y medicamentos activos) y **consultas por especialidad** (cada especialidad tiene su propia plantilla). Los pacientes deben existir antes de importar sus consultas. Al importar consultas históricas, Cuido abre el expediente del paciente (vacío) si aún no existía. La plantilla de consultas acepta las columnas **Tipo de consulta**, **Historia de la enfermedad actual** y **Motivo de consulta**; si no indica el tipo, la consulta queda **Sin clasificar**.
+Hay dos tipos de importación: **pacientes** (datos demográficos, la ficha de identificación —escolaridad, estado civil, residencia, procedencia, ocupación e informante—, alergias y medicamentos activos) y **consultas por especialidad** (cada especialidad tiene su propia plantilla). En la plantilla de pacientes, las columnas de escolaridad, estado civil e informante aceptan el texto de la lista (con o sin acentos, por ejemplo «Soltero/a» o «soltero»); si un valor no coincide, la fila se marca con error en la pantalla de revisión en lugar de adivinar. **La religión no se importa** (es un dato sensible): se registra desde la ficha del paciente. Los pacientes deben existir antes de importar sus consultas. Al importar consultas históricas, Cuido abre el expediente del paciente (vacío) si aún no existía. La plantilla de consultas acepta las columnas **Tipo de consulta**, **Historia de la enfermedad actual** y **Motivo de consulta**; si no indica el tipo, la consulta queda **Sin clasificar**.
 
 ## 12.2 Exportar
 
 En **Pacientes → Exportar** descarga los datos de su clínica. Solo se incluye lo que usted tiene permiso de ver. **La exportación funciona también si la clínica está en modo solo lectura.**
 
 - **Exportación completa de la clínica (.xlsx):** un solo libro con pacientes (con su **código** y su estado), alergias, medicamentos, citas, consentimientos firmados, comprobantes fiscales y sus líneas, reclamaciones, seguros, verificaciones de elegibilidad y una hoja por especialidad con sus consultas. La hoja **Resumen** indica cuántas filas tiene cada hoja, para que pueda comprobar que no falta nada.
-- **Pacientes** (.xlsx o .csv): datos demográficos, alergias y medicamentos activos.
+- **Pacientes** (.xlsx o .csv): datos demográficos y de identificación, alergias y medicamentos activos. La **religión** es un dato sensible y **no se incluye** a menos que usted la pida expresamente con los enlaces «.xlsx con religión» o «.csv con religión».
 - **Consultas por especialidad:** una fila por consulta, con una columna por cada campo de la plantilla.
 - **Otros registros** (.csv): cada tabla por separado, con los textos largos completos.
 
@@ -627,6 +645,8 @@ El día de vencimiento todavía es válido. Después, la cuenta avanza por estas
 | Etapa | Cuánto dura | Qué ocurre |
 |---|---|---|
 | **Período de gracia** | 30 días después del vencimiento | Puede trabajar con normalidad; Cuido le avisa cuántos días faltan para el solo lectura |
+| **Informante** | Persona que da los datos de la consulta cuando no es el propio paciente (madre o padre, cónyuge, acompañante…) |
+| **Procedencia** | De dónde proviene el paciente (municipio, provincia o país); distinta de la residencia, que es dónde vive hoy |
 | **Timbrado** | Encabezado de la clínica (nombre, dirección, teléfonos, logo) que se imprime en las recetas |
 | **Tipo de consulta** | Clase de consulta (inicial, seguimiento, control, urgencia, prequirúrgica, postquirúrgica o alta) |
 | **Solo lectura** | Hasta 90 días más | Puede **consultar toda la información** y el administrador puede **exportarla**, pero **no se puede crear ni modificar nada** |

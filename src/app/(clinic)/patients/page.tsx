@@ -1,3 +1,4 @@
+import { ageLabel } from "@/lib/domain/age";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -123,7 +124,10 @@ export default async function PatientsPage({ searchParams }: { searchParams: Pro
                       )}
                     </span>
                   </span>
-                  <span className="shrink-0 text-zinc-500">{patient.date_of_birth}</span>
+                  <span className="shrink-0 text-zinc-500">
+                    {ageLabel(patient.date_of_birth) ? `${ageLabel(patient.date_of_birth)} · ` : ""}
+                    {patient.date_of_birth}
+                  </span>
                 </Link>
               </li>
             ))}
